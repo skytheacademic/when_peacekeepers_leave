@@ -1,7 +1,8 @@
 
 ACLED Data:
-	-
-	-
+	- Downloaded from https://acleddata.com/data-export-tool/ on April 24, 2022.
+	- "1999-01-01-2019-01-01-Burundi-Central_African_Republic-Chad-Democratic_Republic_of_Congo-Ivory_Coast-Liberia-Mali-Sierra_Leone-South_Sudan-Sudan.csv" 
+	is the original CSV file downloaded.
 
 PRIO static data
 	- Downloaded from https://grid.prio.org/#/download on Jan. 6, 2022.
