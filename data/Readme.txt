@@ -1,29 +1,20 @@
 
-ACLED Data:
-	- Downloaded from https://acleddata.com/data-export-tool/ on April 24, 2022.
-	- "1999-01-01-2019-01-01-Burundi-Central_African_Republic-Chad-Democratic_Republic_of_Congo-Ivory_Coast-Liberia-Mali-Sierra_Leone-South_Sudan-Sudan.csv" 
-	is the original CSV file downloaded.
+ACLED data:
+	- Contains data on armed conflict and violence.
+	- Observed at event-level, with day and latitude and longitude.
+	- Downloaded from https://acleddata.com/data-export-tool/ on June 3, 2022.
+	- "1999-01-01-2015-01-01.csv" is the original CSV file downloaded by ZW.
 
-PRIO static data
-	- Downloaded from https://grid.prio.org/#/download on Jan. 6, 2022.
-	- "PRIO-GRID Static Variables - 2022-01-06" is the original CSV file downloaded.
+PRIO data:
+	- Contains geographic and spatial data.
+	- Observed at the grid-cell level for static variables, and grid-cell-year level for yearly data.
+	- Downloaded from https://grid.prio.org/#/download on June 3, 2022.
+	- "PRIO-GRID Static Variables - 2022-06-03.csv" is the original static CSV file downloaded by ZW.
+	- "PRIO-GRID Yearly Variables for 1999-2014 - 2022-06-03.csv" is the original yearly CSV file downloaded by ZW.
+	- The "priogrid_cellshp" shapefiles were downloaded from https://grid.prio.org/#/extensions on June 3, 2022 by ZW and contain all of the shapefile information.
 
-PRIO yearly data
-	- Downloaded from https://grid.prio.org/#/download on Dec. 30th 2021.
-	- "PRIO-GRID Yearly Variables for 1999-2014 - 2021-12-30.csv" is the original CSV file.
-
-PRIO shapefiles data
-	- Downloaded from: https://grid.prio.org/#/extensions on November 11, 2021
-	- "priogrid_cellshp" is the original shapefile folder with shapefile layers inside.
-
-RADPKO data
-	- Downloaded from https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/BQU5VD (version 4)
-	- "radpko_adm2.csv", "radpko_bases.csv", and "radpko_grid.csv" are the original CSV files.
-
-Country SF data
-	-
-	-
-
-World Shapefiles Data
-	-
-	-
+RADPKO data:
+	- Contains data on peacekeeping operation deployments.
+	- Observed at the grid-cell-month level.
+	- Downloaded from https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/BQU5VD (version 4) on June 3, 2022.
+	- "radpko_grid.csv" is the original CSV file downloaded by ZW.
