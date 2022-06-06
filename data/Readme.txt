@@ -3,7 +3,7 @@ ACLED data:
 	- Contains data on armed conflict and violence.
 	- Observed at event-level, with day and latitude and longitude.
 	- Downloaded from https://acleddata.com/data-export-tool/ on June 3, 2022.
-	- "1999-01-01-2015-01-01.csv" is the original CSV file downloaded by ZW.
+	- "1999-01-01-2021-12-31.csv" is the original CSV file downloaded by SK.
 
 PRIO data:
 	- Contains geographic and spatial data.
