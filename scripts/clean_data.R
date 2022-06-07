@@ -15,6 +15,9 @@ setwd("/Users/zmwarner/github/when_peacekeepers_leave")
 ### set seed
 set.seed(8675309) # hey jenny
 
+### create a function to compute queen contiguity
+st_queen <- function(a, b = a) st_relate(a, b, pattern = "F***T****")
+
 ##### CLEAN PRIO DATA #####
 
 ### load data
@@ -129,7 +132,7 @@ df <- full_join(df, radpko, by = c("gid", "year", "month"))
 df <- full_join(df, prio, by = c("gid", "year", "month"))
 
 ### clean up
-rm(acled, all_gids, prio, prio_shp, proj_crs, radpko)
+rm(acled, all_gids, prio, proj_crs, radpko)
 
 ### drop unneeded data
 df <- df %>% 
@@ -170,7 +173,7 @@ df <- df %>%
                           541, 551, 552, 553, 560, 565, 570, 571, 572, 580, 581, 
                           590, 600, 615, 616, 620, 625, 626, 651))
 
-##### RECODE AND GENERATE MEASURES #####
+##### RECODE VARIABLES #####
 
 ### RADPKO data are complete 1999-2021 for Africa, so we recode NA to 0
 df <- df %>% 
@@ -191,8 +194,35 @@ df <- df %>%
   mutate(acled_fatalities_any = sum(c_across(
     acled_fatalities_protests:acled_fatalities_explosions_remote_violence)))
 
+##### CREATE SPATIAL MEASURES #####
+
+### merge shapefile here (faster than if we do it above), then set it as spatial
+df <- left_join(df, prio_shp, by = c("gid", "col", "row")) %>%
+  st_as_sf(sf_column_name = "geometry")
+
+### get neighbors -- fastest/most robust way is to split it by month/year and 
+### compute each. Adjacency doesn't change over time but spatial properties 
+### prevent a simple copy-paste. At the same time, this is faster than iterating.
+z <- Sys.time()
+nb <- df %>% 
+  group_by(year, month) %>% 
+  mutate(neighbor = st_queen(.)) %>% 
+  ungroup()
+Sys.time() - z
+
+nb <- split(df, f = list(df$year, df$month))
+nb <- lapply(nb, FUN = function(x){
+  x <- st_queen(x)
+})
+
+### bind back together
+df2 <- do.call(rbind, nb) %>% as_tibble()
+class(df2)
+
+
 ##### VERSION CONTROL #####
 sessionInfo()
+
 
 
 ##### OLD TO DELETE #####
@@ -202,3 +232,28 @@ sessionInfo()
 # ggplot(df, aes(x = col, y = row)) + 
 #   geom_tile(aes(fill = prio_temp)) +
 #   coord_fixed()
+
+
+
+
+
+# p1 <- df %>%
+#   filter(year == 2005 & month == 12) %>%
+#   ggplot() +
+#   geom_sf(aes(fill = prio_forest_gc), lwd = 0)
+# ggsave("/users/zmwarner/desktop/p1.pdf", height = 8, width = 8)
+
+
+
+
+
+
+
+df2 %>% 
+  filter(year == 2000 & month == 1) %>% 
+  ggplot() + geom_sf() + 
+  # random place in canada
+  geom_sf(data = df2[1000,], fill = "red") + 
+  # neighbors from nb object
+  geom_sf(data = df2[unlist(df2$neighbor[1000]),], fill = "blue") 
+
