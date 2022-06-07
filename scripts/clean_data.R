@@ -25,9 +25,8 @@ prio_yearly <- read_csv("./data/prio/PRIO-GRID Yearly Variables for 1999-2014 - 
 year <- seq(1999, 2022, 1)
 prio_static <- expand_grid(prio_static, year)
 
-### merge on grid ID and year, then clean
+### merge on grid ID and year, then reorder variables
 prio <- full_join(prio_static, prio_yearly, by = c("gid", "year")) %>% 
-  # move year variable to just after GID
   relocate(year, .after = "gid")
 
 ### expand into monthly data
@@ -50,10 +49,20 @@ radpko <- read_csv("./data/radpko/radpko_grid.csv") %>%
   # rename variable for ease of merging
   rename(gid = prio.grid)
 
+### there are duplicate gid-month-years because of different missions, so we
+### need to aggregate everything by those variables. all vars are sums/counts,
+### so we can just sum them all.
+radpko <- radpko %>% 
+  select(-c(country, mission, date)) %>% 
+  relocate(c(year, month), .after = gid) %>% 
+  group_by(gid, year, month) %>% 
+  summarise(across(units_deployed:afr_unmob, sum)) %>% 
+  ungroup()
+
 ##### CLEAN ACLED DATA #####
 
 ### load data and clean it
-acled <- read_csv("./data/acled/1999-01-01-2015-01-01.csv") %>% 
+acled <- read_csv("./data/acled/1999-01-01-2021-12-31.csv") %>% 
   # recode Abyei to match RADPKO data
   mutate(country = case_when(admin1 == "Abyei" ~ "Abyei",
                              TRUE ~ country)) %>% 
@@ -93,7 +102,7 @@ acled <- acled %>%
               names_from = "event_type",
               values_from = "deaths")
 
-### clean names and expand grid to include all GID-month-years
+### clean names
 acled <- acled %>% 
   clean_names() %>% 
   rename(fatalities_protests = protests, fatalities_riots = riots,
@@ -106,7 +115,9 @@ acled <- acled %>%
 
 ### create a full grid of gid-month-years
 all_gids <- sort(unique(c(acled$gid, prio$gid, radpko$gid)))
-df <- expand_grid(gid = all_gids, year = seq(1999, 2021, 1), month = seq(1, 12, 1))
+df <- expand_grid(gid = all_gids, 
+                  year = seq(1999, 2021, 1), 
+                  month = seq(1, 12, 1))
 
 ### merge the acled data to the main df
 df <- full_join(df, acled, by = c("gid", "year", "month"))
@@ -120,7 +131,74 @@ df <- full_join(df, prio, by = c("gid", "year", "month"))
 ### clean up
 rm(acled, all_gids, prio, prio_shp, proj_crs, radpko)
 
+### drop unneeded data
+df <- df %>% 
+  # some acled events have grids outside terrestrial range; drop these
+  filter(gid >= 49182 & gid <= 249344) %>% 
+  # some years are outside the range we care about; drop these
+  filter(year >= 1999 & year <= 2021) %>% 
+  # some ACLED data is outside the PRIO static table. No PKO ops here, so drop
+  filter(!is.na(row) & !is.na(col))
+
+### reorganize and rename
+df <- df %>% 
+  relocate(c(row, col), .after = month) %>% 
+  select(-c(xcoord, ycoord)) %>% 
+  rename_at(vars(fatalities_protests:fatalities_explosions_remote_violence), 
+            function(x) paste0("acled_", x)) %>% 
+  rename_at(vars(units_deployed:afr_unmob), function(x) paste0("radpko_", x)) %>% 
+  rename_at(vars(agri_gc:water_ih), function(x) paste0("prio_", x)) 
+
+### subset to Africa for the purpose of our analysis
+df <- df %>% 
+  filter(col < 500 & col > 300 & row < 260 & row > 80)
+
+### carry forward country IDs from Gleditsch and Ward, so we don't drop later
+### years. No boundary changes since 2014 -- South Sudan are already in the data 
+df <- df %>% 
+  group_by(gid) %>% 
+  fill(prio_gwno) %>% 
+  ungroup()
+
+### drop any countries that we've clipped which aren't in Africa. This clips out
+### all the water too. It does mean we lose some territories and microstates, eg
+### Western Sahara.
+df <- df %>% 
+  filter(prio_gwno %in% c(402, 404, 411, 420, 432, 433, 434, 435, 436, 437, 438, 
+                          439, 450, 451, 452, 461, 471, 475, 481, 482, 483, 484, 
+                          490, 500, 501, 510, 516, 517, 520, 522, 530, 531, 540, 
+                          541, 551, 552, 553, 560, 565, 570, 571, 572, 580, 581, 
+                          590, 600, 615, 616, 620, 625, 626, 651))
+
+##### RECODE AND GENERATE MEASURES #####
+
+### RADPKO data are complete 1999-2021 for Africa, so we recode NA to 0
+df <- df %>% 
+  mutate(across(radpko_units_deployed:radpko_afr_unmob, ~replace_na(.x, 0)))
+
+### create an "any peacekeepers" variable for RADPKO
+df <- df %>% 
+  mutate(radpko_pko_deployed_any = case_when(radpko_pko_deployed > 0 ~ 1,
+                                             TRUE ~ 0))
+
+### ACLED are also complete over this time/area, so recode NA to 0 here too
+df <- df %>% 
+  mutate(across(acled_fatalities_protests:acled_fatalities_explosions_remote_violence, 
+                ~replace_na(.x, 0)))
+
+### create an "any fatalities" variable for ACLED
+df <- df %>% 
+  mutate(acled_fatalities_any = sum(c_across(
+    acled_fatalities_protests:acled_fatalities_explosions_remote_violence)))
 
 ##### VERSION CONTROL #####
 sessionInfo()
 
+
+##### OLD TO DELETE #####
+
+# ### plotting which cells we're using
+# xx <- df[which(df$year == 2014 & df$month == 1),]
+# ggplot(df, aes(x = col, y = row)) + 
+#   geom_tile(aes(fill = prio_temp)) +
+#   coord_fixed()
