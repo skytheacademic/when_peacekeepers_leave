@@ -2,7 +2,7 @@
 # clean_data.R
 # Merges all data and cleans it for analysis
 # Zach Warner
-# 3 June 2022
+# 7 June 2022
 
 ##### SET UP #####
 
@@ -112,7 +112,7 @@ acled <- acled %>%
          fatalities_violence_against_civilians = violence_against_civilians,
          fatalities_explosions_remote_violence = explosions_remote_violence,
          fatalities_battles = battles,
-         talities_strategic_developments = strategic_developments)
+         fatalities_strategic_developments = strategic_developments)
 
 ##### MERGE EVERYTHING TOGETHER #####
 
@@ -191,8 +191,9 @@ df <- df %>%
 
 ### create an "any fatalities" variable for ACLED
 df <- df %>% 
-  mutate(acled_fatalities_any = sum(c_across(
-    acled_fatalities_protests:acled_fatalities_explosions_remote_violence)))
+  mutate(acled_fatalities_any = case_when(rowSums(across(
+    acled_fatalities_protests:acled_fatalities_explosions_remote_violence)) > 0 ~ 1,
+    TRUE ~ 0))
 
 ##### CREATE SPATIAL MEASURES #####
 
@@ -200,25 +201,18 @@ df <- df %>%
 df <- left_join(df, prio_shp, by = c("gid", "col", "row")) %>%
   st_as_sf(sf_column_name = "geometry")
 
-### get neighbors -- fastest/most robust way is to split it by month/year and 
-### compute each. Adjacency doesn't change over time but spatial properties 
-### prevent a simple copy-paste. At the same time, this is faster than iterating.
-z <- Sys.time()
+### compute neighbors
 nb <- df %>% 
   group_by(year, month) %>% 
   mutate(neighbor = st_queen(.)) %>% 
   ungroup()
-Sys.time() - z
 
-nb <- split(df, f = list(df$year, df$month))
-nb <- lapply(nb, FUN = function(x){
-  x <- st_queen(x)
-})
+##### FINAL CLEANING AND EXPORT #####
 
-### bind back together
-df2 <- do.call(rbind, nb) %>% as_tibble()
-class(df2)
+#### TODO: finish reordering variables then run the export
 
+### save it
+write_rds(df, "Kunkel-Atkinson-Warner-final.rds")
 
 ##### VERSION CONTROL #####
 sessionInfo()
@@ -243,9 +237,49 @@ sessionInfo()
 #   geom_sf(aes(fill = prio_forest_gc), lwd = 0)
 # ggsave("/users/zmwarner/desktop/p1.pdf", height = 8, width = 8)
 
+# ### create some empty variables for loop below
+# df <- df %>% 
+#   mutate(neighbor_fatalities_protests = NA,
+#          neighbor_fatalities_strategic_developments = NA,
+#          neighbor_fatalities_riots = NA,
+#          neighbor_fatalities_violence_against_civilians = NA,
+#          neighbor_fatalities_battles = NA, 
+#          neighbor_fatalities_explosions_remote_violence = NA,
+#          neighbor_fatalities_any = NA)
 
-
-
+# ### run loop getting violence in adjacent grid cells. this is actually fastest
+# ### given the panel structure of the data
+# for(i in 1:nrow(df)){
+#   # get grid cell info
+#   yr <- df$year[i]
+#   mn <- df$month[i]
+#   co <- df$col[i]
+#   ro <- df$row[i]
+#   gi <- df$gid[i]
+#   # subset to relevant observations based on queen adjacency
+#   tmp <- df %>% 
+#     filter(year == yr & month == mn) %>% 
+#     filter(col >= co - 1 & col <= co + 1) %>% 
+#     filter(row >= ro - 1 & row <= ro + 1) %>% 
+#     filter(gid != gi)
+#   # compute and store values
+#   df$neighbor_fatalities_protests[i] <- 
+#     sum(tmp$acled_fatalities_protests, na.rm = T)
+#   df$neighbor_fatalities_strategic_developments[i] <- 
+#     sum(tmp$acled_fatalities_strategic_developments, na.rm = T)
+#   df$neighbor_fatalities_riots[i] <- 
+#     sum(tmp$acled_fatalities_riots, na.rm = T)
+#   df$neighbor_fatalities_violence_against_civilians[i] <- 
+#     sum(tmp$acled_fatalities_violence_against_civilians, na.rm = T)
+#   df$neighbor_fatalities_battles[i] <- 
+#     sum(tmp$acled_fatalities_battles, na.rm = T)
+#   df$neighbor_fatalities_explosions_remote_violence[i] <- 
+#     sum(tmp$acled_fatalities_explosions_remote_violence, na.rm = T)
+#   df$neighbor_fatalities_any[i] <- 
+#     ifelse(sum(tmp$acled_fatalities_any, na.rm = T) > 0, 1, 0)
+#   # update progress bar
+#   print(i)
+# }
 
 
 
