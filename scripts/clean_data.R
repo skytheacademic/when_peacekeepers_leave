@@ -2,21 +2,26 @@
 # clean_data.R
 # Merges all data and cleans it for analysis
 # Zach Warner
-# 7 June 2022
+# 8 June 2022
 
 ##### SET UP #####
 
 ### load packages
-library(janitor); library(lubridate); library(sf); library(tidyverse)
+library(doSNOW); library(foreach); library(janitor); library(lubridate)
+library(parallel); library(sf); library(tidyverse)
+
+### register the clusters
+cl <- makeCluster(detectCores()-1)
+registerDoSNOW(cl)
 
 ### set working directory ###
 setwd("/Users/zmwarner/github/when_peacekeepers_leave")
 
-### set seed
-set.seed(8675309) # hey jenny
-
 ### create a function to compute queen contiguity
 st_queen <- function(a, b = a) st_relate(a, b, pattern = "F***T****")
+
+### set seed
+set.seed(8675309) # hey jenny
 
 ##### CLEAN PRIO DATA #####
 
@@ -201,22 +206,116 @@ df <- df %>%
 df <- left_join(df, prio_shp, by = c("gid", "col", "row")) %>%
   st_as_sf(sf_column_name = "geometry")
 
-### compute neighbors
+### compute neighbors - we only need to do one month since grids don't change
 nb <- df %>% 
-  group_by(year, month) %>% 
+  filter(year == 2000, month == 1) %>%  
   mutate(neighbor = st_queen(.)) %>% 
-  ungroup()
+  select(gid, neighbor)
+
+### convert the neighbor list from rows to gids -- loop due to odd structure.
+### we're leaving the tidyverse for a bit, mea culpa
+nb_gid <- vector("list", nrow(nb))
+for(i in 1:nrow(nb)){
+  ids <- nb$gid[unlist(nb$neighbor[i])]
+  nb_gid[[i]] <- ids
+}
+names(nb_gid) <- nb$gid
+
+### now we're going to loop through the entire df, computing neighboring violence
+### run loop getting violence in adjacent grid cells. this is actually fastest
+### given the panel structure of the data, once parallelized
+# set up progress bar
+pb <- txtProgressBar(max = nrow(df), style = 3)
+progress <- function(n) setTxtProgressBar(pb, n)
+opts <- list(progress = progress)
+# run loop
+out <- foreach(i = 1:nrow(df), .combine = rbind, .options.snow = opts) %dopar% {
+  # get grid cell info
+  yr <- df$year[i]
+  mn <- df$month[i]
+  gi <- as.character(df$gid[i])
+  # subset to relevant observations based on queen adjacency
+  tmp <- df[which(df$year == yr & df$month == mn &
+                  df$gid %in% nb_gid[[which(names(nb_gid) == as.character(gi))]]),]
+  # compute and store values
+  c(sum(tmp$acled_fatalities_protests, na.rm = T),
+    sum(tmp$acled_fatalities_strategic_developments, na.rm = T),
+    sum(tmp$acled_fatalities_riots, na.rm = T),
+    sum(tmp$acled_fatalities_violence_against_civilians, na.rm = T),
+    sum(tmp$acled_fatalities_battles, na.rm = T),
+    sum(tmp$acled_fatalities_explosions_remote_violence, na.rm = T),
+    ifelse(sum(tmp$acled_fatalities_any, na.rm = T) > 0, 1, 0))
+}
+# turn off progress bar and clusters
+close(pb)
+stopCluster(cl) 
+
+### convert the output into a tibble and rename
+out <- as_tibble(out) %>% 
+  rename(neighbor_fatalities_protests = V1, 
+         neighbor_fatalities_strategic_developments  = V2,
+         neighbor_fatalities_riots = V3,
+         neighbor_fatalities_violence_against_civilians = V4,
+         neighbor_fatalities_battles = V5,
+         neighbor_fatalities_explosions_remote_violence = V6,
+         neighbor_fatalities_any = V7)
+
+### bind them together
+df <- bind_cols(df, out)
+
+### clean up
+rm(cl, i, ids, nb, nb_gid, opts, out, pb, prio_shp, progress, st_queen)
 
 ##### FINAL CLEANING AND EXPORT #####
 
-#### TODO: finish reordering variables then run the export
+### reorder variables
+df <- df %>% 
+  rename(prio_xcoord = xcoord, prio_ycoord = ycoord, 
+         prio_geometry = geometry) %>% 
+  relocate(radpko_pko_deployed_any, .after = radpko_afr_unmob) %>% 
+  relocate(acled_fatalities_any, 
+           .after = acled_fatalities_explosions_remote_violence)
 
 ### save it
-write_rds(df, "Kunkel-Atkinson-Warner-final.rds")
+write_rds(df, "./data/Kunkel-Atkinson-Warner-final.rds")
 
 ##### VERSION CONTROL #####
 sessionInfo()
-
+# R version 4.1.0 (2021-05-18)
+# Platform: aarch64-apple-darwin20 (64-bit)
+# Running under: macOS Big Sur 11.6
+# 
+# Matrix products: default
+# LAPACK: /Library/Frameworks/R.framework/Versions/4.1-arm64/Resources/lib/libRlapack.dylib
+# 
+# locale:
+# [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
+# 
+# attached base packages:
+# [1] parallel  stats     graphics  grDevices utils     datasets  methods  
+# [8] base     
+# 
+# other attached packages:
+# [1] forcats_0.5.1    stringr_1.4.0    dplyr_1.0.7      purrr_0.3.4     
+# [5] readr_2.0.1      tidyr_1.1.3      tibble_3.1.5     ggplot2_3.3.5   
+# [9] tidyverse_1.3.1  sf_1.0-2         lubridate_1.7.10 janitor_2.1.0   
+# [13] doSNOW_1.0.20    snow_0.4-3       iterators_1.0.13 foreach_1.5.1   
+# 
+# loaded via a namespace (and not attached):
+# [1] Rcpp_1.0.7         class_7.3-19       assertthat_0.2.1   utf8_1.2.2        
+# [5] R6_2.5.1           cellranger_1.1.0   backports_1.2.1    reprex_2.0.1      
+# [9] e1071_1.7-9        httr_1.4.2         pillar_1.6.4       rlang_0.4.12      
+# [13] readxl_1.3.1       rstudioapi_0.13    bit_4.0.4          munsell_0.5.0     
+# [17] proxy_0.4-26       broom_0.7.9        compiler_4.1.0     modelr_0.1.8      
+# [21] pkgconfig_2.0.3    tidyselect_1.1.1   codetools_0.2-18   fansi_0.5.0       
+# [25] crayon_1.4.1       tzdb_0.1.2         dbplyr_2.1.1       withr_2.4.2       
+# [29] wk_0.5.0           grid_4.1.0         jsonlite_1.7.2     gtable_0.3.0      
+# [33] lifecycle_1.0.1    DBI_1.1.1          magrittr_2.0.1     units_0.7-2       
+# [37] scales_1.1.1       KernSmooth_2.23-20 vroom_1.5.5        cli_3.0.1         
+# [41] stringi_1.7.5      fs_1.5.0           snakecase_0.11.0   xml2_1.3.2        
+# [45] ellipsis_0.3.2     generics_0.1.1     vctrs_0.3.8        s2_1.0.6          
+# [49] tools_4.1.0        bit64_4.0.5        glue_1.4.2         hms_1.1.0         
+# [53] colorspace_2.0-2   classInt_0.4-3     rvest_1.0.1        haven_2.4.3
 
 
 ##### OLD TO DELETE #####
@@ -226,10 +325,6 @@ sessionInfo()
 # ggplot(df, aes(x = col, y = row)) + 
 #   geom_tile(aes(fill = prio_temp)) +
 #   coord_fixed()
-
-
-
-
 
 # p1 <- df %>%
 #   filter(year == 2005 & month == 12) %>%
@@ -281,13 +376,18 @@ sessionInfo()
 #   print(i)
 # }
 
+# 
+# 
+# df2 %>% 
+#   filter(year == 2000 & month == 1) %>% 
+#   ggplot() + geom_sf() + 
+#   # random place in canada
+#   geom_sf(data = df2[1000,], fill = "red") + 
+#   # neighbors from nb object
+#   geom_sf(data = df2[unlist(df2$neighbor[1000]),], fill = "blue") 
 
-
-df2 %>% 
-  filter(year == 2000 & month == 1) %>% 
-  ggplot() + geom_sf() + 
-  # random place in canada
-  geom_sf(data = df2[1000,], fill = "red") + 
-  # neighbors from nb object
-  geom_sf(data = df2[unlist(df2$neighbor[1000]),], fill = "blue") 
+# 
+# 
+# ### create a function to compute queen contiguity
+# st_queen <- function(a, b = a) st_relate(a, b, pattern = "F***T****")
 
