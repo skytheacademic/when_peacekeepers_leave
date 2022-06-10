@@ -28,17 +28,30 @@ sort(unique(df$year))
 ### number of cells
 length(unique(df$gid))
 
-##### DIFF-IN-DIFF #####
+##### DIFF-IN-DIFF FOR IF PKO REDUCE VIOLENCE #####
 
 gids <- sample(unique(df$gid), 1200)
 dd <- df[which(df$gid %in% gids),]
 
 z <- Sys.time()
 out <- att_gt(yname = "acled_fatalities_any", tname = "time", idname = "gid", 
-              gname = "first_treated", data = df, pl = T, cores = 14)
+              gname = "first_treated", data = dd, pl = T, cores = 14)
 Sys.time() - z
 es <- aggte(out, type = "group")
 summary(es)
 
+##### OLD-SCHOOL DID FOR IF PKO REDUCE VIOLENCE #####
 
+# time = post_treatment
+
+# treated = treated
+df <- df %>%
+  group_by(gid) %>% 
+  mutate(treated = case_when(sum(radpko_pko_deployed_any, na.rm = T) > 0 ~ 1,
+                             TRUE ~ 0)) %>% 
+  ungroup()
+
+m1 <- glm(acled_fatalities_any ~ treated + post_treatment + 
+            treated*post_treatment, data = df)
+summary(m1)
 

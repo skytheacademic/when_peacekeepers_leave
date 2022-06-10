@@ -272,20 +272,27 @@ rm(cl, i, ids, nb, nb_gid, opts, out, pb, prio_shp, progress, st_queen)
 df <- df %>% 
   mutate(time = (year-1999)*(12) + month)
 
-### create a "first treated" variable. needs to be 0 for untreated
+### split by GID and make some variables
 dd <- df %>% as.data.frame() %>% select(gid, time, radpko_pko_deployed_any)
 dd <- split(dd, f = dd$gid)
 dd <- lapply(dd, FUN = function(x){
   y <- x[which(x$radpko_pko_deployed_any == 1),]
+  # create a "first treated" variable. needs to be 0 for untreated
   x$first_treated <- ifelse(nrow(y) == 0, 0, min(y$time))
+  # create a "post treated" variable. needs to be 0 until treatment then 1
   x$post_treatment <- ifelse(x$first_treated != 0 & x$time >= x$first_treated, 
                              1, 0)
+  # create a "treated" variable. needs to be 0 if control and 1 if treated
+  x$treated <- ifelse(sum(x$radpko_pko_deployed_any, na.rm = T) > 0, 1, 0)
   x
 })
 dd <- do.call(rbind, dd)
-dd <- dd[,c("gid", "time", "first_treated", "post_treatment")]
+dd <- dd[,c("gid", "time", "first_treated", "treated", "post_treatment")]
 # merge back to main df
 df <- left_join(df, dd, by = c("gid", "time"))
+
+### now do the same thing but for when the treatment is "peacekeepers leave"
+#### TODO: this
 
 ##### FINAL CLEANING AND EXPORT #####
 
@@ -296,7 +303,7 @@ df <- df %>%
   relocate(radpko_pko_deployed_any, .after = radpko_afr_unmob) %>% 
   relocate(acled_fatalities_any, 
            .after = acled_fatalities_explosions_remote_violence) %>% 
-  relocate(c(time, first_treated, post_treatment), .after = month)
+  relocate(c(time, first_treated, treated, post_treatment), .after = month)
 
 ### save it
 write_rds(df, "./data/Kunkel-Atkinson-Warner-final.rds")
