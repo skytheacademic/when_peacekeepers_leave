@@ -266,6 +266,27 @@ df <- bind_cols(df, out)
 ### clean up
 rm(cl, i, ids, nb, nb_gid, opts, out, pb, prio_shp, progress, st_queen)
 
+##### CREATE VARIABLES FOR PACKAGE `DID` #####
+
+### create a unified time variable. this needs to be a positive integer for `did`
+df <- df %>% 
+  mutate(time = (year-1999)*(12) + month)
+
+### create a "first treated" variable. needs to be 0 for untreated
+dd <- df %>% as.data.frame() %>% select(gid, time, radpko_pko_deployed_any)
+dd <- split(dd, f = dd$gid)
+dd <- lapply(dd, FUN = function(x){
+  y <- x[which(x$radpko_pko_deployed_any == 1),]
+  x$first_treated <- ifelse(nrow(y) == 0, 0, min(y$time))
+  x$post_treatment <- ifelse(x$first_treated != 0 & x$time >= x$first_treated, 
+                             1, 0)
+  x
+})
+dd <- do.call(rbind, dd)
+dd <- dd[,c("gid", "time", "first_treated", "post_treatment")]
+# merge back to main df
+df <- left_join(df, dd, by = c("gid", "time"))
+
 ##### FINAL CLEANING AND EXPORT #####
 
 ### reorder variables
@@ -274,7 +295,8 @@ df <- df %>%
          prio_geometry = geometry) %>% 
   relocate(radpko_pko_deployed_any, .after = radpko_afr_unmob) %>% 
   relocate(acled_fatalities_any, 
-           .after = acled_fatalities_explosions_remote_violence)
+           .after = acled_fatalities_explosions_remote_violence) %>% 
+  relocate(c(time, first_treated, post_treatment), .after = month)
 
 ### save it
 write_rds(df, "./data/Kunkel-Atkinson-Warner-final.rds")
