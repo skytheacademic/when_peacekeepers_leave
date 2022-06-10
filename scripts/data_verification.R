@@ -3,6 +3,7 @@
 
 library(sfheaders)
 library(sf)
+library(tidyverse)
 d <- readRDS("../data/Kunkel-Atkinson-Warner-final.rds")
 a = unique(d$gid)
 
@@ -14,20 +15,35 @@ sample(a, 25)
 ### 140771 ###
 d.140771 = subset(d, gid == 140771     | gid == 140771-1   | gid == 140771+1 | 
                      gid == 140771+720 | gid == 140771+719 | gid == 140771+721 | 
-                     gid == 140771-720 | gid == 140771-719 | gid == 140771-721)
+                     gid == 140771-720 | gid == 140771-719 | gid == 140771-721) %>%
+  relocate(131:137, .after = 12)
+d.140771 = d.140771[order(d.140771$year, d.140771$month, d.140771$gid),]
+# manually verified as correct
 
 # d.124950 
 d.124950 = subset(d, gid == 124950     | gid == 124950-1   | gid == 124950+1 | 
                     gid == 124950+720 | gid == 124950+719 | gid == 124950+721 | 
-                    gid == 124950-720 | gid == 124950-719 | gid == 124950-721)
+                    gid == 124950-720 | gid == 124950-719 | gid == 124950-721)%>%
+  relocate(131:137, .after = 12)
+d.124950 = d.124950[order(d.124950$year, d.124950$month, d.124950$gid),]
+# manually verified as correct
+
 # d.140091 
 d.140091 = subset(d, gid == 140091     | gid == 140091-1   | gid == 140091+1 | 
                     gid == 140091+720 | gid == 140091+719 | gid == 140091+721 | 
-                    gid == 140091-720 | gid == 140091-719 | gid == 140091-721)
+                    gid == 140091-720 | gid == 140091-719 | gid == 140091-721)%>%
+  relocate(131:137, .after = 12)
+d.140091 = d.140091[order(d.140091$year, d.140091$month, d.140091$gid),]
+# manually verified as correct (no violence in grid of interest)
+
 # d.132900  
 d.132900 = subset(d, gid == 132900     | gid == 132900-1   | gid == 132900+1 | 
                     gid == 132900+720 | gid == 132900+719 | gid == 132900+721 | 
-                    gid == 132900-720 | gid == 132900-719 | gid == 132900-721)
+                    gid == 132900-720 | gid == 132900-719 | gid == 132900-721) %>%
+  relocate(131:137, .after = 12)
+d.132900 = d.132900[order(d.132900$year, d.132900$month, d.132900$gid),]
+# manually verified as correct
+
 # d.92556 
 d.92556 = subset(d, gid == 92556     | gid == 92556-1   | gid == 92556+1 | 
                     gid == 92556+720 | gid == 92556+719 | gid == 92556+721 | 
