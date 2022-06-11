@@ -200,6 +200,12 @@ df <- df %>%
     acled_fatalities_protests:acled_fatalities_explosions_remote_violence)) > 0 ~ 1,
     TRUE ~ 0))
 
+### create a sum fatalaties variable for ACLED
+df <- df %>% 
+  mutate(acled_fatalities_all = rowSums(across(
+    acled_fatalities_protests:acled_fatalities_explosions_remote_violence)))
+
+
 ##### CREATE SPATIAL MEASURES #####
 
 ### merge shapefile here (faster than if we do it above), then set it as spatial
@@ -244,7 +250,8 @@ out <- foreach(i = 1:nrow(df), .combine = rbind, .options.snow = opts) %dopar% {
     sum(tmp$acled_fatalities_violence_against_civilians, na.rm = T),
     sum(tmp$acled_fatalities_battles, na.rm = T),
     sum(tmp$acled_fatalities_explosions_remote_violence, na.rm = T),
-    ifelse(sum(tmp$acled_fatalities_any, na.rm = T) > 0, 1, 0))
+    ifelse(sum(tmp$acled_fatalities_any, na.rm = T) > 0, 1, 0),
+    sum(tmp$acled_fatalities_all, na.rm = T))
 }
 # turn off progress bar and clusters
 close(pb)
@@ -258,7 +265,8 @@ out <- as_tibble(out) %>%
          neighbor_fatalities_violence_against_civilians = V4,
          neighbor_fatalities_battles = V5,
          neighbor_fatalities_explosions_remote_violence = V6,
-         neighbor_fatalities_any = V7)
+         neighbor_fatalities_any = V7,
+         neighbor_fatalities_all = V8)
 
 ### bind them together
 df <- bind_cols(df, out)
@@ -292,7 +300,26 @@ dd <- dd[,c("gid", "time", "first_treated", "treated", "post_treatment")]
 df <- left_join(df, dd, by = c("gid", "time"))
 
 ### now do the same thing but for when the treatment is "peacekeepers leave"
-#### TODO: this
+dd <- df %>% as.data.frame() %>% select(gid, time, radpko_pko_deployed_any)
+dd <- split(dd, f = dd$gid)
+dd <- lapply(dd, FUN = function(x){
+  x$l_pko <- lag(x$radpko_pko_deployed_any, 1)
+  y <- x[which(x$radpko_pko_deployed_any == 0 & x$l_pko == 1),]
+  # create a "first treated" variable. needs to be 0 for untreated
+  x$first_treated_leave <- ifelse(nrow(y) == 0, 0, min(y$time))
+  # create a "post treated" variable. needs to be 0 until treatment then 1
+  x$post_treatment_leave <- ifelse(x$first_treated != 0 & 
+                                     x$time >= x$first_treated, 
+                                   1, 0)
+  # create a "treated" variable. needs to be 0 if control and 1 if treated
+  x$treated_leave <- ifelse(sum(x$l_pko, na.rm = T) > 0, 1, 0)
+  x
+})
+dd <- do.call(rbind, dd)
+dd <- dd[,c("gid", "time", "first_treated_leave", "treated_leave", 
+            "post_treatment_leave")]
+# merge back to main df
+df <- left_join(df, dd, by = c("gid", "time"))
 
 ##### FINAL CLEANING AND EXPORT #####
 
@@ -301,9 +328,10 @@ df <- df %>%
   rename(prio_xcoord = xcoord, prio_ycoord = ycoord, 
          prio_geometry = geometry) %>% 
   relocate(radpko_pko_deployed_any, .after = radpko_afr_unmob) %>% 
-  relocate(acled_fatalities_any, 
+  relocate(c(acled_fatalities_any, acled_fatalities_all),
            .after = acled_fatalities_explosions_remote_violence) %>% 
-  relocate(c(time, first_treated, treated, post_treatment), .after = month)
+  relocate(c(time, first_treated, treated, post_treatment, first_treated_leave,
+             treated_leave, post_treatment_leave), .after = month)
 
 ### save it
 write_rds(df, "./data/Kunkel-Atkinson-Warner-final.rds")
