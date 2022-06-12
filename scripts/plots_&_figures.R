@@ -1,8 +1,8 @@
-# Conflict Grids & Peacekeeping: Figures and Plots #
+# When Peacekeepers Leave: Figures and Plots #
+# Sky Kunkel #
 # reading in cleaned data
-setwd("../data/")
-a = readRDS("merged_data.rds")
-
+setwd("../")
+a = readRDS("./data/Kunkel-Atkinson-Warner-final.rds")
 ### Descriptive Statistics Tables ###
 acled  = read.csv("acled_data.csv")
 radpko = read.csv("radpko_grid.csv")
@@ -19,6 +19,50 @@ stargazer(radpko[c("pko_deployed", "untrp","unpol", "unmob", 'prio.grid')], cova
             c("Total PKs", "UN Troops", "UN Police", "UN Observers", "Prio Grid"), digits = 2, 
           title = "RADPKO Descriptive Statistics",
           out = "../results/RADPKO_tex_table.txt")
+
+
+# Search for violence data
+
+sort(tapply(a$acled_fatalities_violence_against_civilians, a$gid, max))
+
+### Grid 139387 ###
+a.139387 = subset(a, gid == 139387     | gid == 139387-1   | gid == 139387+1 | 
+                    gid == 139387+720 | gid == 139387+719 | gid == 139387+721 | 
+                    gid == 139387-720 | gid == 139387-719 | gid == 139387-721) #%>%
+relocate(131:137, .after = 12)
+a.139387 = a.139387[order(a.139387$year, a.139387$month, a.139387$gid),]
+
+
+# search for pk presence
+sort(tapply(a$radpko_pko_deployed, a$gid, max))
+
+### Grid 143697 ###
+a.143697 = subset(a, gid == 143697     | gid == 143697-1   | gid == 143697+1 | 
+                    gid == 143697+720 | gid == 143697+719 | gid == 143697+721 | 
+                    gid == 143697-720 | gid == 143697-719 | gid == 143697-721) #%>%
+relocate(131:137, .after = 12)
+a.143697 = a.143697[order(a.143697$year, a.143697$month, a.143697$gid),]
+
+### Grid 141454 ### (not enough violence)
+a.141454 = subset(a, gid == 141454     | gid == 141454-1   | gid == 141454+1 | 
+                    gid == 141454+720 | gid == 141454+719 | gid == 141454+721 | 
+                    gid == 141454-720 | gid == 141454-719 | gid == 141454-721) #%>%
+a.141454 = a.141454[order(a.141454$year, a.141454$month, a.141454$gid),]
+
+### Grid 127139 ### (not enough violence)
+a.127139 = subset(a, gid == 127139     | gid == 127139-1   | gid == 127139+1 | 
+                    gid == 127139+720 | gid == 127139+719 | gid == 127139+721 | 
+                    gid == 127139-720 | gid == 127139-719 | gid == 127139-721) #%>%
+a.127139 = a.127139[order(a.127139$gid, a.127139$year, a.127139$month),]
+
+# potential grids for plotting: 
+# 142978, 2014-5
+# 127139, 2018-1
+
+
+
+
+
 
 
 # make plots of Mali with PRIO borders, showing violence and PKs #
