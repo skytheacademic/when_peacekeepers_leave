@@ -205,7 +205,6 @@ df <- df %>%
   mutate(acled_fatalities_all = rowSums(across(
     acled_fatalities_protests:acled_fatalities_explosions_remote_violence)))
 
-
 ##### CREATE SPATIAL MEASURES #####
 
 ### merge shapefile here (faster than if we do it above), then set it as spatial
@@ -320,6 +319,9 @@ dd <- dd[,c("gid", "time", "first_treated_leave", "treated_leave",
             "post_treatment_leave")]
 # merge back to main df
 df <- left_join(df, dd, by = c("gid", "time"))
+
+### clean uo
+rm(dd, tmp, gi, mn, yr)
 
 ##### FINAL CLEANING AND EXPORT #####
 
