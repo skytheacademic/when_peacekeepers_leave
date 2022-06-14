@@ -3,6 +3,7 @@
 # reading in cleaned data
 setwd("../")
 a = readRDS("./data/Kunkel-Atkinson-Warner-final.rds")
+library(tidyverse)
 ### Descriptive Statistics Tables ###
 acled  = read.csv("acled_data.csv")
 radpko = read.csv("radpko_grid.csv")
@@ -55,14 +56,70 @@ a.127139 = subset(a, gid == 127139     | gid == 127139-1   | gid == 127139+1 |
                     gid == 127139-720 | gid == 127139-719 | gid == 127139-721) #%>%
 a.127139 = a.127139[order(a.127139$gid, a.127139$year, a.127139$month),]
 
+### Grid 138579 ### (not enough violence)
+a.138579 = subset(a, gid == 138579     | gid == 138579-1   | gid == 138579+1 | 
+                    gid == 138579+720 | gid == 138579+719 | gid == 138579+721 | 
+                    gid == 138579-720 | gid == 138579-719 | gid == 138579-721) #%>%
+a.138579 = a.138579[order(a.138579$gid, a.138579$year, a.138579$month),]
+
+### Grid 149451 ### (not enough violence)
+a.149451 = subset(a, gid == 149451     | gid == 149451-1   | gid == 149451+1 | 
+                    gid == 149451+720 | gid == 149451+719 | gid == 149451+721 | 
+                    gid == 149451-720 | gid == 149451-719 | gid == 149451-721 &
+                    time < 228) #%>%
+a.149451 = a.149451[order(a.149451$gid, a.149451$year, a.149451$month),]
+
 # potential grids for plotting: 
 # 142978, 2014-5
 # 127139, 2018-1
 
 
+### Grid 132181 ### 
+a.132181 = subset(a, gid == 132181     | gid == 132181-1   | gid == 132181+1 | 
+                    gid == 132181+720 | gid == 132181+719 | gid == 132181+721 | 
+                    gid == 132181-720 | gid == 132181-719 | gid == 132181-721 &
+                    time < 228) #%>%
+a.132181 = a.132181[order(a.132181$gid, a.132181$year, a.132181$month),]
+# summarize 6 months before PKO entrance, then all violent events during PK presence,
+# then 6 months after PK exit
 
+# PKs enter at time 2000-3 (16)
+# PKs exit at time 2003-2 (50) [AKA, there were 0 PKs at this time in the data]
 
+b = subset(a.132181, time < 56 & time > 9)
 
+b$t_ind = 0
+b$t_ind[b$time > 15 & b$time < 50] = 1
+b$t_ind[b$time > 49] = 2
+
+b.ag = b %>%
+  group_by(t_ind, gid) %>%
+  summarize(fatalities = sum(acled_fatalities_battles))
+
+# now join geographic data so we can plot it
+
+b.join = left_join(b.ag, b)
+
+b.join.0 = subset(b.join, t_ind == 0)
+b.join.0 = st_as_sf(b.join.0)
+
+b.join.1 = subset(b.join, t_ind == 1)
+b.join.1 = st_as_sf(b.join.1)
+
+b.join.2 = subset(b.join, t_ind == 2)
+b.join.2 = st_as_sf(b.join.2)
+
+plot_1 = ggplot(data = b.join.0) + geom_sf(aes(fill = fatalities, geometry = prio_geometry)) +
+  scale_fill_viridis_c(option = "plasma") + labs(fill = "Violent events")
+plot_1
+
+plot_2 = ggplot(data = b.join.1) + geom_sf(aes(fill = fatalities, geometry = prio_geometry)) +
+  scale_fill_viridis_c(option = "plasma") + labs(fill = "Violent events")
+plot_2
+
+plot_3 = ggplot(data = b.join.2) + geom_sf(aes(fill = fatalities, geometry = prio_geometry)) +
+  scale_fill_viridis_c(option = "plasma") + labs(fill = "Violent events")
+plot_3
 
 
 # make plots of Mali with PRIO borders, showing violence and PKs #
