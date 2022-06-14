@@ -3,7 +3,6 @@
 # reading in cleaned data
 setwd("../")
 a = readRDS("./data/Kunkel-Atkinson-Warner-final.rds")
-library(tidyverse)
 ### Descriptive Statistics Tables ###
 acled  = read.csv("acled_data.csv")
 radpko = read.csv("radpko_grid.csv")
@@ -77,8 +76,7 @@ a.149451 = a.149451[order(a.149451$gid, a.149451$year, a.149451$month),]
 ### Grid 132181 ### 
 a.132181 = subset(a, gid == 132181     | gid == 132181-1   | gid == 132181+1 | 
                     gid == 132181+720 | gid == 132181+719 | gid == 132181+721 | 
-                    gid == 132181-720 | gid == 132181-719 | gid == 132181-721 &
-                    time < 228) #%>%
+                    gid == 132181-720 | gid == 132181-719 | gid == 132181-721) #%>%
 a.132181 = a.132181[order(a.132181$gid, a.132181$year, a.132181$month),]
 # summarize 6 months before PKO entrance, then all violent events during PK presence,
 # then 6 months after PK exit
@@ -87,7 +85,9 @@ a.132181 = a.132181[order(a.132181$gid, a.132181$year, a.132181$month),]
 # PKs exit at time 2003-2 (50) [AKA, there were 0 PKs at this time in the data]
 
 b = subset(a.132181, time < 56 & time > 9)
-
+library(ggplot2)
+library(tidyverse)
+library(sf)
 b$t_ind = 0
 b$t_ind[b$time > 15 & b$time < 50] = 1
 b$t_ind[b$time > 49] = 2
@@ -110,15 +110,15 @@ b.join.2 = subset(b.join, t_ind == 2)
 b.join.2 = st_as_sf(b.join.2)
 
 plot_1 = ggplot(data = b.join.0) + geom_sf(aes(fill = fatalities, geometry = prio_geometry)) +
-  scale_fill_viridis_c(option = "plasma") + labs(fill = "Violent events")
+  scale_fill_viridis_c(option = "plasma") + labs(fill = "Violent events") + ggtitle("6 months before PK entrance")
 plot_1
 
 plot_2 = ggplot(data = b.join.1) + geom_sf(aes(fill = fatalities, geometry = prio_geometry)) +
-  scale_fill_viridis_c(option = "plasma") + labs(fill = "Violent events")
+  scale_fill_viridis_c(option = "plasma") + labs(fill = "Violent events") + ggtitle("3 years of PK presence")
 plot_2
 
 plot_3 = ggplot(data = b.join.2) + geom_sf(aes(fill = fatalities, geometry = prio_geometry)) +
-  scale_fill_viridis_c(option = "plasma") + labs(fill = "Violent events")
+  scale_fill_viridis_c(option = "plasma") + labs(fill = "Violent events") + ggtitle("6 months after PK entrance")
 plot_3
 
 
