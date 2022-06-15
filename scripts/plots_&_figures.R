@@ -161,10 +161,29 @@ acled <- acled %>%
 
 df <- left_join(acled, prio, by = c("gid", "year", "month"))
 
+world_shp <- st_read(dsn = "./data/world_shp", layer = "gadm404", 
+                    stringsAsFactors = F)
+
+
+
 
 ### Descriptive Statistics Plots and Graphs ###
 
-head(a)
+# cartogram #
+library(cartogram)
+# construct a cartogram using the population in 2005
+afr_cartogram <- cartogram(world_shp, "POP2005", itermax=5)
+
+# This is a new geospatial object, we can visualise it!
+plot(afr_cartogram)
+
+library(broom)
+spdf_fortified <- tidy(afr_cartogram)
+spdf_fortified = spdf_fortified %>% left_join(. , afr_cartogram@data, by=c("id"="ISO3")) 
+ggplot() +
+  geom_polygon(data = spdf_fortified, aes(fill = POP2005, x = long, y = lat, group = group) , size=0, alpha=0.9) +
+  coord_map() +
+  theme_void()
 
 # let's add a plot of Mali to check #
 a.min = subset(a, country == "Mali")

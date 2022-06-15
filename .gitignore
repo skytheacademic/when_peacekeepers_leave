@@ -6,7 +6,12 @@ data/prio/PRIO-GRID Yearly Variables for 1999-2014 - 2022-06-03.csv
 data/acled/1999-01-01-2021-12-31.csv
 data/Kunkel-Atkinson-Warner-final.rds
 .DS_Store
-data/world_shp/gadm36_2.cpg
-data/world_shp/gadm36_2.dbf
-data/world_shp/gadm36_2.prj
-data/world_shp/gadm36_2.shx
+data/world_adm2/gadm36_2.cpg
+data/world_adm2/gadm36_2.dbf
+data/world_adm2/gadm36_2.prj
+data/world_adm2/gadm36_2.shx
+data/world_shp/gadm404.cpg
+data/world_shp/gadm404.dbf
+data/world_shp/gadm404.prj
+data/world_shp/gadm404.shp
+data/world_shp/gadm404.shx
