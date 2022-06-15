@@ -3,23 +3,6 @@
 # reading in cleaned data
 setwd("../")
 a = readRDS("./data/Kunkel-Atkinson-Warner-final.rds")
-### Descriptive Statistics Tables ###
-acled  = read.csv("acled_data.csv")
-radpko = read.csv("radpko_grid.csv")
-acled$event_date = lubridate::dmy(acled$event_date)
-acled = subset(acled, event_date < "2019-01-01" & event_date > "1999-01-01" & 
-                 event_type == "Violence against civilians")
-
-stargazer(acled[c("year", "time_precision", "geo_precision","fatalities")], covariate.labels = 
-            c("Year", "Time Precision", "Geo Precision", "Deaths"),digits=1, 
-          title = "ACLED Descriptive Statistics",
-          out = "../results/ACLED_tex_table.txt")
-
-stargazer(radpko[c("pko_deployed", "untrp","unpol", "unmob", 'prio.grid')], covariate.labels = 
-            c("Total PKs", "UN Troops", "UN Police", "UN Observers", "Prio Grid"), digits = 2, 
-          title = "RADPKO Descriptive Statistics",
-          out = "../results/RADPKO_tex_table.txt")
-
 
 # Search for violence data
 
@@ -123,6 +106,65 @@ plot_3
 
 
 # make plots of Mali with PRIO borders, showing violence and PKs #
+library(ggplot2)
+library(tidyverse)
+library(sf)
+library(janitor)
+library(lubridate)
+# read in ACLED data #
+
+acled <- read_csv("./data/acled/1999-01-01-2021-12-31.csv") %>% 
+  # make the date variable a date type then subset to post-1999
+  mutate(event_date = dmy(event_date)) %>% 
+  filter(event_date >= "1999-01-01")
+
+#### MERGE ACLED DATA WITH PRIO GRID IDS #####
+
+### get geographic data for prio grids using the shapefiles
+prio_shp <- st_read(dsn = "./data/prio", layer = "priogrid_cell", 
+                    stringsAsFactors = F)
+
+### save the CRS
+proj_crs <- st_crs(prio_shp)
+
+### convert acled to an sf object with a shared CRS
+acled <- st_as_sf(acled, coords = c("longitude", "latitude"), crs = proj_crs)
+
+### join acled events to prio grid info
+acled <- st_join(acled, prio_shp)
+
+### reshape ACLED long to wide, to aggregate deaths by type
+acled <- acled %>% 
+  # get month info
+  mutate(month = month(event_date)) %>% 
+  # remove extra spatial info, now unneeded
+  as_tibble() %>% 
+  # trim to just variables needed
+  select(event_type, fatalities, country) %>% 
+  # aggregate
+  group_by(event_type, country) %>% 
+  summarize(deaths = sum(fatalities)) %>% 
+  ungroup() %>% 
+  # reshape
+  pivot_wider(id_cols = c("country"), 
+              names_from = "event_type",
+              values_from = "deaths")
+
+### clean names
+acled <- acled %>% 
+  clean_names() %>% 
+  rename(fatalities_protests = protests, fatalities_riots = riots,
+         fatalities_violence_against_civilians = violence_against_civilians,
+         fatalities_explosions_remote_violence = explosions_remote_violence,
+         fatalities_battles = battles,
+         fatalities_strategic_developments = strategic_developments)
+
+df <- left_join(acled, prio, by = c("gid", "year", "month"))
+
+
+### Descriptive Statistics Plots and Graphs ###
+
+head(a)
 
 # let's add a plot of Mali to check #
 a.min = subset(a, country == "Mali")
