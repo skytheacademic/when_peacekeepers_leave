@@ -120,18 +120,19 @@ acled <- read_csv("./data/acled/1999-01-01-2021-12-31.csv") %>%
 
 #### MERGE ACLED DATA WITH PRIO GRID IDS #####
 
-### get geographic data for prio grids using the shapefiles
-prio_shp <- st_read(dsn = "./data/prio", layer = "priogrid_cell", 
-                    stringsAsFactors = F)
+### get geographic data for countries using the shapefiles
+world_shp <- st_read(dsn = "./data/world_shp", layer = "gadm404", 
+                     stringsAsFactors = F)
 
 ### save the CRS
-proj_crs <- st_crs(prio_shp)
+proj_crs <- st_crs(world_shp)
 
 ### convert acled to an sf object with a shared CRS
 acled <- st_as_sf(acled, coords = c("longitude", "latitude"), crs = proj_crs)
 
-### join acled events to prio grid info
-acled <- st_join(acled, prio_shp)
+
+### join acled events to country info
+#acled <- st_join(acled, world_shp)
 
 ### reshape ACLED long to wide, to aggregate deaths by type
 acled <- acled %>% 
@@ -159,11 +160,12 @@ acled <- acled %>%
          fatalities_battles = battles,
          fatalities_strategic_developments = strategic_developments)
 
-df <- left_join(acled, prio, by = c("gid", "year", "month"))
 
-world_shp <- st_read(dsn = "./data/world_shp", layer = "gadm404", 
-                    stringsAsFactors = F)
+df <- left_join(acled, world_shp, by = c("country" = "NAME_0"))
 
+df <- df[ -c(9:55) ]
+
+df = st_as_sf(df, sf_column_name = "geometry", crs = "+init=epsg:3395")
 
 
 
@@ -172,7 +174,7 @@ world_shp <- st_read(dsn = "./data/world_shp", layer = "gadm404",
 # cartogram #
 library(cartogram)
 # construct a cartogram using the population in 2005
-afr_cartogram <- cartogram(world_shp, "POP2005", itermax=5)
+afr_cartogram <- cartogram_cont(df, "fatalities_violence_against_civilians", itermax=5)
 
 # This is a new geospatial object, we can visualise it!
 plot(afr_cartogram)
@@ -184,6 +186,27 @@ ggplot() +
   geom_polygon(data = spdf_fortified, aes(fill = POP2005, x = long, y = lat, group = group) , size=0, alpha=0.9) +
   coord_map() +
   theme_void()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # let's add a plot of Mali to check #
 a.min = subset(a, country == "Mali")
