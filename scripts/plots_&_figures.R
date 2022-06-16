@@ -79,6 +79,8 @@ b.ag = b %>%
   group_by(t_ind, gid) %>%
   summarize(fatalities = sum(acled_fatalities_battles))
 
+b.ag$fatalities[b.ag$fatalities == 0] <- NA
+
 # now join geographic data so we can plot it
 
 b.join = left_join(b.ag, b)
@@ -92,8 +94,19 @@ b.join.1 = st_as_sf(b.join.1)
 b.join.2 = subset(b.join, t_ind == 2)
 b.join.2 = st_as_sf(b.join.2)
 
-plot_1 = ggplot(data = b.join.0) + geom_sf(aes(fill = fatalities, geometry = prio_geometry)) +
-  scale_fill_viridis_c(option = "plasma") + labs(fill = "Violent events") + ggtitle("6 months before PK entrance")
+setwd("../606-Repository/final_project/data/country_sf")
+drc.sf = readRDS("drc_sf.rds")
+
+uga_shp <- st_read(dsn = "./UGA_shp", layer = "gadm40_UGA_2", 
+                    stringsAsFactors = F)
+st_crs(drc.sf) = st_crs(uga_shp)
+st_crs(b.join.0) = st_crs(uga_shp)
+
+plot_1 = ggplot() + geom_sf(aes(fill = b.join.0$fatalities, geometry = b.join.0$prio_geometry)) +
+  scale_fill_viridis_c(option = "plasma") + labs(fill = "Violent events") + ggtitle("6 months before PK entrance") +
+  xlim(29,32) + ylim(0,3) +
+  geom_sf(aes(geometry = drc.sf$geometry), alpha = 0) + 
+  geom_sf(aes(geometry = uga_shp$geometry), alpha = 0)
 plot_1
 
 plot_2 = ggplot(data = b.join.1) + geom_sf(aes(fill = fatalities, geometry = prio_geometry)) +
@@ -111,6 +124,12 @@ library(tidyverse)
 library(sf)
 library(janitor)
 library(lubridate)
+
+
+# pull up world map data #
+wrld_shp <- st_read(dsn = "./data/world_shp", layer = "gadm404", 
+                    stringsAsFactors = F)
+
 # read in ACLED data #
 
 acled <- read_csv("./data/acled/1999-01-01-2021-12-31.csv") %>% 
@@ -121,19 +140,17 @@ acled <- read_csv("./data/acled/1999-01-01-2021-12-31.csv") %>%
 #### MERGE ACLED DATA WITH PRIO GRID IDS #####
 
 ### get geographic data for countries using the shapefiles
-world_shp <- st_read(dsn = "./data/world_shp", layer = "gadm404", 
-                     stringsAsFactors = F)
+prio_shp <- st_read(dsn = "./data/prio", layer = "priogrid_cell", 
+                    stringsAsFactors = F)
 
 ### save the CRS
-proj_crs <- st_crs(world_shp)
+proj_crs <- st_crs(prio_shp)
 
 ### convert acled to an sf object with a shared CRS
 acled <- st_as_sf(acled, coords = c("longitude", "latitude"), crs = proj_crs)
 
-
 ### join acled events to country info
-#acled <- st_join(acled, world_shp)
-
+acled <- st_join(acled, prio_shp)
 ### reshape ACLED long to wide, to aggregate deaths by type
 acled <- acled %>% 
   # get month info
@@ -141,13 +158,13 @@ acled <- acled %>%
   # remove extra spatial info, now unneeded
   as_tibble() %>% 
   # trim to just variables needed
-  select(event_type, fatalities, country) %>% 
+  select(gid, year, month, event_type, fatalities) %>% 
   # aggregate
-  group_by(event_type, country) %>% 
+  group_by(event_type, gid) %>% 
   summarize(deaths = sum(fatalities)) %>% 
   ungroup() %>% 
   # reshape
-  pivot_wider(id_cols = c("country"), 
+  pivot_wider(id_cols = c("gid"), 
               names_from = "event_type",
               values_from = "deaths")
 
@@ -160,32 +177,58 @@ acled <- acled %>%
          fatalities_battles = battles,
          fatalities_strategic_developments = strategic_developments)
 
+prio.df = as.data.frame(prio_shp)
+df = left_join(acled, prio_shp)
 
-df <- left_join(acled, world_shp, by = c("country" = "NAME_0"))
+# read in RADPKO data, summarize by gid
+radpko <- read_csv("./data/radpko/radpko_grid.csv") %>% 
+  # make the date variable a date type
+  mutate(date = ymd(date),
+         month = month(date),
+         year = year(date)) %>% 
+  # rename variable for ease of merging
+  rename(gid = prio.grid)
 
-df <- df[ -c(9:55) ]
+### there are duplicate gid-month-years because of different missions, so we
+### need to aggregate everything by those variables. all vars are sums/counts,
+### so we can just sum them all.
+radpko <- radpko %>% 
+  select(-c(country, mission, date)) %>% 
+  relocate(c(year, month), .after = gid) %>% 
+  group_by(gid, year, month) %>% 
+  summarise(across(units_deployed:afr_unmob, sum)) %>% 
+  ungroup()
 
-df = st_as_sf(df, sf_column_name = "geometry", crs = "+init=epsg:3395")
+radpko1 = radpko %>%
+  group_by(gid) %>%
+  summarize(v = sum(pko_deployed))
+
+df = left_join(df, radpko)
+
+df = st_as_sf(df, sf_column_name = "geometry", crs = "world_shp")
 
 
+### subset to Africa for the purpose of our analysis
+df <- df %>% 
+  filter(col < 500 & col > 300 & row < 260 & row > 80)
+
+plot_vac = ggplot(data = df) + geom_sf(aes(fill = fatalities_violence_against_civilians, geometry = geometry)) +
+  scale_fill_viridis_c(option = "plasma") + labs(fill = "Violent events")
+
+
+
+plot_vac
+
+plot_bat = ggplot(data = df) + geom_sf(aes(fill = fatalities_battles, geometry = geometry)) +
+  scale_fill_viridis_c(option = "plasma") + labs(fill = "Violent events")
+plot_bat
+
+plot_pko = ggplot(data = df) + geom_sf(aes(fill = pko_deployed, geometry = geometry)) +
+  scale_fill_viridis_c(option = "plasma") + labs(fill = "Peacekeeper deployment")
+plot_pko
 
 ### Descriptive Statistics Plots and Graphs ###
 
-# cartogram #
-library(cartogram)
-# construct a cartogram using the population in 2005
-afr_cartogram <- cartogram_cont(df, "fatalities_violence_against_civilians", itermax=5)
-
-# This is a new geospatial object, we can visualise it!
-plot(afr_cartogram)
-
-library(broom)
-spdf_fortified <- tidy(afr_cartogram)
-spdf_fortified = spdf_fortified %>% left_join(. , afr_cartogram@data, by=c("id"="ISO3")) 
-ggplot() +
-  geom_polygon(data = spdf_fortified, aes(fill = POP2005, x = long, y = lat, group = group) , size=0, alpha=0.9) +
-  coord_map() +
-  theme_void()
 
 
 
