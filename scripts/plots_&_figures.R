@@ -57,9 +57,11 @@ a.149451 = a.149451[order(a.149451$gid, a.149451$year, a.149451$month),]
 
 
 ### Grid 132181 ### 
-a.132181 = subset(a, gid == 132181     | gid == 132181-1   | gid == 132181+1 | 
-                    gid == 132181+720 | gid == 132181+719 | gid == 132181+721 | 
-                    gid == 132181-720 | gid == 132181-719 | gid == 132181-721) #%>%
+a.132181 = subset(a, gid == 132181     | gid == 132181-1   | gid == 132181+1 | gid == 132181+2 | gid == 132181-2| 
+                    gid == 132181+720 | gid == 132181+719 | gid == 132181+721 | gid == 132181+718 | gid == 132181+722|
+                    gid == 132181+1438| gid == 132181+1439| gid == 132181+1440| gid == 132181+1441| gid == 132181+1442|
+                    gid == 132181-720 | gid == 132181-719 | gid == 132181-721 | gid == 132181-722 | gid == 132181-718 |
+                    gid == 132181-1442| gid == 132181-1441| gid == 132181-1440| gid == 132181-1439| gid == 132181-1438) #%>%
 a.132181 = a.132181[order(a.132181$gid, a.132181$year, a.132181$month),]
 # summarize 6 months before PKO entrance, then all violent events during PK presence,
 # then 6 months after PK exit
@@ -71,9 +73,12 @@ b = subset(a.132181, time < 56 & time > 9)
 library(ggplot2)
 library(tidyverse)
 library(sf)
+
+b = as.data.frame(b)
 b$t_ind = 0
 b$t_ind[b$time > 15 & b$time < 50] = 1
 b$t_ind[b$time > 49] = 2
+
 
 b.ag = b %>%
   group_by(t_ind, gid) %>%
@@ -103,22 +108,31 @@ st_crs(drc.sf) = st_crs(uga_shp)
 st_crs(b.join.0) = st_crs(uga_shp)
 
 plot_1 = ggplot() + geom_sf(aes(fill = b.join.0$fatalities, geometry = b.join.0$prio_geometry)) +
-  scale_fill_viridis_c(option = "plasma") + labs(fill = "Violent events") + ggtitle("6 months before PK entrance") +
-  xlim(29,32) + ylim(0,3) +
+  scale_fill_viridis_c(option = "plasma") + labs(fill = "Violent events") + 
+  ggtitle("Aggregate Battle Violence 6 months before PK entrance") +
+  xlim(29,31.5) + ylim(0.5,3) +
   geom_sf(aes(geometry = drc.sf$geometry), alpha = 0) + 
   geom_sf(aes(geometry = uga_shp$geometry), alpha = 0)
 plot_1
 
-plot_2 = ggplot(data = b.join.1) + geom_sf(aes(fill = fatalities, geometry = prio_geometry)) +
-  scale_fill_viridis_c(option = "plasma") + labs(fill = "Violent events") + ggtitle("3 years of PK presence")
+plot_2 = ggplot() + geom_sf(aes(fill = b.join.1$fatalities, geometry = b.join.1$prio_geometry)) +
+  scale_fill_viridis_c(option = "plasma") + labs(fill = "Violent events") + 
+  ggtitle("Aggregate Battle Violence in 3 years of PK presence") +
+  xlim(29,31.5) + ylim(0.5,3) +
+  geom_sf(aes(geometry = drc.sf$geometry), alpha = 0) + 
+  geom_sf(aes(geometry = uga_shp$geometry), alpha = 0)
 plot_2
 
-plot_3 = ggplot(data = b.join.2) + geom_sf(aes(fill = fatalities, geometry = prio_geometry)) +
-  scale_fill_viridis_c(option = "plasma") + labs(fill = "Violent events") + ggtitle("6 months after PK entrance")
+plot_3 = ggplot() + geom_sf(aes(fill = b.join.2$fatalities, geometry = b.join.2$prio_geometry)) +
+  scale_fill_viridis_c(option = "plasma") + labs(fill = "Violent events") + 
+  ggtitle("Aggregate Battle Violence 6 months after PK exit") +
+  xlim(29,31.5) + ylim(0.5,3) +
+  geom_sf(aes(geometry = drc.sf$geometry), alpha = 0) + 
+  geom_sf(aes(geometry = uga_shp$geometry), alpha = 0)
 plot_3
 
 
-# make plots of Mali with PRIO borders, showing violence and PKs #
+# make descriptive statistics plot #
 library(ggplot2)
 library(tidyverse)
 library(sf)
@@ -149,75 +163,59 @@ proj_crs <- st_crs(prio_shp)
 ### convert acled to an sf object with a shared CRS
 acled <- st_as_sf(acled, coords = c("longitude", "latitude"), crs = proj_crs)
 
-### join acled events to country info
-acled <- st_join(acled, prio_shp)
-### reshape ACLED long to wide, to aggregate deaths by type
-acled <- acled %>% 
-  # get month info
-  mutate(month = month(event_date)) %>% 
-  # remove extra spatial info, now unneeded
-  as_tibble() %>% 
-  # trim to just variables needed
-  select(gid, year, month, event_type, fatalities) %>% 
-  # aggregate
-  group_by(event_type, gid) %>% 
-  summarize(deaths = sum(fatalities)) %>% 
-  ungroup() %>% 
-  # reshape
-  pivot_wider(id_cols = c("gid"), 
-              names_from = "event_type",
-              values_from = "deaths")
 
-### clean names
-acled <- acled %>% 
-  clean_names() %>% 
-  rename(fatalities_protests = protests, fatalities_riots = riots,
-         fatalities_violence_against_civilians = violence_against_civilians,
-         fatalities_explosions_remote_violence = explosions_remote_violence,
-         fatalities_battles = battles,
-         fatalities_strategic_developments = strategic_developments)
-
-prio.df = as.data.frame(prio_shp)
-df = left_join(acled, prio_shp)
-
-# read in RADPKO data, summarize by gid
-radpko <- read_csv("./data/radpko/radpko_grid.csv") %>% 
-  # make the date variable a date type
-  mutate(date = ymd(date),
-         month = month(date),
-         year = year(date)) %>% 
-  # rename variable for ease of merging
-  rename(gid = prio.grid)
-
-### there are duplicate gid-month-years because of different missions, so we
-### need to aggregate everything by those variables. all vars are sums/counts,
-### so we can just sum them all.
-radpko <- radpko %>% 
-  select(-c(country, mission, date)) %>% 
-  relocate(c(year, month), .after = gid) %>% 
-  group_by(gid, year, month) %>% 
-  summarise(across(units_deployed:afr_unmob, sum)) %>% 
-  ungroup()
-
-radpko1 = radpko %>%
-  group_by(gid) %>%
-  summarize(v = sum(pko_deployed))
+rm(a, a.132181, acled, b, b.ag, b.join, b.join.0, b.join.1, b.join.2, drc.sf, plot_1, plot_2,
+   plot_3, prio_shp, prio.df, radpko, radpko1, uga_shp, wrld_shp)
+gc()
 
 df = left_join(df, radpko)
 
 df = st_as_sf(df, sf_column_name = "geometry", crs = "world_shp")
 
 
+
+# read in ACLED's data and subset to Africa #
+
+acled <- read_csv("./data/acled/1999-01-01-2021-12-31.csv") %>% 
+  # make the date variable a date type then subset to post-1999
+  mutate(event_date = dmy(event_date)) %>% 
+  filter(event_date >= "1999-01-01") 
+
+acled = subset(acled, region == "Southern Africa" | region == "Eastern Africa" | region == "Middle Africa" |
+           region == "Western Africa" | region == "Northern Africa")
+
+# read in RADPKO's data #
+# since RADPKO is already in main dataset and gridded w/ map data, let's just used the clean data
+df = readRDS("./data/Kunkel-Atkinson-Warner-final.rds") %>%
+  as.data.frame() %>%
+  select(-c(2:15, 22:146))
+
+
+#### MERGE ACLED DATA WITH PRIO GRID IDS #####
+
+### get geographic data for countries using the shapefiles
+prio_shp <- st_read(dsn = "./data/prio", layer = "priogrid_cell", 
+                    stringsAsFactors = F)
+
+### save the CRS
+proj_crs <- st_crs(prio_shp)
+
+### convert acled to an sf object with a shared CRS
+acled <- st_as_sf(acled, coords = c("longitude", "latitude"), crs = proj_crs)
+
+
 ### subset to Africa for the purpose of our analysis
 df <- df %>% 
   filter(col < 500 & col > 300 & row < 260 & row > 80)
 
-plot_vac = ggplot(data = df) + geom_sf(aes(fill = fatalities_violence_against_civilians, geometry = geometry)) +
+plot_dsc = ggplot(data = df) + geom_sf(aes(fill = fatalities_violence_against_civilians, geometry = geometry)) +
   scale_fill_viridis_c(option = "plasma") + labs(fill = "Violent events")
 
+pdf("../results/violence_pkos_Africa.pdf")
+plot_dsc
+dev.off()
 
-
-plot_vac
+plot_dsc
 
 plot_bat = ggplot(data = df) + geom_sf(aes(fill = fatalities_battles, geometry = geometry)) +
   scale_fill_viridis_c(option = "plasma") + labs(fill = "Violent events")
