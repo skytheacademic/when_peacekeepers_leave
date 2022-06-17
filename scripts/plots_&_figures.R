@@ -73,6 +73,7 @@ b = subset(a.132181, time < 56 & time > 9)
 library(ggplot2)
 library(tidyverse)
 library(sf)
+library(ggpubr)
 
 b = as.data.frame(b)
 b$t_ind = 0
@@ -108,28 +109,38 @@ st_crs(drc.sf) = st_crs(uga_shp)
 st_crs(b.join.0) = st_crs(uga_shp)
 
 plot_1 = ggplot() + geom_sf(aes(fill = b.join.0$fatalities, geometry = b.join.0$prio_geometry)) +
-  scale_fill_viridis_c(option = "plasma") + labs(fill = "Violent events") + 
-  ggtitle("Aggregate Battle Violence 6 months before PK entrance") +
-  xlim(29,31.5) + ylim(0.5,3) +
+  scale_fill_viridis_c(option = "plasma", breaks=c(0, 500, 1000, 1500, 2000),labels=c(0, 500, 1000, 1500, 2000),
+                       limits=c(0,2050)) + labs(fill = "Violent events") + 
+#  ggtitle("Aggregate Battle Violence 6 months before PK entrance") +
+  xlim(29,31.5) + ylim(0.5,3) + theme_void() +
   geom_sf(aes(geometry = drc.sf$geometry), alpha = 0) + 
   geom_sf(aes(geometry = uga_shp$geometry), alpha = 0)
-plot_1
 
 plot_2 = ggplot() + geom_sf(aes(fill = b.join.1$fatalities, geometry = b.join.1$prio_geometry)) +
-  scale_fill_viridis_c(option = "plasma") + labs(fill = "Violent events") + 
-  ggtitle("Aggregate Battle Violence in 3 years of PK presence") +
-  xlim(29,31.5) + ylim(0.5,3) +
+  scale_fill_viridis_c(option = "plasma", breaks=c(0, 500, 1000, 1500, 2000),labels=c(0, 500, 1000, 1500, 2000),
+                       limits=c(0,2050)) + labs(fill = "Violent events") + 
+#  ggtitle("Aggregate Battle Violence in 3 years of PK presence") +
+  xlim(29,31.5) + ylim(0.5,3) + theme_void() +
   geom_sf(aes(geometry = drc.sf$geometry), alpha = 0) + 
   geom_sf(aes(geometry = uga_shp$geometry), alpha = 0)
-plot_2
 
 plot_3 = ggplot() + geom_sf(aes(fill = b.join.2$fatalities, geometry = b.join.2$prio_geometry)) +
-  scale_fill_viridis_c(option = "plasma") + labs(fill = "Violent events") + 
-  ggtitle("Aggregate Battle Violence 6 months after PK exit") +
-  xlim(29,31.5) + ylim(0.5,3) +
+  scale_fill_viridis_c(option = "plasma", breaks=c(0, 500, 1000, 1500, 2000),labels=c(0, 500, 1000, 1500, 2000),
+                       limits=c(0,2050)) + labs(fill = "Violent events") + 
+#  ggtitle("Aggregate Battle Violence 6 months after PK exit") +
+  xlim(29,31.5) + ylim(0.5,3) + theme_void() +
   geom_sf(aes(geometry = drc.sf$geometry), alpha = 0) + 
   geom_sf(aes(geometry = uga_shp$geometry), alpha = 0)
-plot_3
+
+
+# see here: https://rpkgs.datanovia.com/ggpubr/reference/ggarrange.html
+pdf("./results/violence_over_time.pdf")
+ggarrange(plot_1, plot_2, plot_3,
+                     labels = c("A", "B", "C"),
+                     ncol = 2, nrow = 2, 
+                     common.legend = TRUE, legend = "right")
+dev.off()
+
 
 
 # make descriptive statistics plot #
