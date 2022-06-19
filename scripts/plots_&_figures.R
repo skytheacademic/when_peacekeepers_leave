@@ -3,7 +3,7 @@
 # reading in cleaned data
 setwd("../")
 a = readRDS("./data/Kunkel-Atkinson-Warner-final.rds")
-
+a= as.data.frame(a)
 # Search for violence data
 
 sort(tapply(a$acled_fatalities_violence_against_civilians, a$gid, max))
@@ -63,6 +63,8 @@ a.132181 = subset(a, gid == 132181     | gid == 132181-1   | gid == 132181+1 | g
                     gid == 132181-720 | gid == 132181-719 | gid == 132181-721 | gid == 132181-722 | gid == 132181-718 |
                     gid == 132181-1442| gid == 132181-1441| gid == 132181-1440| gid == 132181-1439| gid == 132181-1438) #%>%
 a.132181 = a.132181[order(a.132181$gid, a.132181$year, a.132181$month),]
+rm(a)
+gc()
 # summarize 6 months before PKO entrance, then all violent events during PK presence,
 # then 6 months after PK exit
 
@@ -107,10 +109,11 @@ uga_shp <- st_read(dsn = "./UGA_shp", layer = "gadm40_UGA_2",
                     stringsAsFactors = F)
 st_crs(drc.sf) = st_crs(uga_shp)
 st_crs(b.join.0) = st_crs(uga_shp)
+setwd("~/GitHub/when_peacekeepers_leave")
 
 plot_1 = ggplot() + geom_sf(aes(fill = b.join.0$fatalities, geometry = b.join.0$prio_geometry)) +
-  scale_fill_viridis_c(option = "plasma", breaks=c(0, 500, 1000, 1500, 2000),labels=c(0, 500, 1000, 1500, 2000),
-                       limits=c(0,2050)) + labs(fill = "Violent events") + 
+  scale_fill_viridis_c(option = "plasma", breaks=NULL,labels=NULL,
+                       limits=c(0,2050)) + 
 #  ggtitle("Aggregate Battle Violence 6 months before PK entrance") +
   xlim(29,31.5) + ylim(0.5,3) + theme_void() +
   geom_sf(aes(geometry = drc.sf$geometry), alpha = 0) + 
@@ -136,8 +139,7 @@ plot_3 = ggplot() + geom_sf(aes(fill = b.join.2$fatalities, geometry = b.join.2$
 # see here: https://rpkgs.datanovia.com/ggpubr/reference/ggarrange.html
 pdf("./results/violence_over_time.pdf")
 ggarrange(plot_1, plot_2, plot_3,
-                     labels = c("A", "B", "C"),
-                     ncol = 2, nrow = 2, 
+                     ncol = 3, nrow = 1, 
                      common.legend = TRUE, legend = "right")
 dev.off()
 
@@ -151,37 +153,37 @@ library(janitor)
 library(lubridate)
 
 
-# pull up world map data #
-wrld_shp <- st_read(dsn = "./data/world_shp", layer = "gadm404", 
-                    stringsAsFactors = F)
-
-# read in ACLED data #
-
-acled <- read_csv("./data/acled/1999-01-01-2021-12-31.csv") %>% 
-  # make the date variable a date type then subset to post-1999
-  mutate(event_date = dmy(event_date)) %>% 
-  filter(event_date >= "1999-01-01")
-
-#### MERGE ACLED DATA WITH PRIO GRID IDS #####
-
-### get geographic data for countries using the shapefiles
-prio_shp <- st_read(dsn = "./data/prio", layer = "priogrid_cell", 
-                    stringsAsFactors = F)
-
-### save the CRS
-proj_crs <- st_crs(prio_shp)
-
-### convert acled to an sf object with a shared CRS
-acled <- st_as_sf(acled, coords = c("longitude", "latitude"), crs = proj_crs)
-
-
-rm(a, a.132181, acled, b, b.ag, b.join, b.join.0, b.join.1, b.join.2, drc.sf, plot_1, plot_2,
-   plot_3, prio_shp, prio.df, radpko, radpko1, uga_shp, wrld_shp)
-gc()
-
-df = left_join(df, radpko)
-
-df = st_as_sf(df, sf_column_name = "geometry", crs = "world_shp")
+# # pull up world map data #
+# wrld_shp <- st_read(dsn = "./data/world_shp", layer = "gadm404", 
+#                     stringsAsFactors = F)
+# 
+# # read in ACLED data #
+# 
+# acled <- read_csv("./data/acled/1999-01-01-2021-12-31.csv") %>% 
+#   # make the date variable a date type then subset to post-1999
+#   mutate(event_date = dmy(event_date)) %>% 
+#   filter(event_date >= "1999-01-01")
+# 
+# #### MERGE ACLED DATA WITH PRIO GRID IDS #####
+# 
+# ### get geographic data for countries using the shapefiles
+# prio_shp <- st_read(dsn = "./data/prio", layer = "priogrid_cell", 
+#                     stringsAsFactors = F)
+# 
+# ### save the CRS
+# proj_crs <- st_crs(prio_shp)
+# 
+# ### convert acled to an sf object with a shared CRS
+# acled <- st_as_sf(acled, coords = c("longitude", "latitude"), crs = proj_crs)
+# 
+# 
+# rm(a, a.132181, acled, b, b.ag, b.join, b.join.0, b.join.1, b.join.2, drc.sf, plot_1, plot_2,
+#    plot_3, prio_shp, prio.df, radpko, radpko1, uga_shp, wrld_shp)
+# gc()
+# 
+# df = left_join(df, radpko)
+# 
+# df = st_as_sf(df, sf_column_name = "geometry", crs = "world_shp")
 
 
 
@@ -196,10 +198,18 @@ acled = subset(acled, region == "Southern Africa" | region == "Eastern Africa" |
            region == "Western Africa" | region == "Northern Africa")
 
 # read in RADPKO's data #
-# since RADPKO is already in main dataset and gridded w/ map data, let's just used the clean data
-df = readRDS("./data/Kunkel-Atkinson-Warner-final.rds") %>%
-  as.data.frame() %>%
-  select(-c(2:15, 22:146))
+### load data
+
+radpko = read.csv("./data/radpko/radpko_grid.csv")  %>%
+  select(-c(west_pko,west_untrp,west_unpol,west_unmob,asian_pko,asian_untrp,asian_unpol,asian_unmob,afr_pko,afr_untrp,afr_unpol,afr_unmob))
+
+a.ag = radpko %>%
+  group_by(prio.grid) %>%
+  summarize(pko_deployed = sum(units_deployed))
+
+
+
+
 
 
 #### MERGE ACLED DATA WITH PRIO GRID IDS #####
