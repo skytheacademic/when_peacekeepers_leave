@@ -145,7 +145,7 @@ dev.off()
 
 
 
-# make descriptive statistics plot #
+### Descriptive Statistics Plots and Graphs ###
 library(ggplot2)
 library(tidyverse)
 library(sf)
@@ -153,90 +153,45 @@ library(janitor)
 library(lubridate)
 
 
-# # pull up world map data #
-# wrld_shp <- st_read(dsn = "./data/world_shp", layer = "gadm404", 
-#                     stringsAsFactors = F)
-# 
-# # read in ACLED data #
-# 
-# acled <- read_csv("./data/acled/1999-01-01-2021-12-31.csv") %>% 
-#   # make the date variable a date type then subset to post-1999
-#   mutate(event_date = dmy(event_date)) %>% 
-#   filter(event_date >= "1999-01-01")
-# 
-# #### MERGE ACLED DATA WITH PRIO GRID IDS #####
-# 
-# ### get geographic data for countries using the shapefiles
-# prio_shp <- st_read(dsn = "./data/prio", layer = "priogrid_cell", 
-#                     stringsAsFactors = F)
-# 
-# ### save the CRS
-# proj_crs <- st_crs(prio_shp)
-# 
-# ### convert acled to an sf object with a shared CRS
-# acled <- st_as_sf(acled, coords = c("longitude", "latitude"), crs = proj_crs)
-# 
-# 
-# rm(a, a.132181, acled, b, b.ag, b.join, b.join.0, b.join.1, b.join.2, drc.sf, plot_1, plot_2,
-#    plot_3, prio_shp, prio.df, radpko, radpko1, uga_shp, wrld_shp)
-# gc()
-# 
-# df = left_join(df, radpko)
-# 
-# df = st_as_sf(df, sf_column_name = "geometry", crs = "world_shp")
+a = readRDS("./data/Kunkel-Atkinson-Warner-final.rds")
+a= as.data.frame(a)
 
-
-
-# read in ACLED's data and subset to Africa #
-
-acled <- read_csv("./data/acled/1999-01-01-2021-12-31.csv") %>% 
-  # make the date variable a date type then subset to post-1999
-  mutate(event_date = dmy(event_date)) %>% 
-  filter(event_date >= "1999-01-01") 
-
-acled = subset(acled, region == "Southern Africa" | region == "Eastern Africa" | region == "Middle Africa" |
-           region == "Western Africa" | region == "Northern Africa")
-
-# read in RADPKO's data #
-### load data
-
-radpko = read.csv("./data/radpko/radpko_grid.csv")  %>%
-  select(-c(west_pko,west_untrp,west_unpol,west_unmob,asian_pko,asian_untrp,asian_unpol,asian_unmob,afr_pko,afr_untrp,afr_unpol,afr_unmob))
-
-a.ag = radpko %>%
-  group_by(prio.grid) %>%
-  summarize(pko_deployed = sum(units_deployed))
-
-
-
-
-
-
+df = a %>%
+  group_by(gid) %>%
+  summarize(pko_deployed = sum(radpko_units_deployed), 
+            violence = sum(acled_fatalities_battles, acled_fatalities_violence_against_civilians,
+                           acled_fatalities_protests, acled_fatalities_strategic_developments,
+                           acled_fatalities_explosions_remote_violence, acled_fatalities_riots))
+gc()
 #### MERGE ACLED DATA WITH PRIO GRID IDS #####
 
 ### get geographic data for countries using the shapefiles
-prio_shp <- st_read(dsn = "./data/prio", layer = "priogrid_cell", 
+prio_shp <- st_read(dsn = "./data/prio", layer = "priogrid_cell",
                     stringsAsFactors = F)
 
 ### save the CRS
 proj_crs <- st_crs(prio_shp)
 
-### convert acled to an sf object with a shared CRS
-acled <- st_as_sf(acled, coords = c("longitude", "latitude"), crs = proj_crs)
+df = left_join(df, prio_shp, by = "gid")
+df = st_as_sf(df, sf_column_name = "geometry", crs = "world_shp")
 
-
-### subset to Africa for the purpose of our analysis
-df <- df %>% 
-  filter(col < 500 & col > 300 & row < 260 & row > 80)
-
-plot_dsc = ggplot(data = df) + geom_sf(aes(fill = fatalities_violence_against_civilians, geometry = geometry)) +
-  scale_fill_viridis_c(option = "plasma") + labs(fill = "Violent events")
+plot_dsc = ggplot(data = df) + geom_sf(aes(fill = pko_deployed, geometry = geometry)) +
+  scale_fill_viridis_c(option = "plasma") + labs(fill = "PK Deployments")
 
 pdf("../results/violence_pkos_Africa.pdf")
 plot_dsc
 dev.off()
 
 plot_dsc
+
+
+# new plot w/ increased bubble size based on counts
+
+ggplot(df) + geom_sf(aes(geometry = geometry, color = alpha("black"), fill = 0)) +
+  geom_point(aes(x = xcoord, y = ycoord, size = violence, colour = "red"))
+
+
+
 
 plot_bat = ggplot(data = df) + geom_sf(aes(fill = fatalities_battles, geometry = geometry)) +
   scale_fill_viridis_c(option = "plasma") + labs(fill = "Violent events")
@@ -246,7 +201,6 @@ plot_pko = ggplot(data = df) + geom_sf(aes(fill = pko_deployed, geometry = geome
   scale_fill_viridis_c(option = "plasma") + labs(fill = "Peacekeeper deployment")
 plot_pko
 
-### Descriptive Statistics Plots and Graphs ###
 
 
 
