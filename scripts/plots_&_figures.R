@@ -76,7 +76,8 @@ library(ggplot2)
 library(tidyverse)
 library(sf)
 library(ggpubr)
-
+library(tmap)
+library(tmaptools)
 b = as.data.frame(b)
 b$t_ind = 0
 b$t_ind[b$time > 15 & b$time < 50] = 1
@@ -110,15 +111,52 @@ drc_00 <- st_read(dsn = "./data/gadm/drc", layer = "gadm40_COD_0",
 drc_01 <- st_read(dsn = "./data/gadm/drc", layer = "gadm40_COD_1", 
                   stringsAsFactors = F)
 
+# read in neighbor shapefiles
+ago_00 <- st_read(dsn = "./data/gadm/angola", layer = "gadm40_AGO_0", 
+                  stringsAsFactors = F)
+bdi_00 <- st_read(dsn = "./data/gadm/burundi", layer = "gadm40_BDI_0", 
+                  stringsAsFactors = F)
+caf_00 <- st_read(dsn = "./data/gadm/caf", layer = "gadm40_CAF_0", 
+                  stringsAsFactors = F)
+cog_00 <- st_read(dsn = "./data/gadm/congo", layer = "gadm40_COG_0", 
+                  stringsAsFactors = F)
+rwa_00 <- st_read(dsn = "./data/gadm/rwanda", layer = "gadm40_RWA_0", 
+                  stringsAsFactors = F)
+ssd_00 <- st_read(dsn = "./data/gadm/s_sudan", layer = "gadm40_SSD_0", 
+                  stringsAsFactors = F)
+tza_00 <- st_read(dsn = "./data/gadm/tanzania", layer = "gadm40_TZA_0", 
+                  stringsAsFactors = F)
+zmb_00 <- st_read(dsn = "./data/gadm/zambia", layer = "gadm40_ZMB_0", 
+                  stringsAsFactors = F)
+
+
 st_crs(b.join.0) = st_crs(uga_00)
 st_crs(b.join.1) = st_crs(uga_00)
 st_crs(b.join.2) = st_crs(uga_00)
 
-drc_uga = ggplot() + geom_sf(aes(geometry = uga_00$geometry), size = 1) + 
-  geom_sf(aes(geometry = drc_00$geometry), size = 1, fill = "blue") +
-  geom_sf(aes(geometry = uga_01$geometry), size = 0.1) +
-  geom_sf(aes(geometry = drc_01$geometry), size = 0.1)
-drc_uga
+# try using tm_shape instead
+bbox_uga <- st_bbox(uga_00) # current bounding box
+bbox_drc <- st_bbox(drc_00) # current bounding box
+bbox_new = bbox_drc
+bbox_new[1] = bbox_drc[1]
+bbox_new[2] = bbox_drc[2]
+bbox_new[3] = bbox_uga[3]
+bbox_new[4] = bbox_drc[4]
+
+
+tm_shape(shp = uga_00, bbox= bbox_new) + tm_borders(col = "blue") +
+  tm_shape(shp = drc_00) + tm_borders(col = "blue") +
+  tm_shape(shp = uga_01) + tm_borders(lty = "dashed", alpha = 0.7) +
+  tm_shape(shp = drc_01) + tm_borders(lty = "dashed", alpha = 0.7) +
+  tm_shape(shp = ago_00) + tm_borders(lty = "solid", alpha = 0.3) +
+  tm_shape(shp = bdi_00) + tm_borders(lty = "solid", alpha = 0.3) +
+  tm_shape(shp = caf_00) + tm_borders(lty = "solid", alpha = 0.3) +
+  tm_shape(shp = cog_00) + tm_borders(lty = "solid", alpha = 0.3) +
+  tm_shape(shp = rwa_00) + tm_borders(lty = "solid", alpha = 0.3) +
+  tm_shape(shp = ssd_00) + tm_borders(lty = "solid", alpha = 0.3) +
+  tm_shape(shp = tza_00) + tm_borders(lty = "solid", alpha = 0.3) +
+  tm_shape(shp = zmb_00) + tm_borders(lty = "solid", alpha = 0.3)
+
 
 plot_1 = ggplot() + geom_sf(aes(fill = b.join.0$fatalities, geometry = b.join.0$prio_geometry)) +
   scale_fill_viridis_c(option = "plasma",
