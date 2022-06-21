@@ -90,58 +90,73 @@ b.ag = b %>%
 b.ag$fatalities[b.ag$fatalities == 0] <- NA
 
 # now join geographic data so we can plot it
-
 b.join = left_join(b.ag, b)
+b.join.0 = subset(b.join, t_ind == 0) %>%
+  st_as_sf()
+b.join.1 = subset(b.join, t_ind == 1)%>%
+  st_as_sf()
+b.join.2 = subset(b.join, t_ind == 2)%>%
+  st_as_sf()
 
-b.join.0 = subset(b.join, t_ind == 0)
-b.join.0 = st_as_sf(b.join.0)
-
-b.join.1 = subset(b.join, t_ind == 1)
-b.join.1 = st_as_sf(b.join.1)
-
-b.join.2 = subset(b.join, t_ind == 2)
-b.join.2 = st_as_sf(b.join.2)
-
-setwd("../606-Repository/final_project/data/country_sf")
-drc.sf = readRDS("drc_sf.rds")
-
-uga_shp <- st_read(dsn = "./UGA_shp", layer = "gadm40_UGA_2", 
+# read in Uganda shapefiles
+uga_00 <- st_read(dsn = "./data/gadm/uganda", layer = "gadm40_UGA_0", 
                     stringsAsFactors = F)
-st_crs(drc.sf) = st_crs(uga_shp)
-st_crs(b.join.0) = st_crs(uga_shp)
-setwd("~/GitHub/when_peacekeepers_leave")
+uga_01 <- st_read(dsn = "./data/gadm/uganda", layer = "gadm40_UGA_1", 
+                  stringsAsFactors = F)
+
+# read in DRC shapefiles
+drc_00 <- st_read(dsn = "./data/gadm/drc", layer = "gadm40_COD_0", 
+                  stringsAsFactors = F)
+drc_01 <- st_read(dsn = "./data/gadm/drc", layer = "gadm40_COD_1", 
+                  stringsAsFactors = F)
+
+st_crs(b.join.0) = st_crs(uga_00)
+st_crs(b.join.1) = st_crs(uga_00)
+st_crs(b.join.2) = st_crs(uga_00)
+
+drc_uga = ggplot() + geom_sf(aes(geometry = uga_00$geometry), size = 1) + 
+  geom_sf(aes(geometry = drc_00$geometry), size = 1, fill = "blue") +
+  geom_sf(aes(geometry = uga_01$geometry), size = 0.1) +
+  geom_sf(aes(geometry = drc_01$geometry), size = 0.1)
+drc_uga
 
 plot_1 = ggplot() + geom_sf(aes(fill = b.join.0$fatalities, geometry = b.join.0$prio_geometry)) +
-  scale_fill_viridis_c(option = "plasma", breaks=NULL,labels=NULL,
-                       limits=c(0,2050)) + 
-#  ggtitle("Aggregate Battle Violence 6 months before PK entrance") +
-  xlim(29,31.5) + ylim(0.5,3) + theme_void() +
-  geom_sf(aes(geometry = drc.sf$geometry), alpha = 0) + 
-  geom_sf(aes(geometry = uga_shp$geometry), alpha = 0)
+  scale_fill_viridis_c(option = "plasma",
+                       limits=c(0,2050)) +
+  geom_sf(aes(geometry = drc_01$geometry), alpha = 0) + 
+  geom_sf(aes(geometry = uga_01$geometry), alpha = 0) +
+  geom_sf(aes(geometry = uga_00$geometry), size = 1, fill = alpha("red",0)) +
+  xlim(29,31.5) + ylim(0.5,3) + theme_void()
+plot_1
 
 plot_2 = ggplot() + geom_sf(aes(fill = b.join.1$fatalities, geometry = b.join.1$prio_geometry)) +
-  scale_fill_viridis_c(option = "plasma", breaks=c(0, 500, 1000, 1500, 2000),labels=c(0, 500, 1000, 1500, 2000),
-                       limits=c(0,2050)) + labs(fill = "Violent events") + 
-#  ggtitle("Aggregate Battle Violence in 3 years of PK presence") +
-  xlim(29,31.5) + ylim(0.5,3) + theme_void() +
-  geom_sf(aes(geometry = drc.sf$geometry), alpha = 0) + 
-  geom_sf(aes(geometry = uga_shp$geometry), alpha = 0)
+  scale_fill_viridis_c(option = "plasma",
+                       limits=c(0,2050)) +
+  geom_sf(aes(geometry = drc_01$geometry), alpha = 0) + 
+  geom_sf(aes(geometry = uga_01$geometry), alpha = 0) +
+  geom_sf(aes(geometry = uga_00$geometry), size = 1, fill = alpha("red",0)) +
+  xlim(29,31.5) + ylim(0.5,3) + theme_void()
 
 plot_3 = ggplot() + geom_sf(aes(fill = b.join.2$fatalities, geometry = b.join.2$prio_geometry)) +
-  scale_fill_viridis_c(option = "plasma", breaks=c(0, 500, 1000, 1500, 2000),labels=c(0, 500, 1000, 1500, 2000),
-                       limits=c(0,2050)) + labs(fill = "Violent events") + 
-#  ggtitle("Aggregate Battle Violence 6 months after PK exit") +
-  xlim(29,31.5) + ylim(0.5,3) + theme_void() +
-  geom_sf(aes(geometry = drc.sf$geometry), alpha = 0) + 
-  geom_sf(aes(geometry = uga_shp$geometry), alpha = 0)
+  scale_fill_viridis_c(option = "plasma",
+                       limits=c(0,2050)) +
+  geom_sf(aes(geometry = drc_01$geometry), alpha = 0) + 
+  geom_sf(aes(geometry = uga_01$geometry), alpha = 0) +
+  geom_sf(aes(geometry = uga_00$geometry), size = 1, fill = alpha("red",0)) +
+  xlim(29,31.5) + ylim(0.5,3) + theme_void()
+
 
 
 # see here: https://rpkgs.datanovia.com/ggpubr/reference/ggarrange.html
 pdf("./results/violence_over_time.pdf")
 ggarrange(plot_1, plot_2, plot_3,
                      ncol = 3, nrow = 1, 
-                     common.legend = TRUE, legend = "right")
+                     common.legend = TRUE, legend = "bottom")
 dev.off()
+
+
+
+
 
 
 
@@ -154,7 +169,7 @@ library(lubridate)
 
 
 a = readRDS("./data/Kunkel-Atkinson-Warner-final.rds")
-a= as.data.frame(a)
+a = as.data.frame(a)
 
 df = a %>%
   group_by(gid) %>%
@@ -190,8 +205,14 @@ plot_dsc
 ggplot(df) + geom_sf(aes(geometry = geometry, color = alpha("black"), fill = 0)) +
   geom_point(aes(x = xcoord, y = ycoord, size = violence, colour = "red"))
 
+# try subsetting and removing the geometry data from pko and violence counts (geometry and coordinates may be messing up plotting)
+# also try putting "alpha" and color stuff outside of "AES" parentheses
 
-
+ggplot(capitals, aes(long, lat)) +
+  borders("state") +
+  geom_point(aes(size = pop)) +
+  scale_size_area() +
+  coord_quickmap()
 
 plot_bat = ggplot(data = df) + geom_sf(aes(fill = fatalities_battles, geometry = geometry)) +
   scale_fill_viridis_c(option = "plasma") + labs(fill = "Violent events")
