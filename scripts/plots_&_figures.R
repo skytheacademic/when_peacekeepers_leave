@@ -236,8 +236,8 @@ library(janitor)
 library(lubridate)
 
 
-a = readRDS("./data/Kunkel-Atkinson-Warner-final.rds")
-a = as.data.frame(a)
+a = readRDS("./data/Kunkel-Atkinson-Warner-final.rds") %>%
+  as.data.frame()
 
 df = a %>%
   group_by(gid) %>%
@@ -245,6 +245,11 @@ df = a %>%
             violence = sum(acled_fatalities_battles, acled_fatalities_violence_against_civilians,
                            acled_fatalities_protests, acled_fatalities_strategic_developments,
                            acled_fatalities_explosions_remote_violence, acled_fatalities_riots))
+
+df$pko_deployed[df$pko_deployed == 0] <- NA
+df$violence[df$violence == 0] <- NA
+
+rm(a)
 gc()
 #### MERGE ACLED DATA WITH PRIO GRID IDS #####
 
@@ -255,10 +260,19 @@ prio_shp <- st_read(dsn = "./data/prio", layer = "priogrid_cell",
 ### save the CRS
 proj_crs <- st_crs(prio_shp)
 
-df = left_join(df, prio_shp, by = "gid")
-df = st_as_sf(df, sf_column_name = "geometry", crs = "world_shp")
+df.prio = left_join(df, prio_shp, by = "gid") %>%
+  select(-c(2:7))
 
-plot_dsc = ggplot(data = df) + geom_sf(aes(fill = pko_deployed, geometry = geometry)) +
+df = left_join(df, prio_shp, by = "gid") %>%
+  as.data.frame() %>%
+  select(-c("geometry", "col", "row"))
+#df = st_as_sf(df, coords = c("xcoord", "ycoord"), crs = proj_crs)
+df_ac= df %>%
+  drop_na(violence)
+df_pk = df %>%
+  drop_na(pko_deployed)
+  
+plot_dsc = ggplot(data = df) + geom_sf(aes(fill = violence, geometry = geometry)) +
   scale_fill_viridis_c(option = "plasma") + labs(fill = "PK Deployments")
 
 pdf("../results/violence_pkos_Africa.pdf")
@@ -270,10 +284,10 @@ plot_dsc
 
 # new plot w/ increased bubble size based on counts
 
-ggplot(df) + geom_sf(aes(geometry = geometry, color = alpha("black"), fill = 0)) +
-  geom_point(aes(x = xcoord, y = ycoord, size = violence, colour = "red"))
+ggplot(df.prio) + geom_sf(aes(geometry = geometry), color = "dark blue") +
+  geom_point(data = df_ac, mapping = aes(x = xcoord, y = ycoord, fill = violence, shape = 5))
+  geom_sf(data = df_ac, aes(geometry = geometry, size = violence), colour = "dark red")
 
-# try subsetting and removing the geometry data from pko and violence counts (geometry and coordinates may be messing up plotting)
 # also try putting "alpha" and color stuff outside of "AES" parentheses
 
 ggplot(capitals, aes(long, lat)) +
