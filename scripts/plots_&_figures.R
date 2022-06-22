@@ -111,6 +111,9 @@ drc_00 <- st_read(dsn = "./data/gadm/drc", layer = "gadm40_COD_0",
 drc_01 <- st_read(dsn = "./data/gadm/drc", layer = "gadm40_COD_1", 
                   stringsAsFactors = F)
 
+# combine UGA and DRC so we can shade in with country names
+uga_drc = rbind(uga_00, drc_00)
+
 # read in neighbor shapefiles
 ago_00 <- st_read(dsn = "./data/gadm/angola", layer = "gadm40_AGO_0", 
                   stringsAsFactors = F)
@@ -144,10 +147,11 @@ bbox_new[3] = bbox_uga[3]
 bbox_new[4] = bbox_drc[4]
 
 
-tm_shape(shp = uga_00, bbox= bbox_new) + tm_borders(col = "blue") +
-  tm_shape(shp = drc_00) + tm_borders(col = "blue") +
-  tm_shape(shp = uga_01) + tm_borders(lty = "dashed", alpha = 0.7) +
-  tm_shape(shp = drc_01) + tm_borders(lty = "dashed", alpha = 0.7) +
+tm_shape(shp = uga_drc, bbox= bbox_new) + tm_borders(col = "black", lwd = 3) +
+  tm_fill(col="COUNTRY") + tm_layout(legend.width = 2, legend.frame = "black", legend.bg.alpha = 0.1) + 
+#  tm_shape(shp = uga_drc) + tm_borders(col = "red", lwd = 3) +
+  tm_shape(shp = uga_01) + tm_borders(col = "black", lty = "dashed", alpha = 0.7, lwd = 0.5) +
+  tm_shape(shp = drc_01) + tm_borders(col = "black", lty = "dashed", alpha = 0.7, lwd = 0.5) +
   tm_shape(shp = ago_00) + tm_borders(lty = "solid", alpha = 0.3) +
   tm_shape(shp = bdi_00) + tm_borders(lty = "solid", alpha = 0.3) +
   tm_shape(shp = caf_00) + tm_borders(lty = "solid", alpha = 0.3) +
@@ -158,31 +162,57 @@ tm_shape(shp = uga_00, bbox= bbox_new) + tm_borders(col = "blue") +
   tm_shape(shp = zmb_00) + tm_borders(lty = "solid", alpha = 0.3)
 
 
+# plot_1 = ggplot() + geom_sf(aes(fill = b.join.0$fatalities, geometry = b.join.0$prio_geometry)) +
+#   scale_fill_viridis_c(option = "plasma", limits=c(0,2050)) +
+#   geom_sf(aes(geometry = drc_01$geometry), alpha = 0) + 
+#   geom_sf(aes(geometry = uga_01$geometry), alpha = 0) +
+#   geom_sf(aes(geometry = uga_00$geometry), size = 2, fill = alpha("red",0)) +
+#   geom_sf_label(data = uga_drc, aes(label = COUNTRY), label.padding = unit(1, "mm")) +
+#   theme_void()
+# plot_1
+
+# above plot can be used if we want to have a box over the grids with a country level focus
+
+
+################
+# try using t_map to make this plot instead since GGplot sucks
+###############
+
+
 plot_1 = ggplot() + geom_sf(aes(fill = b.join.0$fatalities, geometry = b.join.0$prio_geometry)) +
-  scale_fill_viridis_c(option = "plasma",
-                       limits=c(0,2050)) +
+  scale_fill_viridis_c(option = "plasma", limits=c(0,2050)) +
   geom_sf(aes(geometry = drc_01$geometry), alpha = 0) + 
   geom_sf(aes(geometry = uga_01$geometry), alpha = 0) +
-  geom_sf(aes(geometry = uga_00$geometry), size = 1, fill = alpha("red",0)) +
-  xlim(29,31.5) + ylim(0.5,3) + theme_void()
+  geom_sf(aes(geometry = uga_00$geometry), size = 2, fill = alpha("red",0)) +
+  # geom_text(data = uga_drc,
+  #   position = "identity", x = 29.5, y = 3.15, label = "DRC")  + 
+  # geom_text(data = uga_drc,
+  #           position = "identity", x = 31.25, y = 3.15, label = "Uganda") +
+  xlim(29,31.5) + ylim(0.5,3.10) + theme_void()
 plot_1
 
 plot_2 = ggplot() + geom_sf(aes(fill = b.join.1$fatalities, geometry = b.join.1$prio_geometry)) +
-  scale_fill_viridis_c(option = "plasma",
-                       limits=c(0,2050)) +
+  scale_fill_viridis_c(option = "plasma", limits=c(0,2050)) +
+  labs("Fatalities") +
   geom_sf(aes(geometry = drc_01$geometry), alpha = 0) + 
   geom_sf(aes(geometry = uga_01$geometry), alpha = 0) +
-  geom_sf(aes(geometry = uga_00$geometry), size = 1, fill = alpha("red",0)) +
-  xlim(29,31.5) + ylim(0.5,3) + theme_void()
+  geom_sf(aes(geometry = uga_00$geometry), size = 2, fill = alpha("red",0)) +
+  geom_text(data = uga_drc,
+            position = "identity", x = 29.5, y = 3.10, label = "DRC")  + 
+  geom_text(data = uga_drc,
+            position = "identity", x = 31.25, y = 3.10, label = "Uganda") +
+  xlim(29,31.5) + ylim(0.5,3.10) + theme_void()
 
 plot_3 = ggplot() + geom_sf(aes(fill = b.join.2$fatalities, geometry = b.join.2$prio_geometry)) +
-  scale_fill_viridis_c(option = "plasma",
-                       limits=c(0,2050)) +
+  scale_fill_viridis_c(option = "plasma", limits=c(0,2050)) +
   geom_sf(aes(geometry = drc_01$geometry), alpha = 0) + 
   geom_sf(aes(geometry = uga_01$geometry), alpha = 0) +
-  geom_sf(aes(geometry = uga_00$geometry), size = 1, fill = alpha("red",0)) +
-  xlim(29,31.5) + ylim(0.5,3) + theme_void()
-
+  geom_sf(aes(geometry = uga_00$geometry), size = 2, fill = alpha("red",0)) +
+  # geom_text(data = uga_drc,
+  #           position = "identity", x = 29.5, y = 3.15, label = "DRC")  + 
+  # geom_text(data = uga_drc,
+  #           position = "identity", x = 31.25, y = 3.15, label = "Uganda") +
+  xlim(29,31.5) + ylim(0.5,3.10) + theme_void()
 
 
 # see here: https://rpkgs.datanovia.com/ggpubr/reference/ggarrange.html
