@@ -299,6 +299,15 @@ ggplot(df.prio) + geom_sf(aes(geometry = geometry), fill = "blue") +
   geom_point(data = df_pk, mapping = aes(x = xcoord, y = ycoord, 
                                          size = pko_deployed), colour = "dark red")
 
+# try scaling
+ggplot(df.prio) + geom_sf(aes(geometry = geometry), fill = "blue") +
+  geom_point(data = df_ac, mapping = aes(x = xcoord, y = ycoord, size = violence), 
+             colour = "dark green", alpha = 0.25) +
+  scale_size(trans = "time")
+
+# trans that work: log, log10, log1p, log2, pseudo_log
+
+
 # also try putting "alpha" and color stuff outside of "AES" parentheses
 
 ggplot(capitals, aes(long, lat)) +
