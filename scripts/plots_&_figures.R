@@ -197,9 +197,9 @@ plot_2 = ggplot() + geom_sf(aes(fill = b.join.1$fatalities, geometry = b.join.1$
   geom_sf(aes(geometry = drc_01$geometry), alpha = 0) + 
   geom_sf(aes(geometry = uga_01$geometry), alpha = 0) +
   geom_sf(aes(geometry = uga_00$geometry), size = 2, fill = alpha("red",0)) +
-  geom_text(data = uga_drc,
+  geom_text(data = uga_drc, fontface = "bold",
             position = "identity", x = 29.5, y = 3.10, label = "DRC")  + 
-  geom_text(data = uga_drc,
+  geom_text(data = uga_drc, fontface = "bold",
             position = "identity", x = 31.25, y = 3.10, label = "Uganda") +
   xlim(29,31.5) + ylim(0.5,3.10) + theme_void()
 
@@ -216,7 +216,7 @@ plot_3 = ggplot() + geom_sf(aes(fill = b.join.2$fatalities, geometry = b.join.2$
 
 
 # see here: https://rpkgs.datanovia.com/ggpubr/reference/ggarrange.html
-pdf("./results/violence_over_time.pdf")
+# pdf("./results/violence_over_time.pdf")
 ggarrange(plot_1, plot_2, plot_3,
                      ncol = 3, nrow = 1, 
                      common.legend = TRUE, legend = "bottom")
@@ -251,9 +251,9 @@ df$violence[df$violence == 0] <- NA
 
 rm(a)
 gc()
-#### MERGE ACLED DATA WITH PRIO GRID IDS #####
 
-### get geographic data for countries using the shapefiles
+#### MERGE ACLED DATA WITH PRIO GRID IDS #####
+# get geographic data for countries using the shapefiles
 prio_shp <- st_read(dsn = "./data/prio", layer = "priogrid_cell",
                     stringsAsFactors = F)
 
@@ -284,9 +284,20 @@ plot_dsc
 
 # new plot w/ increased bubble size based on counts
 
-ggplot(df.prio) + geom_sf(aes(geometry = geometry), color = "dark blue") +
-  geom_point(data = df_ac, mapping = aes(x = xcoord, y = ycoord, fill = violence, shape = 5))
-  geom_sf(data = df_ac, aes(geometry = geometry, size = violence), colour = "dark red")
+ggplot(df.prio) + geom_sf(aes(geometry = geometry), fill = "blue") +
+  geom_point(data = df_ac, mapping = aes(x = xcoord, y = ycoord, 
+                                         size = violence, colour = "Dataset1")) +
+  geom_point(data = df_pk, mapping = aes(x = xcoord, y = ycoord, 
+                                         size = pko_deployed, colour = "Dataset2")) +
+  labs(colour="Datasets",x="xxx",y="yyy")
+
+# adding labels seems to have messed up something with the color scaling
+
+ggplot(df.prio) + geom_sf(aes(geometry = geometry), fill = "blue") +
+  geom_point(data = df_ac, mapping = aes(x = xcoord, y = ycoord, 
+                                         size = violence), colour = "dark green") +
+  geom_point(data = df_pk, mapping = aes(x = xcoord, y = ycoord, 
+                                         size = pko_deployed), colour = "dark red")
 
 # also try putting "alpha" and color stuff outside of "AES" parentheses
 
