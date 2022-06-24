@@ -114,52 +114,57 @@ drc_01 <- st_read(dsn = "./data/gadm/drc", layer = "gadm40_COD_1",
 # combine UGA and DRC so we can shade in with country names
 uga_drc = rbind(uga_00, drc_00)
 
-# read in neighbor shapefiles
-ago_00 <- st_read(dsn = "./data/gadm/angola", layer = "gadm40_AGO_0", 
-                  stringsAsFactors = F)
-bdi_00 <- st_read(dsn = "./data/gadm/burundi", layer = "gadm40_BDI_0", 
-                  stringsAsFactors = F)
-caf_00 <- st_read(dsn = "./data/gadm/caf", layer = "gadm40_CAF_0", 
-                  stringsAsFactors = F)
-cog_00 <- st_read(dsn = "./data/gadm/congo", layer = "gadm40_COG_0", 
-                  stringsAsFactors = F)
-rwa_00 <- st_read(dsn = "./data/gadm/rwanda", layer = "gadm40_RWA_0", 
-                  stringsAsFactors = F)
-ssd_00 <- st_read(dsn = "./data/gadm/s_sudan", layer = "gadm40_SSD_0", 
-                  stringsAsFactors = F)
-tza_00 <- st_read(dsn = "./data/gadm/tanzania", layer = "gadm40_TZA_0", 
-                  stringsAsFactors = F)
-zmb_00 <- st_read(dsn = "./data/gadm/zambia", layer = "gadm40_ZMB_0", 
-                  stringsAsFactors = F)
+
 
 
 st_crs(b.join.0) = st_crs(uga_00)
 st_crs(b.join.1) = st_crs(uga_00)
 st_crs(b.join.2) = st_crs(uga_00)
 
+
+# below code is useful if plotting all of DRC and Uganda w/ surrounding countries on plot
+######### 
+
+# read in neighbor shapefiles
+# ago_00 <- st_read(dsn = "./data/gadm/angola", layer = "gadm40_AGO_0", 
+#                   stringsAsFactors = F)
+# bdi_00 <- st_read(dsn = "./data/gadm/burundi", layer = "gadm40_BDI_0", 
+#                   stringsAsFactors = F)
+# caf_00 <- st_read(dsn = "./data/gadm/caf", layer = "gadm40_CAF_0", 
+#                   stringsAsFactors = F)
+# cog_00 <- st_read(dsn = "./data/gadm/congo", layer = "gadm40_COG_0", 
+#                   stringsAsFactors = F)
+# rwa_00 <- st_read(dsn = "./data/gadm/rwanda", layer = "gadm40_RWA_0", 
+#                   stringsAsFactors = F)
+# ssd_00 <- st_read(dsn = "./data/gadm/s_sudan", layer = "gadm40_SSD_0", 
+#                   stringsAsFactors = F)
+# tza_00 <- st_read(dsn = "./data/gadm/tanzania", layer = "gadm40_TZA_0", 
+#                   stringsAsFactors = F)
+# zmb_00 <- st_read(dsn = "./data/gadm/zambia", layer = "gadm40_ZMB_0", 
+#                   stringsAsFactors = F)
 # try using tm_shape instead
-bbox_uga <- st_bbox(uga_00) # current bounding box
-bbox_drc <- st_bbox(drc_00) # current bounding box
-bbox_new = bbox_drc
-bbox_new[1] = bbox_drc[1]
-bbox_new[2] = bbox_drc[2]
-bbox_new[3] = bbox_uga[3]
-bbox_new[4] = bbox_drc[4]
+# bbox_uga <- st_bbox(uga_00) # current bounding box
+# bbox_drc <- st_bbox(drc_00) # current bounding box
+# bbox_new = bbox_drc
+# bbox_new[1] = bbox_drc[1]
+# bbox_new[2] = bbox_drc[2]
+# bbox_new[3] = bbox_uga[3]
+# bbox_new[4] = bbox_drc[4]
 
 
-tm_shape(shp = uga_drc, bbox= bbox_new) + tm_borders(col = "black", lwd = 3) +
-  tm_fill(col="COUNTRY") + tm_layout(legend.width = 2, legend.frame = "black", legend.bg.alpha = 0.1) + 
-#  tm_shape(shp = uga_drc) + tm_borders(col = "red", lwd = 3) +
-  tm_shape(shp = uga_01) + tm_borders(col = "black", lty = "dashed", alpha = 0.7, lwd = 0.5) +
-  tm_shape(shp = drc_01) + tm_borders(col = "black", lty = "dashed", alpha = 0.7, lwd = 0.5) +
-  tm_shape(shp = ago_00) + tm_borders(lty = "solid", alpha = 0.3) +
-  tm_shape(shp = bdi_00) + tm_borders(lty = "solid", alpha = 0.3) +
-  tm_shape(shp = caf_00) + tm_borders(lty = "solid", alpha = 0.3) +
-  tm_shape(shp = cog_00) + tm_borders(lty = "solid", alpha = 0.3) +
-  tm_shape(shp = rwa_00) + tm_borders(lty = "solid", alpha = 0.3) +
-  tm_shape(shp = ssd_00) + tm_borders(lty = "solid", alpha = 0.3) +
-  tm_shape(shp = tza_00) + tm_borders(lty = "solid", alpha = 0.3) +
-  tm_shape(shp = zmb_00) + tm_borders(lty = "solid", alpha = 0.3)
+# tm_shape(shp = uga_drc, bbox= bbox_new) + tm_borders(col = "black", lwd = 3) +
+#   tm_fill(col="COUNTRY") + tm_layout(legend.width = 2, legend.frame = "black", legend.bg.alpha = 0.1) + 
+# #  tm_shape(shp = uga_drc) + tm_borders(col = "red", lwd = 3) +
+#   tm_shape(shp = uga_01) + tm_borders(col = "black", lty = "dashed", alpha = 0.7, lwd = 0.5) +
+#   tm_shape(shp = drc_01) + tm_borders(col = "black", lty = "dashed", alpha = 0.7, lwd = 0.5) +
+#   tm_shape(shp = ago_00) + tm_borders(lty = "solid", alpha = 0.3) +
+#   tm_shape(shp = bdi_00) + tm_borders(lty = "solid", alpha = 0.3) +
+#   tm_shape(shp = caf_00) + tm_borders(lty = "solid", alpha = 0.3) +
+#   tm_shape(shp = cog_00) + tm_borders(lty = "solid", alpha = 0.3) +
+#   tm_shape(shp = rwa_00) + tm_borders(lty = "solid", alpha = 0.3) +
+#   tm_shape(shp = ssd_00) + tm_borders(lty = "solid", alpha = 0.3) +
+#   tm_shape(shp = tza_00) + tm_borders(lty = "solid", alpha = 0.3) +
+#   tm_shape(shp = zmb_00) + tm_borders(lty = "solid", alpha = 0.3)
 
 
 # plot_1 = ggplot() + geom_sf(aes(fill = b.join.0$fatalities, geometry = b.join.0$prio_geometry)) +
@@ -175,51 +180,47 @@ tm_shape(shp = uga_drc, bbox= bbox_new) + tm_borders(col = "black", lwd = 3) +
 
 
 ################
-# try using t_map to make this plot instead since GGplot sucks
+
+# Plot of moving violence after PK entrance
 ###############
 
-
-plot_1 = ggplot() + geom_sf(aes(fill = b.join.0$fatalities, geometry = b.join.0$prio_geometry)) +
+plot_1 = 
+  ggplot() + geom_sf(aes(fill = b.join.0$fatalities, geometry = b.join.0$prio_geometry)) +
   scale_fill_viridis_c(option = "plasma", limits=c(0,2050)) +
   geom_sf(aes(geometry = drc_01$geometry), alpha = 0) + 
   geom_sf(aes(geometry = uga_01$geometry), alpha = 0) +
   geom_sf(aes(geometry = uga_00$geometry), size = 2, fill = alpha("red",0)) +
-  # geom_text(data = uga_drc,
-  #   position = "identity", x = 29.5, y = 3.15, label = "DRC")  + 
-  # geom_text(data = uga_drc,
-  #           position = "identity", x = 31.25, y = 3.15, label = "Uganda") +
-  xlim(29,31.5) + ylim(0.5,3.10) + theme_void()
-plot_1
+  xlim(29.12,31.38) + ylim(0.61,2.88) + theme_void() +
+  theme(plot.margin = unit(c(1,1,1,0.15), "cm"))
 
-plot_2 = ggplot() + geom_sf(aes(fill = b.join.1$fatalities, geometry = b.join.1$prio_geometry)) +
-  scale_fill_viridis_c(option = "plasma", limits=c(0,2050)) +
-  labs("Fatalities") +
-  geom_sf(aes(geometry = drc_01$geometry), alpha = 0) + 
-  geom_sf(aes(geometry = uga_01$geometry), alpha = 0) +
-  geom_sf(aes(geometry = uga_00$geometry), size = 2, fill = alpha("red",0)) +
-  geom_text(data = uga_drc, fontface = "bold",
-            position = "identity", x = 29.5, y = 3.10, label = "DRC")  + 
-  geom_text(data = uga_drc, fontface = "bold",
-            position = "identity", x = 31.25, y = 3.10, label = "Uganda") +
-  xlim(29,31.5) + ylim(0.5,3.10) + theme_void()
-
-plot_3 = ggplot() + geom_sf(aes(fill = b.join.2$fatalities, geometry = b.join.2$prio_geometry)) +
+#plot_2 = 
+  ggplot() + geom_sf(aes(fill = b.join.1$fatalities, geometry = b.join.1$prio_geometry)) +
   scale_fill_viridis_c(option = "plasma", limits=c(0,2050)) +
   geom_sf(aes(geometry = drc_01$geometry), alpha = 0) + 
   geom_sf(aes(geometry = uga_01$geometry), alpha = 0) +
   geom_sf(aes(geometry = uga_00$geometry), size = 2, fill = alpha("red",0)) +
-  # geom_text(data = uga_drc,
-  #           position = "identity", x = 29.5, y = 3.15, label = "DRC")  + 
-  # geom_text(data = uga_drc,
-  #           position = "identity", x = 31.25, y = 3.15, label = "Uganda") +
-  xlim(29,31.5) + ylim(0.5,3.10) + theme_void()
+  xlim(29.12,31.38) + ylim(0.61,2.88) + theme_void() +
+  theme(plot.margin = unit(c(1,1,1,0.15), "cm")) +
+  labs(color ="Fatalities")
+
+plot_3 = 
+  ggplot() + geom_sf(aes(fill = b.join.2$fatalities, geometry = b.join.2$prio_geometry)) +
+  scale_fill_viridis_c(option = "plasma", limits=c(0,2050)) +
+  geom_sf(aes(geometry = drc_01$geometry), alpha = 0) + 
+  geom_sf(aes(geometry = uga_01$geometry), alpha = 0) +
+  geom_sf(aes(geometry = uga_00$geometry), size = 2, fill = alpha("red",0)) +
+  xlim(29.12,31.38) + ylim(0.61,2.88) + theme_void() +
+  theme(plot.margin = unit(c(1,1,1,0.15), "cm"))
+
+# try extracting legend and attaching in Latex? first put legend on bottom of plot, then extract
 
 
-# see here: https://rpkgs.datanovia.com/ggpubr/reference/ggarrange.html
+# see here: https://stackoverflow.com/questions/59162865/how-to-edit-common-legend-title-in-ggarrange
 # pdf("./results/violence_over_time.pdf")
-ggarrange(plot_1, plot_2, plot_3,
-                     ncol = 3, nrow = 1, 
-                     common.legend = TRUE, legend = "bottom")
+ggarrange(plot_1, plot_2, plot_3, 
+          ncol = 3, nrow = 1, 
+          labels = c("DRC", "Uganda"), label.x = c(1.0, 0.55), vjust = c(7.3, 7.3),
+          common.legend = TRUE, legend = "bottom", font.label = list(size = 13))
 dev.off()
 
 rm(list = ls())
@@ -328,285 +329,6 @@ plot_pko = ggplot(data = df) + geom_sf(aes(fill = pko_deployed, geometry = geome
 plot_pko
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# let's add a plot of Mali to check #
-a.min = subset(a, country == "Mali")
-table(a.min$fatalities)
-
-a.min1 = a.min %>%
-  group_by(prio.grid) %>%
-  summarize(v = sum(fatalities))
-
-aa = merge(x = a.min[, c("prio.grid", "geometry")], y = a.min1, by = "prio.grid")
-#aa$v[aa$v == 0] <- NA
-
-plot_1 = ggplot(data = aa) + geom_sf(aes(fill = v, geometry = geometry)) +
-  scale_fill_viridis_c(option = "plasma") + labs(fill = "Violent events")
-
-pdf("../results/mali_violent_events_prio.pdf")
-plot_1
-dev.off()
-
-a.min2 = a.min %>%
-  group_by(prio.grid) %>%
-  summarize(v = sum(pko_deployed))
-
-aa2 = merge(x = a.min[, c("prio.grid", "geometry")], y = a.min2, by = "prio.grid")
-# aa2$v[aa2$v == 0] <- NA
-
-plot_3 = ggplot(data = aa2) + geom_sf(aes(fill = v, geometry = geometry)) +
-  scale_fill_viridis_c(option = "plasma") + labs(fill = "Peacekeepers")
-
-pdf("../results/mali_pks_prio.pdf")
-plot_3
-dev.off()
-
-
-
-### Aggregate PK & PKO locations w/ violence and violent events ###
-
-a.min = subset(a, country == "Mali")
-table(a.min$fatalities)
-
-a.min1 = a.min %>%
-  group_by(prio.grid) %>%
-  summarize(v = sum(fatalities))
-
-aa = merge(x = a.min[, c("prio.grid", "geometry")], y = a.min1, by = "prio.grid")
-aa$v[aa$v == 0] <- NA
-
-plot_1 = ggplot(data = aa) + geom_sf(aes(fill = v, geometry = geometry)) +
-  scale_fill_viridis_c(option = "plasma") + labs(fill = "Fatalities")
-
-pdf("../results/plot_1.pdf")
-plot_1
-dev.off()
-
-
-
-table(a.min$t_ind)
-a.min2 = a.min %>%
-  group_by(prio.grid) %>%
-  summarize(v = sum(t_ind))
-
-aa1 = merge(x = a.min[, c("prio.grid", "geometry")], y = a.min2, by = "prio.grid")
-aa1$v[aa1$v == 0] <- NA
-
-plot_2 = ggplot(data = aa1) + geom_sf(aes(fill = v, geometry = geometry)) +
-  scale_fill_viridis_c(option = "plasma") + labs(fill = "PKO")
-
-pdf("../results/plot_2.pdf")
-plot_2
-dev.off()
-
-
-a.min2 = a.min %>%
-  group_by(prio.grid) %>%
-  summarize(v = sum(pko_deployed))
-
-aa2 = merge(x = a.min[, c("prio.grid", "geometry")], y = a.min2, by = "prio.grid")
-aa2$v[aa2$v == 0] <- NA
-
-plot_3 = ggplot(data = aa2) + geom_sf(aes(fill = v, geometry = geometry)) +
-  scale_fill_viridis_c(option = "plasma") + labs(fill = "Peacekeepers")
-
-pdf("../results/plot_3.pdf")
-plot_3
-dev.off()
-
-
-a.min3 = a.min %>%
-  group_by(prio.grid) %>%
-  summarize(v = sum(event))
-
-aa3 = merge(x = a.min[, c("prio.grid", "geometry")], y = a.min3, by = "prio.grid")
-aa3$v[aa3$v == 0] <- NA
-
-plot_4 = ggplot(data = aa3) + geom_sf(aes(fill = v, geometry = geometry)) +
-  scale_fill_viridis_c(option = "plasma") + labs(fill = "Violent Events")
-
-pdf("../results/plot_4.pdf")
-plot_4
-dev.off()
-
-# gg.all = ggarrange(plot_1, 
-#                    ggarrange(plot_2, plot_3, labels = c("Presence of PKO (Binary Count)", "Presence of PKs (Total)")),
-#                    nrow = 2, labels = "Fatalities")
-# mali.plot = annotate_figure(
-#   gg.all,
-#   top = text_grob("Visualizing the Overlap of PKOs & Violence in Mali",
-#                   color = "blue", face = "bold", size = 14),
-#   bottom = text_grob("Data source: \n ACLED & RADPKO", color = "blue",
-#                      hjust = 1, x = 1, face = "italic", size = 10),
-#   left = text_grob("Fig arranged using ggpubr",
-#                    color = "black", rot = 90),
-#   fig.lab = "Figure 1", fig.lab.face = "bold"
-# )
-
-# mali.plot
-
-
-
-### Time-series plots of MINUSMA ###
-#subset
-a.una = subset(a, country == "Democratic Republic of Congo") 
-
-
-tapply(a.una$fatalities, a.una$date, sum)
-
-# dates to subset for MINUSMA: 2017-06-01 2017-07-01 2017-08-01 2017-09-01
-a.min.02 = subset(a.una, date == "2017-02-01")
-a.min.03 = subset(a.una, date == "2017-03-01")
-a.min.04 = subset(a.una, date == "2017-04-01")
-a.min.05 = subset(a.una, date == "2017-05-01")
-
-
-## 2017-02-01 ##
-a.min.02.ft = a.min.02 %>%
-  group_by(prio.grid) %>%
-  summarize(v = sum(fatalities))
-
-aa4 = merge(x = a.una[, c("prio.grid", "geometry")], y = a.min.02.ft, by = "prio.grid")
-aa4$v[aa4$v == 0] <- NA
-
-plot_5 = ggplot(data = aa4) + geom_sf(aes(fill = v, geometry = geometry)) +
-  scale_fill_viridis_c(option = "plasma") + labs(fill = "Fatalities")
-
-pdf("../results/plot_5.pdf")
-plot_5
-dev.off()
-
-
-a.min.02.pk = a.min.02 %>%
-  group_by(prio.grid) %>%
-  summarize(v = sum(pko_deployed))
-
-aa5 = merge(x = a.una[, c("prio.grid", "geometry")], y = a.min.02.pk, by = "prio.grid")
-aa5$v[aa5$v == 0] <- NA
-
-plot_6 = ggplot(data = aa5) + geom_sf(aes(fill = v, geometry = geometry)) +
-  scale_fill_viridis_c(option = "plasma") + labs(fill = "Peacekeepers")
-
-pdf("../results/plot_6.pdf")
-plot_6
-dev.off()
-
-
-## 2017-03-01 ##
-
-a.min.03.ft = a.min.03 %>%
-  group_by(prio.grid) %>%
-  summarize(v = sum(fatalities))
-
-aa6 = merge(x = a.una[, c("prio.grid", "geometry")], y = a.min.03.ft, by = "prio.grid")
-aa6$v[aa6$v == 0] <- NA
-
-plot_7 = ggplot(data = aa6) + geom_sf(aes(fill = v, geometry = geometry)) +
-  scale_fill_viridis_c(option = "plasma") + labs(fill = "Fatalities")
-
-pdf("../results/plot_7.pdf")
-plot_7
-dev.off()
-
-
-a.min.03.pk = a.min.03 %>%
-  group_by(prio.grid) %>%
-  summarize(v = sum(pko_deployed))
-
-aa7 = merge(x = a.una[, c("prio.grid", "geometry")], y = a.min.03.pk, by = "prio.grid")
-aa7$v[aa7$v == 0] <- NA
-
-plot_8 = ggplot(data = aa7) + geom_sf(aes(fill = v, geometry = geometry)) +
-  scale_fill_viridis_c(option = "plasma") + labs(fill = "Peacekeepers")
-
-pdf("../results/plot_8.pdf")
-plot_8
-dev.off()
-
-
-## 2017-04-01 ##
-
-a.min.04.ft = a.min.04 %>%
-  group_by(prio.grid) %>%
-  summarize(v = sum(fatalities))
-
-aa8 = merge(x = a.una[, c("prio.grid", "geometry")], y = a.min.04.ft, by = "prio.grid")
-aa8$v[aa8$v == 0] <- NA
-
-plot_9 = ggplot(data = aa8) + geom_sf(aes(fill = v, geometry = geometry)) +
-  scale_fill_viridis_c(option = "plasma") + labs(fill = "Fatalities")
-
-pdf("../results/plot_9.pdf")
-plot_9
-dev.off()
-
-
-a.min.04.pk = a.min.04 %>%
-  group_by(prio.grid) %>%
-  summarize(v = sum(pko_deployed))
-
-aa9 = merge(x = a.una[, c("prio.grid", "geometry")], y = a.min.04.pk, by = "prio.grid")
-aa9$v[aa9$v == 0] <- NA
-
-plot_10 = ggplot(data = aa9) + geom_sf(aes(fill = v, geometry = geometry)) +
-  scale_fill_viridis_c(option = "plasma") + labs(fill = "Peacekeepers")
-
-pdf("../results/plot_10.pdf")
-plot_10
-dev.off()
-
-
-## 2017-05-01 ##
-
-a.min.05.ft = a.min.05 %>%
-  group_by(prio.grid) %>%
-  summarize(v = sum(fatalities))
-
-aa10 = merge(x = a.una[, c("prio.grid", "geometry")], y = a.min.05.ft, by = "prio.grid")
-aa10$v[aa10$v == 0] <- NA
-
-plot_11 = ggplot(data = aa10) + geom_sf(aes(fill = v, geometry = geometry)) +
-  scale_fill_viridis_c(option = "plasma") + labs(fill = "Fatalities")
-
-pdf("../results/plot_11.pdf")
-plot_11
-dev.off()
-
-
-a.min.05.pk = a.min.05 %>%
-  group_by(prio.grid) %>%
-  summarize(v = sum(pko_deployed))
-
-aa11 = merge(x = a.una[, c("prio.grid", "geometry")], y = a.min.05.pk, by = "prio.grid")
-aa11$v[aa11$v == 0] <- NA
-
-plot_12 = ggplot(data = aa11) + geom_sf(aes(fill = v, geometry = geometry)) +
-  scale_fill_viridis_c(option = "plasma") + labs(fill = "Peacekeepers")
-
-pdf("../results/plot_12.pdf")
-plot_12
-dev.off()
 
 
 
