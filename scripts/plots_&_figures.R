@@ -222,8 +222,7 @@ ggarrange(plot_1, plot_2, plot_3,
                      common.legend = TRUE, legend = "bottom")
 dev.off()
 
-
-
+rm(list = ls())
 
 
 
@@ -235,7 +234,6 @@ library(sf)
 library(janitor)
 library(lubridate)
 library(viridis)
-library(hrbrthemes)
 
 a = readRDS("./data/Kunkel-Atkinson-Warner-final.rds") %>%
   as.data.frame()
@@ -247,94 +245,70 @@ df = a %>%
                            acled_fatalities_protests, acled_fatalities_strategic_developments,
                            acled_fatalities_explosions_remote_violence, acled_fatalities_riots))
 
-dd = a %>%
-  group_by(gid) %>%
-  summarize(pko_deployed = sum(radpko_units_deployed), 
-            battle_deaths = sum(acled_fatalities_battles),
-            vac_deaths = sum(acled_fatalities_violence_against_civilians),
-            other_deaths = sum(acled_fatalities_protests, acled_fatalities_strategic_developments,
-                               acled_fatalities_explosions_remote_violence, acled_fatalities_riots))
-
 df$pko_deployed[df$pko_deployed == 0] <- NA
 df$violence[df$violence == 0] <- NA
-dd$pko_deployed[dd$pko_deployed == 0] <- NA
-dd$battle_deaths[dd$battle_deaths == 0] <- NA
-dd$vac_deaths[dd$vac_deaths == 0] <- NA
-dd$other_deaths[dd$other_deaths == 0] <- NA
 
-dd.bat = subset(dd, battle_deaths > 0) %>%
-  select(-c("pko_deployed", "vac_deaths", "other_deaths")) %>%
-  rename(fatalities = battle_deaths)
-dd.bat$death_type = "Battle Deaths"
-dd.vac = subset(dd, vac_deaths > 0) %>%
-  select(-c("pko_deployed", "battle_deaths", "other_deaths")) %>%
-  rename(fatalities = vac_deaths)
-dd.vac$death_type = "Civilian Deaths"
-dd.oth = subset(dd, other_deaths > 0) %>%
-  select(-c("pko_deployed", "vac_deaths", "battle_deaths")) %>%
-  rename(fatalities = other_deaths)
-dd.oth$death_type = "Other Deaths"
+# restructure the data so grids can be duplicated and pko/violence is on the same scale
+df.pk = subset(df, pko_deployed > 0) %>%
+  select(-c("violence")) %>%
+  rename(count = pko_deployed)
+df.pk$ct.type = "Peacekeepers Deployed"
+df.vo = subset(df, violence > 0) %>%
+  select(-c("pko_deployed")) %>%
+  rename(count = violence)
+df.vo$ct.type = "Violent Deaths"
+
 # rejoin to same column
-dd = rbind(dd.bat, dd.vac)
-dd = rbind(dd, dd.oth)
+dd = rbind(df.pk, df.vo)
 
 rm(a)
 gc()
 
 #### MERGE ACLED DATA WITH PRIO GRID IDS #####
-# get prio shapefiles
-prio_shp <- st_read(dsn = "./data/prio", layer = "priogrid_cell",
+prio_shp <- st_read(dsn = "./data/prio", layer = "priogrid_cell", # get prio shapefiles
                     stringsAsFactors = F)
-# get Africa shapefiles
-afr_shp <- st_read(dsn = "./data/gadm/africa", layer = "afr_g2014_2013_0",
+afr_shp <- st_read(dsn = "./data/gadm/africa", layer = "afr_g2014_2013_0", # get Africa shapefiles
                    stringsAsFactors = F)
 
 ### save the CRS
 proj_crs <- st_crs(prio_shp)
 
+# convert, get rid of useless data
 df.prio = left_join(df, prio_shp, by = "gid") %>%
   select(-c(2:7))
-
 df = left_join(df, prio_shp, by = "gid") %>%
   as.data.frame() %>%
   select(-c("geometry", "col", "row"))
 dd_ac = left_join(dd, prio_shp, by = "gid") %>%
   as.data.frame() %>%
   select(-c("geometry", "col", "row"))
-
-#df = st_as_sf(df, coords = c("xcoord", "ycoord"), crs = proj_crs)
 df_ac= df %>%
-  drop_na(violence)
+  drop_na(violence) # drop NAs
 df_pk = df %>%
   drop_na(pko_deployed)
 
 
-
-# plot_dsc = ggplot(data = df) + geom_sf(aes(fill = violence, geometry = geometry)) +
-#   scale_fill_viridis_c(option = "plasma") + labs(fill = "PK Deployments")
-# 
-# pdf("../results/violence_pkos_Africa.pdf")
-# plot_dsc
-# dev.off()
-# 
-# plot_dsc
-
-
-# new plot based on breaking down violence by type
-
-ggplot(data = dd_ac, aes(x=xcoord, y=ycoord, size=fatalities, color=death_type)) +
+ggplot(data = dd_ac, aes(x=xcoord, y=ycoord, size=count, color=ct.type)) +
   geom_point(alpha=0.5) +
-  scale_size(range = c(.1, 24), name="Deaths (M)")
-
+  scale_size(range = c(.1, 24), name="Count") +
+  scale_fill_viridis_c(option="E") +
+  xlab("latitude") +
+  ylab("longitude")
 
 ggplot() + geom_sf(aes(geometry = afr_shp$geometry), fill = NA) + 
-  geom_point(data = dd_ac, aes(x=xcoord, y=ycoord, size=fatalities, color=death_type)) +
-  geom_point(alpha=0.5) +
-  scale_size(range = c(.1, 24), name="Deaths (TH)") +
-  scale_fill_viridis(option="A") +
+  geom_point(data = dd_ac, aes(x=xcoord, y=ycoord, size=count, color=ct.type)) +
+  geom_point(alpha=0.01, shape = 21) +
+  scale_size(range = c(.1, 24), name="Count") +
   xlab("latitude") +
-  ylab("longitude") +
-  theme_ipsum()
+  ylab("longitude")
+
+ggplot() + geom_point(data = dd_ac, aes(x = xcoord, y = ycoord, size=count, color=ct.type)) +
+  scale_size(range = c(.1, 24), name="Count") +
+  geom_point(alpha=0.5, shape = 19)
+
+
+
+
 # this theme from here: https://r-graph-gallery.com/320-the-basis-of-bubble-plot.html
 # isnt plotting correctly because I don't have arial narrow installed, try different theme
 
@@ -343,14 +317,6 @@ ggplot(df.prio) + geom_sf(aes(geometry = geometry), fill = "blue") +
                                          size = violence), colour = "dark green") +
   geom_point(data = df_pk, mapping = aes(x = xcoord, y = ycoord, 
                                          size = pko_deployed), colour = "dark red")
-
-# try scaling
-ggplot(df.prio) + geom_sf(aes(geometry = geometry), fill = "grey") +
-  geom_point(data = df_ac, mapping = aes(x = xcoord, y = ycoord, size = violence), 
-             colour = "dark green", alpha = 0.25) +
-  scale_size(trans = "log")
-
-# trans that work: log, log10, log1p, log2, pseudo_log
 
 
 plot_bat = ggplot(data = df) + geom_sf(aes(fill = fatalities_battles, geometry = geometry)) +
