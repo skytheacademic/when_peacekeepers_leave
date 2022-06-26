@@ -291,46 +291,34 @@ df_ac= df %>%
 df_pk = df %>%
   drop_na(pko_deployed)
 
+# plot of variables as different colors and different shape
 
-ggplot(data = dd_ac, aes(x=xcoord, y=ycoord, size=count, color=ct.type)) +
-  geom_point(alpha=0.5) +
+dsc.1 = ggplot(afr_shp) + geom_sf(aes(geometry = geometry), fill = NA) +
+  geom_point(data = df, aes(x = xcoord, y = ycoord, size=violence, colour = "#e5695b"), alpha=0.4, shape = 17) +
+  geom_point(data = df, aes(x = xcoord, y = ycoord, size=pko_deployed, colour = "#5b92e5"), alpha=0.5, shape = 19) +
+  scale_fill_viridis_c(option="E") +
+  scale_size(range = c(.1, 24), name="Count") +
+  xlab("Latitude") +
+  ylab("Longitude")
+
+dsc.1 + labs(colour = "Variables of Interest") + 
+  scale_color_manual(labels = c("PKs Deployed", "Violence"), values = c("#5b92e5", "#e5695b")) +
+  theme(legend.background = element_rect(color = "black")) + 
+  guides(shape = guide_legend(order = 2),col = guide_legend(order = 1))
+
+
+# plot w/ variables as different colors but same shape
+
+dsc = ggplot(afr_shp) + geom_sf(aes(geometry = geometry), fill = NA) +
+  geom_point(data = dd_ac, aes(x = xcoord, y = ycoord, size=count, color=ct.type), alpha=0.4, shape = 19) +
   scale_size(range = c(.1, 24), name="Count") +
   scale_fill_viridis_c(option="E") +
   xlab("latitude") +
   ylab("longitude")
 
-ggplot() + geom_sf(aes(geometry = afr_shp$geometry), fill = NA) + 
-  geom_point(data = dd_ac, aes(x=xcoord, y=ycoord, size=count, color=ct.type)) +
-  geom_point(alpha=0.01, shape = 21) +
-  scale_size(range = c(.1, 24), name="Count") +
-  xlab("latitude") +
-  ylab("longitude")
+dsc + labs(color = "Variables of Interest")
 
-ggplot() + geom_point(data = dd_ac, aes(x = xcoord, y = ycoord, size=count, color=ct.type)) +
-  scale_size(range = c(.1, 24), name="Count") +
-  geom_point(alpha=0.5, shape = 19)
-
-
-
-
-# this theme from here: https://r-graph-gallery.com/320-the-basis-of-bubble-plot.html
-# isnt plotting correctly because I don't have arial narrow installed, try different theme
-
-ggplot(df.prio) + geom_sf(aes(geometry = geometry), fill = "blue") +
-  geom_point(data = df_ac, mapping = aes(x = xcoord, y = ycoord, 
-                                         size = violence), colour = "dark green") +
-  geom_point(data = df_pk, mapping = aes(x = xcoord, y = ycoord, 
-                                         size = pko_deployed), colour = "dark red")
-
-
-plot_bat = ggplot(data = df) + geom_sf(aes(fill = fatalities_battles, geometry = geometry)) +
-  scale_fill_viridis_c(option = "plasma") + labs(fill = "Violent events")
-plot_bat
-
-plot_pko = ggplot(data = df) + geom_sf(aes(fill = pko_deployed, geometry = geometry)) +
-  scale_fill_viridis_c(option = "plasma") + labs(fill = "Peacekeeper deployment")
-plot_pko
-
+# end of plot
 
 
 
