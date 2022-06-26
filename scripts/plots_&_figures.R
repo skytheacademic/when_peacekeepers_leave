@@ -182,34 +182,38 @@ st_crs(b.join.2) = st_crs(uga_00)
 # Plot of moving violence after PK entrance
 ###############
 
-p_1 = 
+plot_1 = 
   ggplot() + geom_sf(aes(fill = b.join.0$fatalities, geometry = b.join.0$prio_geometry)) +
   scale_fill_viridis_c(option = "plasma", limits=c(0,2050)) +
   geom_sf(aes(geometry = drc_01$geometry), alpha = 0) + 
   geom_sf(aes(geometry = uga_01$geometry), alpha = 0) +
   geom_sf(aes(geometry = uga_00$geometry), size = 2, fill = alpha("red",0)) +
   xlim(29.12,31.38) + ylim(0.61,2.88) + theme_void() +
-  theme(plot.margin = unit(c(1,1,1,0.15), "cm"))
-plot_1 = p_1 + labs(fill = "Fatalities")
-p_2 = 
+  theme(plot.margin = unit(c(1,1,1,0.15), "cm"), legend.position="none")
+
+# p_2 = 
   ggplot() + geom_sf(aes(fill = b.join.1$fatalities, geometry = b.join.1$prio_geometry)) +
   scale_fill_viridis_c(option = "plasma", limits=c(0,2050)) +
   geom_sf(aes(geometry = drc_01$geometry), alpha = 0) + 
   geom_sf(aes(geometry = uga_01$geometry), alpha = 0) +
   geom_sf(aes(geometry = uga_00$geometry), size = 2, fill = alpha("red",0)) +
   xlim(29.12,31.38) + ylim(0.61,2.88) + theme_void() +
-  theme(legend.position="bottom", plot.margin = unit(c(1,1,1,0.15), "cm"), )
-plot_2 = p_2 + labs(fill = "Fatalities")
+  geom_label(label = c("DRC", "Uganda"), x=30, y=2,
+             label.padding = unit(0.55, "lines"), # Rectangle size around label
+             label.size = 0.35, color = "black", fill="#69b3a2") +
+  theme(legend.position="bottom", plot.margin = unit(c(1,1,1,0.15), "cm"))
+plot_2 = p_2 + labs(fill = "Fatalities") 
   
-p_3 = 
+  
+plot_3 = 
   ggplot() + geom_sf(aes(fill = b.join.2$fatalities, geometry = b.join.2$prio_geometry)) +
   scale_fill_viridis_c(option = "plasma", limits=c(0,2050)) +
   geom_sf(aes(geometry = drc_01$geometry), alpha = 0) + 
   geom_sf(aes(geometry = uga_01$geometry), alpha = 0) +
   geom_sf(aes(geometry = uga_00$geometry), size = 2, fill = alpha("red",0)) +
   xlim(29.12,31.38) + ylim(0.61,2.88) + theme_void() +
-  theme(plot.margin = unit(c(1,1,1,0.15), "cm"))
-plot_3 = p_3 + labs(fill = "Fatalities")
+  theme(plot.margin = unit(c(1,1,1,0.15), "cm"), legend.position="none")
+
 
 
 # see here: https://stackoverflow.com/questions/59162865/how-to-edit-common-legend-title-in-ggarrange
@@ -217,7 +221,7 @@ plot_3 = p_3 + labs(fill = "Fatalities")
 ggarrange(plot_1, plot_2, plot_3, 
           ncol = 3, nrow = 1,
           labels = c("DRC", "Uganda"), label.x = c(1.0, 0.55), vjust = c(12.5, 12.5),
-          common.legend = TRUE, legend = "bottom", font.label = list(size = 10))
+          common.legend = FALSE, legend = "bottom", font.label = list(size = 10))
 
 # to adjust legend height and stuff, check this: https://github.com/kassambara/ggpubr/issues/160
 # also might want to just make each plot separately, and then arrange in ggplot
@@ -323,3 +327,9 @@ dsc + labs(color = "Variables of Interest")
 
 
 
+
+
+# Regression Plots #
+# https://seaborn.pydata.org/tutorial/regression.html
+# https://cran.r-project.org/web/packages/ggiraphExtra/vignettes/ggPredict.html
+# https://cran.r-project.org/web/packages/jtools/vignettes/summ.html
