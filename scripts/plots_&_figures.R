@@ -8,55 +8,56 @@ a= as.data.frame(a)
 
 sort(tapply(a$acled_fatalities_violence_against_civilians, a$gid, max))
 
+##### Check highest fatality grids #####
 ### Grid 139387 ###
-a.139387 = subset(a, gid == 139387     | gid == 139387-1   | gid == 139387+1 | 
-                    gid == 139387+720 | gid == 139387+719 | gid == 139387+721 | 
-                    gid == 139387-720 | gid == 139387-719 | gid == 139387-721) #%>%
-relocate(131:137, .after = 12)
-a.139387 = a.139387[order(a.139387$year, a.139387$month, a.139387$gid),]
-
-
-# search for pk presence
-sort(tapply(a$radpko_pko_deployed, a$gid, max))
-
-### Grid 143697 ###
-a.143697 = subset(a, gid == 143697     | gid == 143697-1   | gid == 143697+1 | 
-                    gid == 143697+720 | gid == 143697+719 | gid == 143697+721 | 
-                    gid == 143697-720 | gid == 143697-719 | gid == 143697-721) #%>%
-relocate(131:137, .after = 12)
-a.143697 = a.143697[order(a.143697$year, a.143697$month, a.143697$gid),]
-
-### Grid 141454 ### (not enough violence)
-a.141454 = subset(a, gid == 141454     | gid == 141454-1   | gid == 141454+1 | 
-                    gid == 141454+720 | gid == 141454+719 | gid == 141454+721 | 
-                    gid == 141454-720 | gid == 141454-719 | gid == 141454-721) #%>%
-a.141454 = a.141454[order(a.141454$year, a.141454$month, a.141454$gid),]
-
-### Grid 127139 ### (not enough violence)
-a.127139 = subset(a, gid == 127139     | gid == 127139-1   | gid == 127139+1 | 
-                    gid == 127139+720 | gid == 127139+719 | gid == 127139+721 | 
-                    gid == 127139-720 | gid == 127139-719 | gid == 127139-721) #%>%
-a.127139 = a.127139[order(a.127139$gid, a.127139$year, a.127139$month),]
-
-### Grid 138579 ### (not enough violence)
-a.138579 = subset(a, gid == 138579     | gid == 138579-1   | gid == 138579+1 | 
-                    gid == 138579+720 | gid == 138579+719 | gid == 138579+721 | 
-                    gid == 138579-720 | gid == 138579-719 | gid == 138579-721) #%>%
-a.138579 = a.138579[order(a.138579$gid, a.138579$year, a.138579$month),]
-
-### Grid 149451 ### (not enough violence)
-a.149451 = subset(a, gid == 149451     | gid == 149451-1   | gid == 149451+1 | 
-                    gid == 149451+720 | gid == 149451+719 | gid == 149451+721 | 
-                    gid == 149451-720 | gid == 149451-719 | gid == 149451-721 &
-                    time < 228) #%>%
-a.149451 = a.149451[order(a.149451$gid, a.149451$year, a.149451$month),]
+# a.139387 = subset(a, gid == 139387     | gid == 139387-1   | gid == 139387+1 | 
+#                     gid == 139387+720 | gid == 139387+719 | gid == 139387+721 | 
+#                     gid == 139387-720 | gid == 139387-719 | gid == 139387-721) #%>%
+# relocate(131:137, .after = 12)
+# a.139387 = a.139387[order(a.139387$year, a.139387$month, a.139387$gid),]
+# 
+# 
+# # search for pk presence
+# sort(tapply(a$radpko_pko_deployed, a$gid, max))
+# 
+# ### Grid 143697 ###
+# a.143697 = subset(a, gid == 143697     | gid == 143697-1   | gid == 143697+1 | 
+#                     gid == 143697+720 | gid == 143697+719 | gid == 143697+721 | 
+#                     gid == 143697-720 | gid == 143697-719 | gid == 143697-721) #%>%
+# relocate(131:137, .after = 12)
+# a.143697 = a.143697[order(a.143697$year, a.143697$month, a.143697$gid),]
+# 
+# ### Grid 141454 ### (not enough violence)
+# a.141454 = subset(a, gid == 141454     | gid == 141454-1   | gid == 141454+1 | 
+#                     gid == 141454+720 | gid == 141454+719 | gid == 141454+721 | 
+#                     gid == 141454-720 | gid == 141454-719 | gid == 141454-721) #%>%
+# a.141454 = a.141454[order(a.141454$year, a.141454$month, a.141454$gid),]
+# 
+# ### Grid 127139 ### (not enough violence)
+# a.127139 = subset(a, gid == 127139     | gid == 127139-1   | gid == 127139+1 | 
+#                     gid == 127139+720 | gid == 127139+719 | gid == 127139+721 | 
+#                     gid == 127139-720 | gid == 127139-719 | gid == 127139-721) #%>%
+# a.127139 = a.127139[order(a.127139$gid, a.127139$year, a.127139$month),]
+# 
+# ### Grid 138579 ### (not enough violence)
+# a.138579 = subset(a, gid == 138579     | gid == 138579-1   | gid == 138579+1 | 
+#                     gid == 138579+720 | gid == 138579+719 | gid == 138579+721 | 
+#                     gid == 138579-720 | gid == 138579-719 | gid == 138579-721) #%>%
+# a.138579 = a.138579[order(a.138579$gid, a.138579$year, a.138579$month),]
+# 
+# ### Grid 149451 ### (not enough violence)
+# a.149451 = subset(a, gid == 149451     | gid == 149451-1   | gid == 149451+1 | 
+#                     gid == 149451+720 | gid == 149451+719 | gid == 149451+721 | 
+#                     gid == 149451-720 | gid == 149451-719 | gid == 149451-721 &
+#                     time < 228) #%>%
+# a.149451 = a.149451[order(a.149451$gid, a.149451$year, a.149451$month),]
 
 # potential grids for plotting: 
 # 142978, 2014-5
 # 127139, 2018-1
 
 
-### Grid 132181 ### 
+##### Grid 132181 subset and plotting####
 a.132181 = subset(a, gid == 132181     | gid == 132181-1   | gid == 132181+1 | gid == 132181+2 | gid == 132181-2| 
                     gid == 132181+720 | gid == 132181+719 | gid == 132181+721 | gid == 132181+718 | gid == 132181+722|
                     gid == 132181+1438| gid == 132181+1439| gid == 132181+1440| gid == 132181+1441| gid == 132181+1442|
@@ -76,6 +77,7 @@ library(sf)
 library(ggpubr)
 library(tmap)
 library(tmaptools)
+
 b = as.data.frame(b)
 b$t_ind = 0
 b$t_ind[b$time > 15 & b$time < 50] = 1
@@ -111,9 +113,6 @@ drc_01 <- st_read(dsn = "./data/gadm/drc", layer = "gadm40_COD_1",
 
 # combine UGA and DRC so we can shade in with country names
 uga_drc = rbind(uga_00, drc_00)
-
-
-
 
 st_crs(b.join.0) = st_crs(uga_00)
 st_crs(b.join.1) = st_crs(uga_00)
@@ -179,51 +178,78 @@ st_crs(b.join.2) = st_crs(uga_00)
 
 ################
 
-# Plot of moving violence after PK entrance
-###############
-
+##### Plot of moving violence after PK entrance #####
 plot_1 = 
   ggplot() + geom_sf(aes(fill = b.join.0$fatalities, geometry = b.join.0$prio_geometry)) +
-  scale_fill_viridis_c(option = "plasma", limits=c(0,2050)) +
+  scale_fill_gradient(low = "#ffc4c4", high = "#ff3b3b", space = "Lab", na.value = "grey89",
+                      guide = "colourbar", aesthetics = "fill", limits=c(0,2050)) +
   geom_sf(aes(geometry = drc_01$geometry), alpha = 0) + 
   geom_sf(aes(geometry = uga_01$geometry), alpha = 0) +
   geom_sf(aes(geometry = uga_00$geometry), size = 2, fill = alpha("red",0)) +
   xlim(29.12,31.38) + ylim(0.61,2.88) + theme_void() +
-  theme(plot.margin = unit(c(1,1,1,0.15), "cm"), legend.position="none")
+  theme(plot.margin = unit(c(0,0,0,0), "cm"), legend.position="none")
 
-# p_2 = 
+p_2 = 
   ggplot() + geom_sf(aes(fill = b.join.1$fatalities, geometry = b.join.1$prio_geometry)) +
-  scale_fill_viridis_c(option = "plasma", limits=c(0,2050)) +
+  scale_fill_gradient(low = "#ffc4c4", high = "#ff3b3b", space = "Lab", na.value = "grey89",
+                      guide = "colourbar", aesthetics = "fill", limits=c(0,2050)) +
   geom_sf(aes(geometry = drc_01$geometry), alpha = 0) + 
   geom_sf(aes(geometry = uga_01$geometry), alpha = 0) +
   geom_sf(aes(geometry = uga_00$geometry), size = 2, fill = alpha("red",0)) +
   xlim(29.12,31.38) + ylim(0.61,2.88) + theme_void() +
-  geom_label(label = c("DRC", "Uganda"), x=30, y=2,
-             label.padding = unit(0.55, "lines"), # Rectangle size around label
-             label.size = 0.35, color = "black", fill="#69b3a2") +
-  theme(legend.position="bottom", plot.margin = unit(c(1,1,1,0.15), "cm"))
+  geom_label(aes(x=31.2, y=2.88), label = "Uganda", label.padding = unit(0.55, "lines"),
+                   label.size = 0.35, color = alpha("black", 1), fill="#3bff9d") +
+  geom_label(aes(x=29.8, y=2.88), label = "Democratic Republic of the Congo", 
+             label.padding = unit(0.55, "lines"), label.size = 0.35, color = alpha("black", 1), fill="#3b9dff") +
+  theme(plot.margin = unit(c(0,0,0,0), "cm"), legend.background = element_rect(color = "black"), 
+        legend.position = "bottom", legend.key.size = unit(1.75, 'cm'))
+
 plot_2 = p_2 + labs(fill = "Fatalities") 
-  
-  
+
+##### plot 2 horizontal ####
+# p_2 = 
+#   ggplot() + geom_sf(aes(fill = b.join.1$fatalities, geometry = b.join.1$prio_geometry)) +
+#   scale_fill_gradient(low = "#ffc4c4", high = "#ff3b3b", space = "Lab", na.value = "grey89",
+#                       guide = "colourbar", aesthetics = "fill", limits=c(0,2050)) +
+#   geom_sf(aes(geometry = drc_01$geometry), alpha = 0) + 
+#   geom_sf(aes(geometry = uga_01$geometry), alpha = 0) +
+#   geom_sf(aes(geometry = uga_00$geometry), size = 2, fill = alpha("red",0)) +
+#   xlim(29.12,31.38) + ylim(0.61,2.88) + theme_void() +
+#   geom_label(aes(x=31.2, y=2.88), label = "Uganda", label.padding = unit(0.55, "lines"),
+#              label.size = 0.35, color = alpha("black", 1), fill="#3bff9d") +
+#   geom_label(aes(x=29.8, y=2.88), label = "Democratic Republic of the Congo", 
+#              label.padding = unit(0.55, "lines"), label.size = 0.35, color = alpha("black", 1), fill="#3b9dff") +
+#   theme(plot.margin = unit(c(0,5,0,0.15), "cm"), legend.background = element_rect(color = "black"), 
+#         legend.position = c(1.25, 0.5), legend.key.size = unit(1.75, 'cm'))
+# 
+# plot_2 = p_2 + labs(fill = "Fatalities") 
+
+######
 plot_3 = 
   ggplot() + geom_sf(aes(fill = b.join.2$fatalities, geometry = b.join.2$prio_geometry)) +
-  scale_fill_viridis_c(option = "plasma", limits=c(0,2050)) +
+  scale_fill_gradient(low = "#ffc4c4", high = "#ff3b3b", space = "Lab", na.value = "grey89",
+                      guide = "colourbar", aesthetics = "fill", limits=c(0,2050)) +
   geom_sf(aes(geometry = drc_01$geometry), alpha = 0) + 
   geom_sf(aes(geometry = uga_01$geometry), alpha = 0) +
   geom_sf(aes(geometry = uga_00$geometry), size = 2, fill = alpha("red",0)) +
   xlim(29.12,31.38) + ylim(0.61,2.88) + theme_void() +
-  theme(plot.margin = unit(c(1,1,1,0.15), "cm"), legend.position="none")
+  theme(plot.margin = unit(c(0,0,0,0), "cm"), legend.position="none")
 
+pdf("./results/violence_before.pdf")
+plot_1
+dev.off()
+pdf("./results/violence_during.pdf")
+plot_2
+dev.off()
+pdf("./results/violence_after.pdf")
+plot_3
+dev.off()
 
-
-# see here: https://stackoverflow.com/questions/59162865/how-to-edit-common-legend-title-in-ggarrange
-# pdf("./results/violence_over_time.pdf")
 ggarrange(plot_1, plot_2, plot_3, 
           ncol = 3, nrow = 1,
           labels = c("DRC", "Uganda"), label.x = c(1.0, 0.55), vjust = c(12.5, 12.5),
-          common.legend = FALSE, legend = "bottom", font.label = list(size = 10))
+          common.legend = FALSE, legend = "none", font.label = list(size = 10))
 
-# to adjust legend height and stuff, check this: https://github.com/kassambara/ggpubr/issues/160
 # also might want to just make each plot separately, and then arrange in ggplot
 # in other words, put only the "DRC" and "Uganda" and fatalities scale next to each other
 # in the middle plot. Also, see Zach's messages about colors and stuff
@@ -297,18 +323,25 @@ df_pk = df %>%
 
 # plot of variables as different colors and different shape
 
-dsc.1 = ggplot(afr_shp) + geom_sf(aes(geometry = geometry), fill = NA) +
-  geom_point(data = df, aes(x = xcoord, y = ycoord, size=violence, colour = "#e5695b"), alpha=0.4, shape = 17) +
+dsc.1 = 
+  ggplot(afr_shp) + geom_sf(aes(geometry = geometry), alpha = 0.3,fill = NA) +
+  geom_point(data = df, aes(x = xcoord, y = ycoord, size=violence, colour = "#e5695b"), alpha=0.4, shape = 19) +
   geom_point(data = df, aes(x = xcoord, y = ycoord, size=pko_deployed, colour = "#5b92e5"), alpha=0.5, shape = 19) +
+  geom_sf(data = df.prio, aes(geometry = geometry), alpha = 0.1, fill = NA, size = 0.001) +
   scale_fill_viridis_c(option="E") +
-  scale_size(range = c(.1, 24), name="Count") +
-  xlab("Latitude") +
-  ylab("Longitude")
+  scale_size(range = c(.1, 24), name="Count", labels = c("20,000", "40,000", "60,000"), breaks = c(20000, 40000,60000)) +
+  theme_void()
 
-dsc.1 + labs(colour = "Variables of Interest") + 
+dsc = 
+  dsc.1 + labs(colour = "Variable") + 
   scale_color_manual(labels = c("PKs Deployed", "Violence"), values = c("#5b92e5", "#e5695b")) +
-  theme(legend.background = element_rect(color = "black")) + 
-  guides(shape = guide_legend(order = 2),col = guide_legend(order = 1))
+  theme(legend.background = element_rect(color = "black"), legend.position = c(0.98, 0.55),
+        plot.margin = unit(c(0,3,0,0), "cm")) + 
+  guides(shape = guide_legend(order = 2),col = guide_legend(order = 1), colour = guide_legend(override.aes = list(alpha = 1)))
+
+pdf("./results/desc_plot.pdf")
+dsc
+dev.off()
 
 
 # plot w/ variables as different colors but same shape
