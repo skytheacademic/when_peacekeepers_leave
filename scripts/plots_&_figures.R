@@ -65,8 +65,6 @@ a.132181 = subset(a, gid == 132181     | gid == 132181-1   | gid == 132181+1 | g
 a.132181 = a.132181[order(a.132181$gid, a.132181$year, a.132181$month),]
 rm(a)
 gc()
-# summarize 6 months before PKO entrance, then all violent events during PK presence,
-# then 6 months after PK exit
 
 # PKs enter at time 2000-3 (16)
 # PKs exit at time 2003-2 (50) [AKA, there were 0 PKs at this time in the data]
@@ -184,7 +182,7 @@ st_crs(b.join.2) = st_crs(uga_00)
 # Plot of moving violence after PK entrance
 ###############
 
-plot_1 = 
+p_1 = 
   ggplot() + geom_sf(aes(fill = b.join.0$fatalities, geometry = b.join.0$prio_geometry)) +
   scale_fill_viridis_c(option = "plasma", limits=c(0,2050)) +
   geom_sf(aes(geometry = drc_01$geometry), alpha = 0) + 
@@ -192,18 +190,18 @@ plot_1 =
   geom_sf(aes(geometry = uga_00$geometry), size = 2, fill = alpha("red",0)) +
   xlim(29.12,31.38) + ylim(0.61,2.88) + theme_void() +
   theme(plot.margin = unit(c(1,1,1,0.15), "cm"))
-
-#plot_2 = 
+plot_1 = p_1 + labs(fill = "Fatalities")
+p_2 = 
   ggplot() + geom_sf(aes(fill = b.join.1$fatalities, geometry = b.join.1$prio_geometry)) +
   scale_fill_viridis_c(option = "plasma", limits=c(0,2050)) +
   geom_sf(aes(geometry = drc_01$geometry), alpha = 0) + 
   geom_sf(aes(geometry = uga_01$geometry), alpha = 0) +
   geom_sf(aes(geometry = uga_00$geometry), size = 2, fill = alpha("red",0)) +
   xlim(29.12,31.38) + ylim(0.61,2.88) + theme_void() +
-  theme(plot.margin = unit(c(1,1,1,0.15), "cm")) +
-  labs(color ="Fatalities")
-
-plot_3 = 
+  theme(legend.position="bottom", plot.margin = unit(c(1,1,1,0.15), "cm"), )
+plot_2 = p_2 + labs(fill = "Fatalities")
+  
+p_3 = 
   ggplot() + geom_sf(aes(fill = b.join.2$fatalities, geometry = b.join.2$prio_geometry)) +
   scale_fill_viridis_c(option = "plasma", limits=c(0,2050)) +
   geom_sf(aes(geometry = drc_01$geometry), alpha = 0) + 
@@ -211,16 +209,21 @@ plot_3 =
   geom_sf(aes(geometry = uga_00$geometry), size = 2, fill = alpha("red",0)) +
   xlim(29.12,31.38) + ylim(0.61,2.88) + theme_void() +
   theme(plot.margin = unit(c(1,1,1,0.15), "cm"))
-
-# try extracting legend and attaching in Latex? first put legend on bottom of plot, then extract
+plot_3 = p_3 + labs(fill = "Fatalities")
 
 
 # see here: https://stackoverflow.com/questions/59162865/how-to-edit-common-legend-title-in-ggarrange
 # pdf("./results/violence_over_time.pdf")
 ggarrange(plot_1, plot_2, plot_3, 
-          ncol = 3, nrow = 1, 
-          labels = c("DRC", "Uganda"), label.x = c(1.0, 0.55), vjust = c(7.3, 7.3),
-          common.legend = TRUE, legend = "bottom", font.label = list(size = 13))
+          ncol = 3, nrow = 1,
+          labels = c("DRC", "Uganda"), label.x = c(1.0, 0.55), vjust = c(12.5, 12.5),
+          common.legend = TRUE, legend = "bottom", font.label = list(size = 10))
+
+# to adjust legend height and stuff, check this: https://github.com/kassambara/ggpubr/issues/160
+# also might want to just make each plot separately, and then arrange in ggplot
+# in other words, put only the "DRC" and "Uganda" and fatalities scale next to each other
+# in the middle plot. Also, see Zach's messages about colors and stuff
+
 dev.off()
 
 rm(list = ls())
