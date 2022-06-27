@@ -265,10 +265,6 @@ plot_3
 dev.off()
 
 
-# also might want to just make each plot separately, and then arrange in ggplot
-# in other words, put only the "DRC" and "Uganda" and fatalities scale next to each other
-# in the middle plot. Also, see Zach's messages about colors and stuff
-
 dev.off()
 
 rm(list = ls())
