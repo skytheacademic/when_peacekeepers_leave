@@ -189,7 +189,22 @@ plot_1 =
   xlim(29.12,31.38) + ylim(0.61,2.88) + theme_void() +
   theme(plot.margin = unit(c(0,0,0,0), "cm"), legend.position="none")
 
-p_2 = 
+plot_2 = 
+  ggplot() + geom_sf(aes(fill = b.join.1$fatalities, geometry = b.join.1$prio_geometry)) +
+  scale_fill_gradient(low = "#ffc4c4", high = "#ff3b3b", space = "Lab", na.value = "grey89",
+                      guide = "colourbar", aesthetics = "fill", limits=c(0,2050)) +
+  geom_sf(aes(geometry = drc_01$geometry), alpha = 0) + 
+  geom_sf(aes(geometry = uga_01$geometry), alpha = 0) +
+  geom_sf(aes(geometry = uga_00$geometry), size = 2, fill = alpha("red",0)) +
+  xlim(29.12,31.38) + ylim(0.61,2.88) + theme_void() +
+  theme(plot.margin = unit(c(0,0,0,0), "cm"), legend.position="none") + 
+  geom_label(aes(x=31.2, y=2.88), label = "Uganda", label.padding = unit(0.55, "lines"),
+             label.size = 0.35, color = alpha("black", 1), fill="#3bff9d") +
+  geom_label(aes(x=29.8, y=2.88), label = "Democratic Republic of the Congo", 
+             label.padding = unit(0.55, "lines"), label.size = 0.35, color = alpha("black", 1), fill="#3b9dff")
+
+
+legend = 
   ggplot() + geom_sf(aes(fill = b.join.1$fatalities, geometry = b.join.1$prio_geometry)) +
   scale_fill_gradient(low = "#ffc4c4", high = "#ff3b3b", space = "Lab", na.value = "grey89",
                       guide = "colourbar", aesthetics = "fill", limits=c(0,2050)) +
@@ -198,15 +213,16 @@ p_2 =
   geom_sf(aes(geometry = uga_00$geometry), size = 2, fill = alpha("red",0)) +
   xlim(29.12,31.38) + ylim(0.61,2.88) + theme_void() +
   geom_label(aes(x=31.2, y=2.88), label = "Uganda", label.padding = unit(0.55, "lines"),
-                   label.size = 0.35, color = alpha("black", 1), fill="#3bff9d") +
+                   label.size = 0.5, color = alpha("black", 1), fill="#3bff9d") +
   geom_label(aes(x=29.8, y=2.88), label = "Democratic Republic of the Congo", 
-             label.padding = unit(0.55, "lines"), label.size = 0.35, color = alpha("black", 1), fill="#3b9dff") +
+             label.padding = unit(1, "lines"), label.size = 0.35, color = alpha("black", 1), fill="#3b9dff") + 
   theme(plot.margin = unit(c(0,0,0,0), "cm"), legend.background = element_rect(color = "black"), 
-        legend.position = "bottom", legend.key.size = unit(1.75, 'cm'))
+        legend.position = "bottom", legend.key.size = unit(1.75, 'cm'), legend.margin=margin(c(5,5,5,5)))
+plot_2.1 = legend + labs(fill = "Fatalities")  
 
-plot_2 = p_2 + labs(fill = "Fatalities") 
+gg_legend = as_ggplot(get_legend(plot_2.1))
 
-##### plot 2 horizontal ####
+##### plot 2 vertical ####
 # p_2 = 
 #   ggplot() + geom_sf(aes(fill = b.join.1$fatalities, geometry = b.join.1$prio_geometry)) +
 #   scale_fill_gradient(low = "#ffc4c4", high = "#ff3b3b", space = "Lab", na.value = "grey89",
@@ -241,14 +257,13 @@ dev.off()
 pdf("./results/violence_during.pdf")
 plot_2
 dev.off()
+pdf("./results/violence_legend.pdf")
+gg_legend
+dev.off()
 pdf("./results/violence_after.pdf")
 plot_3
 dev.off()
 
-ggarrange(plot_1, plot_2, plot_3, 
-          ncol = 3, nrow = 1,
-          labels = c("DRC", "Uganda"), label.x = c(1.0, 0.55), vjust = c(12.5, 12.5),
-          common.legend = FALSE, legend = "none", font.label = list(size = 10))
 
 # also might want to just make each plot separately, and then arrange in ggplot
 # in other words, put only the "DRC" and "Uganda" and fatalities scale next to each other
@@ -327,7 +342,7 @@ dsc.1 =
   ggplot(afr_shp) + geom_sf(aes(geometry = geometry), alpha = 0.3,fill = NA) +
   geom_point(data = df, aes(x = xcoord, y = ycoord, size=violence, colour = "#e5695b"), alpha=0.4, shape = 19) +
   geom_point(data = df, aes(x = xcoord, y = ycoord, size=pko_deployed, colour = "#5b92e5"), alpha=0.5, shape = 19) +
-  geom_sf(data = df.prio, aes(geometry = geometry), alpha = 0.1, fill = NA, size = 0.001) +
+#  geom_sf(data = df.prio, aes(geometry = geometry), alpha = 0.1, fill = NA, size = 0.001) +
   scale_fill_viridis_c(option="E") +
   scale_size(range = c(.1, 24), name="Count", labels = c("20,000", "40,000", "60,000"), breaks = c(20000, 40000,60000)) +
   theme_void()
@@ -335,9 +350,10 @@ dsc.1 =
 dsc = 
   dsc.1 + labs(colour = "Variable") + 
   scale_color_manual(labels = c("PKs Deployed", "Violence"), values = c("#5b92e5", "#e5695b")) +
-  theme(legend.background = element_rect(color = "black"), legend.position = c(0.98, 0.55),
-        plot.margin = unit(c(0,3,0,0), "cm")) + 
-  guides(shape = guide_legend(order = 2),col = guide_legend(order = 1), colour = guide_legend(override.aes = list(alpha = 1)))
+  theme(legend.background = element_rect(color = "black"), legend.position = c(0.25, 0.3),
+        plot.margin = unit(c(0,0,0,0), "cm"), legend.margin=margin(c(5,5,5,5)), 
+        legend.key.size = unit(0.2, 'cm')) + 
+  guides(shape = guide_legend(order = 1),col = guide_legend(order = 2), legend.direction="vertical")
 
 pdf("./results/desc_plot.pdf")
 dsc
