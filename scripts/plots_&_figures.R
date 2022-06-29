@@ -374,7 +374,36 @@ dsc + labs(color = "Variables of Interest")
 
 
 
-# Regression Plots #
-# https://seaborn.pydata.org/tutorial/regression.html
-# https://cran.r-project.org/web/packages/ggiraphExtra/vignettes/ggPredict.html
-# https://cran.r-project.org/web/packages/jtools/vignettes/summ.html
+######################
+# Clean data, subset to data size that won't crash my machine, then figure out DiD plot #
+
+library(ggplot2)
+library(tidyverse)
+library(sf)
+library(janitor)
+library(lubridate)
+library(viridis)
+library(did)
+setwd("~/GitHub/when_peacekeepers_leave")
+a = readRDS("./data/Kunkel-Atkinson-Warner-final.rds") %>%
+  as.data.frame() %>%
+  select(-c(7,8,16:130, "first_treated.y", "post_treatment.y")) %>%
+  rename(first_treated = first_treated.x, post_treatment = post_treatment.x)
+gc()
+
+
+
+out2 <- att_gt(yname = "acled_fatalities_any", 
+               tname = "time", idname = "gid", 
+               gname = "first_treated", data = a, pl = T, cores = 6)
+es2 <- aggte(out2, type = "group")
+summary(es2)
+
+
+
+### model where the outcome is Pr(fatalties)
+out7 <- att_gt(yname = "neighbor_fatalities_any", tname = "time", idname = "gid", 
+               gname = "first_treated", data = df, pl = T, cores = 6)
+es7 <- aggte(out7, type = "group")
+summary(es7)
+rm(out7, es7)
