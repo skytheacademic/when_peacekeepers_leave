@@ -392,18 +392,56 @@ a = readRDS("./data/Kunkel-Atkinson-Warner-final.rds") %>%
 gc()
 
 
+# same grid
+# PK arrival/presence
 
 out2 <- att_gt(yname = "acled_fatalities_any", 
                tname = "time", idname = "gid", 
                gname = "first_treated", data = a, pl = T, cores = 6)
 es2 <- aggte(out2, type = "group")
+saveRDS(es2, "./results/es2.RDS")
 summary(es2)
+pdf("./results/PR_fatalities.pdf")
+ggdid(es2)
+dev.off()
+pdf("./results/PR_fatalities.pdf")
+ggdid(es2.1, theming = FALSE) + theme_light()
+ggplot(d)
+
+dev.off()
+
+# here we see an increase in violence when PKs arrive; because data is agg. at month level,
+# this could mean that PKs arrive, hurt rebels, who then have to hurt civilians more to 
+# extract resources from population, esp. since they don't have the usual mechanisms of a state
+# plot can also be explained as, we don't see any v
+
+# If your confidence interval for a difference between groups includes zero, that means that 
+# if you run your experiment again you have a good chance of finding no difference between 
+# groups.
+
+# PK Leaving
+out4 <- att_gt(yname = "acled_fatalities_any", 
+               tname = "time", idname = "gid", 
+               gname = "first_treated_leave", data = df, pl = T, cores = 6)
+es4 <- aggte(out4, type = "group")
 
 
-
-### model where the outcome is Pr(fatalties)
+# Neighboring grids:
+# Cells: neighbor cells. IV: PKO presence. DV: Pr(fatalities). ATT = 0.07, significant
 out7 <- att_gt(yname = "neighbor_fatalities_any", tname = "time", idname = "gid", 
                gname = "first_treated", data = df, pl = T, cores = 6)
 es7 <- aggte(out7, type = "group")
 summary(es7)
 rm(out7, es7)
+
+# Cells: neighbor cells. IV: PKO leaving.  DV: fatalities.     ATT = -6.50, significant
+
+out11 <- att_gt(yname = "neighbor_fatalities_all", 
+                tname = "time", idname = "gid", 
+                gname = "first_treated_leave", data = df, pl = T, cores = 6)
+es11 <- aggte(out11, type = "group")
+summary(es11)
+rm(out11, es11)
+
+
+
