@@ -384,10 +384,11 @@ library(janitor)
 library(lubridate)
 library(viridis)
 library(did)
+library(ggthemes)
 setwd("~/GitHub/when_peacekeepers_leave")
 a = readRDS("./data/Kunkel-Atkinson-Warner-final.rds") %>%
   as.data.frame() %>%
-  select(-c(7,8,16:130, "first_treated.y", "post_treatment.y")) %>%
+  select(-c(7,8,19:130)) %>%
   rename(first_treated = first_treated.x, post_treatment = post_treatment.x)
 gc()
 
@@ -422,7 +423,7 @@ dev.off()
 # PK Leaving
 out4 <- att_gt(yname = "acled_fatalities_any", 
                tname = "time", idname = "gid", 
-               gname = "first_treated_leave", data = df, pl = T, cores = 6)
+               gname = "first_treated_leave", data = a, pl = T, cores = 6)
 es4 <- aggte(out4, type = "group")
 
 
@@ -433,15 +434,24 @@ out7 <- att_gt(yname = "neighbor_fatalities_any", tname = "time", idname = "gid"
 es7 <- aggte(out7, type = "group")
 summary(es7)
 rm(out7, es7)
+saveRDS(es7, "./results/es7.RDS")
+
+es7 = readRDS("./results/es7.RDS")
+es7.t = tidy(es7)
+
+pdf("./results/neighbor_death_presence.pdf")
+ggdid(es7,theming = FALSE, title = " ") +
+  geom_point(colour = "#CC0000") +
+  theme_few() + theme(legend.position = "none") + scale_colour_few("Medium")
+dev.off()
+# scale color manual? https://www.rdocumentation.org/packages/ggthemes/versions/3.5.0/topics/scale_colour_few
 
 # Cells: neighbor cells. IV: PKO leaving.  DV: fatalities.     ATT = -6.50, significant
-
 out11 <- att_gt(yname = "neighbor_fatalities_all", 
                 tname = "time", idname = "gid", 
                 gname = "first_treated_leave", data = df, pl = T, cores = 6)
 es11 <- aggte(out11, type = "group")
 summary(es11)
 rm(out11, es11)
-
 
 
