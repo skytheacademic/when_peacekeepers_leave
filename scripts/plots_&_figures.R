@@ -392,7 +392,39 @@ a = readRDS("./data/Kunkel-Atkinson-Warner-final.rds") %>%
   rename(first_treated = first_treated.x, post_treatment = post_treatment.x)
 gc()
 
-
+dd <- a %>% as.data.frame() %>% select(gid, time, radpko_pko_deployed_any)
+dd <- split(dd, f = dd$gid)
+dd <- lapply(dd, FUN = function(x){
+  x$l_pko <- lag(x$radpko_pko_deployed_any, 1)
+  y <- x[which(x$radpko_pko_deployed_any == 0 & x$l_pko == 1),]
+  # create a "first treated" variable. needs to be 0 for untreated
+  x$first_treated_leave <- ifelse(nrow(y) == 0, 0, min(y$time))
+  # create a "post treated" variable. needs to be 0 until treatment then 1
+  x$post_treatment_leave <- ifelse(x$first_treated != 0 & 
+                                     x$time >= x$first_treated, 
+                                   1, 0)
+  # create a "treated" variable. needs to be 0 if control and 1 if treated
+  x$treated_leave <- ifelse(sum(x$l_pko, na.rm = T) > 0, 1, 0)
+  x
+})
+dd <- do.call(rbind, dd)
+dd <- dd[,c("gid", "time", "first_treated_leave", "treated_leave", 
+            "post_treatment_leave")]
+a <- left_join(a, dd, by = c("gid", "time"))
+dd = NULL
+gc()
+b = a %>%
+  group_by(gid, time) %>%
+  summarise(neighbor_fatalities_all = sum(neighbor_fatalities_battles, neighbor_fatalities_protests, neighbor_fatalities_strategic_developments,
+                neighbor_fatalities_riots, neighbor_fatalities_explosions_remote_violence, 
+                neighbor_fatalities_violence_against_civilians))
+a = left_join(a, b, by = c("gid", "time"))
+b = NULL
+a = a %>%
+  select(-c(18:20, 32:34))
+gc()
+saveRDS(a, "./data/plot.RDS")
+a = readRDS("./data/plot.RDS")
 # same grid
 # PK arrival/presence
 
@@ -440,8 +472,8 @@ es7 = readRDS("./results/es7.RDS")
 es7.t = tidy(es7)
 
 pdf("./results/neighbor_death_presence.pdf")
-ggdid(es7,theming = FALSE, title = " ") +
-  geom_point(colour = "#CC0000") +
+ggdid(es7,theming = FALSE, title = " ", ylim = c(-4.5,4.5)) +
+  geom_point(shape = 18, colour = "dark green") + geom_errorbarh(color = "red") +
   theme_few() + theme(legend.position = "none") + scale_colour_few("Medium")
 dev.off()
 # scale color manual? https://www.rdocumentation.org/packages/ggthemes/versions/3.5.0/topics/scale_colour_few
@@ -452,6 +484,23 @@ out11 <- att_gt(yname = "neighbor_fatalities_all",
                 gname = "first_treated_leave", data = df, pl = T, cores = 6)
 es11 <- aggte(out11, type = "group")
 summary(es11)
-rm(out11, es11)
+saveRDS(es11, "./results/es11.RDS")
+es11.1 = readRDS("./results/es11.RDS")
+all.equal(es11.1, es11)
+rm(out11, es11.1, a)
+gc()
+
+pdf("./results/neighbor_death_leaving.pdf")
+ggdid(es11,theming = FALSE, title = " ", ylim = c(-4,4)) + geom_errorbarh(color = "white") +
+  geom_point(shape = 18, colour = "red") +
+  theme_few() + theme(legend.position = "none") + scale_colour_few("Light") +
+  geom_errorbarh(color = "black", alpha = 0.3) +
+  coord_cartesian(xlim = c(-2,2))
+
+
+
+
+
+
 
 
