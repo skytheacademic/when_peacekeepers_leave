@@ -272,7 +272,7 @@ rm(list = ls())
 
 
 
-### Descriptive Statistics Plots and Graphs ###
+##### Descriptive Statistics Plots and Graphs #####
 library(ggplot2)
 library(tidyverse)
 library(sf)
@@ -309,7 +309,7 @@ dd = rbind(df.pk, df.vo)
 rm(a)
 gc()
 
-#### MERGE ACLED DATA WITH PRIO GRID IDS #####
+### MERGE ACLED DATA WITH PRIO GRID IDS ###
 prio_shp <- st_read(dsn = "./data/prio", layer = "priogrid_cell", # get prio shapefiles
                     stringsAsFactors = F)
 afr_shp <- st_read(dsn = "./data/gadm/africa", layer = "afr_g2014_2013_0", # get Africa shapefiles
@@ -374,7 +374,7 @@ dsc + labs(color = "Variables of Interest")
 
 
 
-######################
+##### Results Plot #####
 # Clean data, subset to data size that won't crash my machine, then figure out DiD plot #
 
 library(ggplot2)
@@ -386,6 +386,7 @@ library(viridis)
 library(did)
 library(ggthemes)
 setwd("~/GitHub/when_peacekeepers_leave")
+#### Plot data, add treated variables ####
 a = readRDS("./data/Kunkel-Atkinson-Warner-final.rds") %>%
   as.data.frame() %>%
   select(-c(7,8,19:130)) %>%
@@ -424,23 +425,28 @@ a = a %>%
   select(-c(18:20, 32:34))
 gc()
 saveRDS(a, "./data/plot.RDS")
-a = readRDS("./data/plot.RDS")
-# same grid
-# PK arrival/presence
 
+#### Read in plotable data ####
+a = readRDS("./data/plot.RDS")
+
+
+# same grid
+#### Create ES2 ####
+# PK arrival/presence
 out2 <- att_gt(yname = "acled_fatalities_any", 
                tname = "time", idname = "gid", 
                gname = "first_treated", data = a, pl = T, cores = 6)
 es2 <- aggte(out2, type = "group")
 saveRDS(es2, "./results/es2.RDS")
-summary(es2)
-pdf("./results/PR_fatalities.pdf")
-ggdid(es2)
-dev.off()
-pdf("./results/PR_fatalities.pdf")
-ggdid(es2.1, theming = FALSE) + theme_light()
-ggplot(d)
 
+#### Plot ES2 ####
+es2 = readRDS("./results/es2.RDS")
+pdf("./results/es2.pdf")
+ggdid(es2,theming = FALSE, title = " ", ylim = c(-4,4)) + geom_errorbarh(color = "white") +
+  geom_point(shape = 18, colour = "#e5695b") +
+  theme_few() + theme(legend.position = "none") + scale_colour_few("Light") +
+  geom_errorbarh(color = "black", alpha = 0.3) +
+  coord_cartesian(xlim = c(-2,2))
 dev.off()
 
 # here we see an increase in violence when PKs arrive; because data is agg. at month level,
@@ -459,7 +465,18 @@ out4 <- att_gt(yname = "acled_fatalities_any",
 es4 <- aggte(out4, type = "group")
 
 
+#### Plot ES4 ####
+pdf("./results/es4.pdf")
+ggdid(es4,theming = FALSE, title = " ", ylim = c(-4,4)) + geom_errorbarh(color = "white") +
+  geom_point(shape = 18, colour = "#5b92e5") +
+  theme_few() + theme(legend.position = "none") + scale_colour_few("Light") +
+  geom_errorbarh(color = "black", alpha = 0.3) +
+  coord_cartesian(xlim = c(-2,2))
+dev.off()
+
 # Neighboring grids:
+
+#### Build ES7 ####
 # Cells: neighbor cells. IV: PKO presence. DV: Pr(fatalities). ATT = 0.07, significant
 out7 <- att_gt(yname = "neighbor_fatalities_any", tname = "time", idname = "gid", 
                gname = "first_treated", data = df, pl = T, cores = 6)
@@ -468,16 +485,25 @@ summary(es7)
 rm(out7, es7)
 saveRDS(es7, "./results/es7.RDS")
 
+#### Plot ES7 ####
 es7 = readRDS("./results/es7.RDS")
 es7.t = tidy(es7)
 
-pdf("./results/neighbor_death_presence.pdf")
-ggdid(es7,theming = FALSE, title = " ", ylim = c(-4.5,4.5)) +
-  geom_point(shape = 18, colour = "dark green") + geom_errorbarh(color = "red") +
-  theme_few() + theme(legend.position = "none") + scale_colour_few("Medium")
+pdf("./results/es7.pdf")
+ggdid(es7,theming = FALSE, title = " ", ylim = c(-4,4)) + geom_errorbarh(color = "white") +
+  geom_point(shape = 18, colour = "#e5695b") +
+  theme_few() + theme(legend.position = "none") + scale_colour_few("Light") +
+  geom_errorbarh(color = "black", alpha = 0.3) +
+  coord_cartesian(xlim = c(-2,2))
+dev.off()
+
+# ggdid(es7,theming = FALSE, title = " ", ylim = c(-4.5,4.5)) +
+#   geom_point(shape = 18, colour = "dark green") + geom_errorbarh(color = "red") +
+#   theme_few() + theme(legend.position = "none") + scale_colour_few("Medium")
 dev.off()
 # scale color manual? https://www.rdocumentation.org/packages/ggthemes/versions/3.5.0/topics/scale_colour_few
 
+#### Build ES11 ####
 # Cells: neighbor cells. IV: PKO leaving.  DV: fatalities.     ATT = -6.50, significant
 out11 <- att_gt(yname = "neighbor_fatalities_all", 
                 tname = "time", idname = "gid", 
@@ -485,18 +511,20 @@ out11 <- att_gt(yname = "neighbor_fatalities_all",
 es11 <- aggte(out11, type = "group")
 summary(es11)
 saveRDS(es11, "./results/es11.RDS")
-es11.1 = readRDS("./results/es11.RDS")
-all.equal(es11.1, es11)
-rm(out11, es11.1, a)
+rm(es11)
+
+#### Plot ES11 ####
+es11 = readRDS("./results/es11.RDS")
 gc()
 
-pdf("./results/neighbor_death_leaving.pdf")
+
+pdf("./results/es11.pdf")
 ggdid(es11,theming = FALSE, title = " ", ylim = c(-4,4)) + geom_errorbarh(color = "white") +
-  geom_point(shape = 18, colour = "red") +
+  geom_point(shape = 18, colour = "#5b92e5") +
   theme_few() + theme(legend.position = "none") + scale_colour_few("Light") +
   geom_errorbarh(color = "black", alpha = 0.3) +
   coord_cartesian(xlim = c(-2,2))
-
+dev.off()
 
 
 
