@@ -578,6 +578,15 @@ gc()
 saveRDS(a, "./data/plot.RDS")
 
 #### Read in plotable data ####
+library(ggplot2)
+library(tidyverse)
+library(sf)
+library(janitor)
+library(lubridate)
+library(viridis)
+library(did)
+library(ggthemes)
+
 a = readRDS("./data/plot.RDS")
 
 
@@ -612,9 +621,9 @@ dev.off()
 # PK Leaving
 out4 <- att_gt(yname = "acled_fatalities_any", 
                tname = "time", idname = "gid", 
-               gname = "first_treated_leave", data = a, pl = T, cores = 6)
+               gname = "first_treated_leave.x", data = a, pl = T, cores = 6)
 es4 <- aggte(out4, type = "group")
-
+saveRDS(es4, "./results/es4.RDS")
 
 #### Plot ES4 ####
 pdf("./results/es4.pdf")
