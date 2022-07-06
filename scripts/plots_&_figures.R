@@ -39,9 +39,9 @@ sort(tapply(a$acled_fatalities_violence_against_civilians, a$gid, max))
 #                     gid == 127139-720 | gid == 127139-719 | gid == 127139-721) #%>%
 # a.127139 = a.127139[order(a.127139$gid, a.127139$year, a.127139$month),]
 # 
-# ### Grid 138579 ### (not enough violence)
-# a.138579 = subset(a, gid == 138579     | gid == 138579-1   | gid == 138579+1 | 
-#                     gid == 138579+720 | gid == 138579+719 | gid == 138579+721 | 
+### Grid 138579 ### (not enough violence)
+# a.138579 = subset(a, gid == 138579     | gid == 138579-1   | gid == 138579+1 |
+#                     gid == 138579+720 | gid == 138579+719 | gid == 138579+721 |
 #                     gid == 138579-720 | gid == 138579-719 | gid == 138579-721) #%>%
 # a.138579 = a.138579[order(a.138579$gid, a.138579$year, a.138579$month),]
 # 
@@ -57,7 +57,7 @@ sort(tapply(a$acled_fatalities_violence_against_civilians, a$gid, max))
 # 127139, 2018-1
 
 
-##### Grid 132181 subset and plotting####
+##### Grid 132181 subset and cleaning ####
 a.132181 = subset(a, gid == 132181     | gid == 132181-1   | gid == 132181+1 | gid == 132181+2 | gid == 132181-2| 
                     gid == 132181+720 | gid == 132181+719 | gid == 132181+721 | gid == 132181+718 | gid == 132181+722|
                     gid == 132181+1438| gid == 132181+1439| gid == 132181+1440| gid == 132181+1441| gid == 132181+1442|
@@ -92,6 +92,7 @@ b.ag$fatalities[b.ag$fatalities == 0] <- NA
 
 # now join geographic data so we can plot it
 b.join = left_join(b.ag, b)
+b.join$radpko_pko_deployed_any[b.join$radpko_pko_deployed_any == 0] <- NA
 b.join.0 = subset(b.join, t_ind == 0) %>%
   st_as_sf()
 b.join.1 = subset(b.join, t_ind == 1)%>%
@@ -118,9 +119,7 @@ st_crs(b.join.0) = st_crs(uga_00)
 st_crs(b.join.1) = st_crs(uga_00)
 st_crs(b.join.2) = st_crs(uga_00)
 
-
-# below code is useful if plotting all of DRC and Uganda w/ surrounding countries on plot
-######### 
+#### useful if plotting all of DRC and Uganda w/ surrounding countries on plot ####
 
 # read in neighbor shapefiles
 # ago_00 <- st_read(dsn = "./data/gadm/angola", layer = "gadm40_AGO_0", 
@@ -176,8 +175,6 @@ st_crs(b.join.2) = st_crs(uga_00)
 # above plot can be used if we want to have a box over the grids with a country level focus
 
 
-################
-
 ##### Plot of moving violence after PK entrance #####
 plot_1 = 
   ggplot() + geom_sf(aes(fill = b.join.0$fatalities, geometry = b.join.0$prio_geometry)) +
@@ -186,6 +183,7 @@ plot_1 =
   geom_sf(aes(geometry = drc_01$geometry), alpha = 0) + 
   geom_sf(aes(geometry = uga_01$geometry), alpha = 0) +
   geom_sf(aes(geometry = uga_00$geometry), size = 2, fill = alpha("red",0)) +
+  geom_point(data = b.join.0, aes(x = prio_xcoord, y = prio_ycoord, size=radpko_pko_deployed_any), alpha=0.4, shape = 19, colour = "#5b92e5") +
   xlim(29.12,31.38) + ylim(0.61,2.88) + theme_void() +
   theme(plot.margin = unit(c(0,0,0,0), "cm"), legend.position="none")
 
@@ -196,6 +194,7 @@ plot_2 =
   geom_sf(aes(geometry = drc_01$geometry), alpha = 0) + 
   geom_sf(aes(geometry = uga_01$geometry), alpha = 0) +
   geom_sf(aes(geometry = uga_00$geometry), size = 2, fill = alpha("red",0)) +
+  geom_point(data = b.join.1, aes(x = prio_xcoord, y = prio_ycoord, size=radpko_pko_deployed_any), alpha=0.4, shape = 19, colour = "#5b92e5") +
   xlim(29.12,31.38) + ylim(0.61,2.88) + theme_void() +
   theme(plot.margin = unit(c(0,0,0,0), "cm"), legend.position="none") + 
   geom_label(aes(x=31.2, y=2.88), label = "Uganda", label.padding = unit(0.55, "lines"),
@@ -222,6 +221,17 @@ plot_2.1 = legend + labs(fill = "Fatalities")
 
 gg_legend = as_ggplot(get_legend(plot_2.1))
 
+plot_3 = 
+  ggplot() + geom_sf(aes(fill = b.join.2$fatalities, geometry = b.join.2$prio_geometry)) +
+  scale_fill_gradient(low = "#ffc4c4", high = "#ff3b3b", space = "Lab", na.value = "grey89",
+                      guide = "colourbar", aesthetics = "fill", limits=c(0,2050)) +
+  geom_sf(aes(geometry = drc_01$geometry), alpha = 0) + 
+  geom_sf(aes(geometry = uga_01$geometry), alpha = 0) +
+  geom_sf(aes(geometry = uga_00$geometry), size = 2, fill = alpha("red",0)) +
+  geom_point(data = b.join.2, aes(x = prio_xcoord, y = prio_ycoord, size=radpko_pko_deployed_any), alpha=0.4, shape = 19, colour = "#5b92e5") +
+  xlim(29.12,31.38) + ylim(0.61,2.88) + theme_void() +
+  theme(plot.margin = unit(c(0,0,0,0), "cm"), legend.position="none")
+
 ##### plot 2 vertical ####
 # p_2 = 
 #   ggplot() + geom_sf(aes(fill = b.join.1$fatalities, geometry = b.join.1$prio_geometry)) +
@@ -240,17 +250,7 @@ gg_legend = as_ggplot(get_legend(plot_2.1))
 # 
 # plot_2 = p_2 + labs(fill = "Fatalities") 
 
-######
-plot_3 = 
-  ggplot() + geom_sf(aes(fill = b.join.2$fatalities, geometry = b.join.2$prio_geometry)) +
-  scale_fill_gradient(low = "#ffc4c4", high = "#ff3b3b", space = "Lab", na.value = "grey89",
-                      guide = "colourbar", aesthetics = "fill", limits=c(0,2050)) +
-  geom_sf(aes(geometry = drc_01$geometry), alpha = 0) + 
-  geom_sf(aes(geometry = uga_01$geometry), alpha = 0) +
-  geom_sf(aes(geometry = uga_00$geometry), size = 2, fill = alpha("red",0)) +
-  xlim(29.12,31.38) + ylim(0.61,2.88) + theme_void() +
-  theme(plot.margin = unit(c(0,0,0,0), "cm"), legend.position="none")
-
+##### Export Results #####
 pdf("./results/violence_before.pdf")
 plot_1
 dev.off()
@@ -270,7 +270,158 @@ dev.off()
 rm(list = ls())
 
 
+#### Search for violence displacement grid ####
 
+# Search for displacement grids
+library(ggplot2)
+library(dplyr)
+library(tidyverse)
+library(sf)
+library(ggpubr)
+library(tmap)
+library(tmaptools)
+
+a = readRDS("./data/plot.RDS") %>%
+  relocate(c(16,29), .after = 4)
+a1 = subset(a, a$radpko_pko_deployed > 0 & a$neighbor_fatalities_all > 0)
+sort(decreasing = TRUE, tapply(a1$neighbor_fatalities_all, a1$gid, max))
+# a1 grids
+sort(decreasing = TRUE, tapply(a1$neighbor_fatalities_all, a1$gid, max))
+
+# Potential grids
+# Tested unsuccessfully: 111995 150914 151634
+# Not tested:            152354 150915 151636
+rm(list = setdiff(ls(), "a"))
+#### Search for grids w/ violence displacement ####
+
+# 127857
+a.127857 = subset(a, gid == 127857     | gid == 127857-1   | gid == 127857+1 | gid == 127857+2 | gid == 127857-2| 
+                    gid == 127857+720 | gid == 127857+719 | gid == 127857+721 | gid == 127857+718 | gid == 127857+722|
+                    gid == 127857+1438| gid == 127857+1439| gid == 127857+1440| gid == 127857+1441| gid == 127857+1442|
+                    gid == 127857-720 | gid == 127857-719 | gid == 127857-721 | gid == 127857-722 | gid == 127857-718 |
+                    gid == 127857-1442| gid == 127857-1441| gid == 127857-1440| gid == 127857-1439| gid == 127857-1438) #%>%
+a.127857 = a.127857[order(a.127857$gid, a.127857$year, a.127857$month),]
+rm(list = setdiff(ls(), "a.127857"))
+gc()
+
+
+#### Prepare data for grid 127857 plotting ####
+# PKs enter at time 2008-11 (119)
+# PKs exit at time 2009-6 (126) [AKA, there were 0 PKs at this time in the data]
+
+b = subset(a.127857, time < 130 & time > 114)
+b = as.data.frame(b)
+b$t_ind = 0
+b$t_ind[b$time > 118 & b$time < 126] = 1
+b$t_ind[b$time > 125] = 2
+
+
+b.ag = b %>%
+  group_by(t_ind, gid) %>%
+  summarize(fatalities = sum(neighbor_fatalities_all))
+
+b.ag$fatalities[b.ag$fatalities == 0] <- NA
+
+# now join geographic data so we can plot it
+prio_shp <- st_read(dsn = "./data/prio", layer = "priogrid_cell", # get prio shapefiles
+                    stringsAsFactors = F)
+b.join = left_join(b.ag, b)
+b.join = left_join(b.join, prio_shp, by = "gid")
+b.join$radpko_pko_deployed_any[b.join$radpko_pko_deployed_any == 0] <- NA
+b.join.0 = subset(b.join, t_ind == 0) %>%
+  st_as_sf()
+b.join.1 = subset(b.join, t_ind == 1)%>%
+  st_as_sf()
+b.join.2 = subset(b.join, t_ind == 2)%>%
+  st_as_sf()
+
+# read in DRC shapefiles
+drc_00 <- st_read(dsn = "./data/gadm/drc", layer = "gadm40_COD_0", 
+                  stringsAsFactors = F)
+drc_01 <- st_read(dsn = "./data/gadm/drc", layer = "gadm40_COD_1", 
+                  stringsAsFactors = F)
+
+# read in Rwanda shapefiles
+rwa_00 <- st_read(dsn = "./data/gadm/rwanda", layer = "gadm40_RWA_0", 
+                  stringsAsFactors = F)
+rwa_01 <- st_read(dsn = "./data/gadm/rwanda", layer = "gadm40_RWA_1", 
+                  stringsAsFactors = F)
+
+st_crs(b.join.0) = st_crs(drc_00)
+st_crs(b.join.1) = st_crs(drc_00)
+st_crs(b.join.2) = st_crs(drc_00)
+
+#### grid 127857 plotting ####
+
+plot_4 = 
+  ggplot() + geom_sf(aes(fill = b.join.0$fatalities, geometry = b.join.0$geometry)) +
+  scale_fill_gradient(low = "#ffc4c4", high = "#ff3b3b", space = "Lab", na.value = "grey89",
+                      guide = "colourbar", aesthetics = "fill", limits=c(0,1200)) +
+  geom_sf(aes(geometry = drc_01$geometry), alpha = 0) + 
+  geom_sf(aes(geometry = rwa_01$geometry), alpha = 0) +
+  geom_sf(aes(geometry = rwa_00$geometry), size = 2, fill = alpha("red",0)) +
+  xlim(27.112,29.388) + ylim(-2.388,-0.115) + theme_void() +
+  geom_point(data = b.join.0, aes(x = xcoord, y = ycoord, size=radpko_pko_deployed_any), alpha=0.4, shape = 19, colour = "#5b92e5") +
+  theme(plot.margin = unit(c(0,0,0,0), "cm"), legend.position="none")
+
+plot_5 = 
+  ggplot() + geom_sf(aes(fill = b.join.1$fatalities, geometry = b.join.1$geometry)) +
+  scale_fill_gradient(low = "#ffc4c4", high = "#ff3b3b", space = "Lab", na.value = "grey89",
+                      guide = "colourbar", aesthetics = "fill", limits=c(0,1200)) +
+  geom_sf(aes(geometry = drc_01$geometry), alpha = 0) + 
+  geom_sf(aes(geometry = rwa_01$geometry), alpha = 0) +
+  geom_sf(aes(geometry = rwa_00$geometry), size = 2, fill = alpha("red",0)) +
+  xlim(27.112,29.388) + ylim(-2.388,-0.115) + theme_void() +
+  geom_point(data = b.join.1, aes(x = xcoord, y = ycoord, size=radpko_pko_deployed_any), alpha=0.4, shape = 19, colour = "#5b92e5") +
+  geom_label(aes(x=29.33, y=-2.3), label = "Uganda", label.padding = unit(0.55, "lines"),
+             label.size = 0.5, color = alpha("black", 1), fill="#ff9d3b") +
+  geom_label(aes(x=27.93, y=-2.3), label = "Democratic Republic of the Congo", 
+             label.padding = unit(1, "lines"), label.size = 0.35, color = alpha("black", 1), fill="#3b9dff") +
+  theme(plot.margin = unit(c(0,0,0,0), "cm"), legend.position="none")
+  
+
+legend_1 = 
+  ggplot() + geom_sf(aes(fill = b.join.1$fatalities, geometry = b.join.1$geometry)) +
+  scale_fill_gradient(low = "#ffc4c4", high = "#ff3b3b", space = "Lab", na.value = "grey89",
+                      guide = "colourbar", aesthetics = "fill", limits=c(0,1200)) +
+  geom_sf(aes(geometry = drc_01$geometry), alpha = 0) + 
+  geom_sf(aes(geometry = rwa_01$geometry), alpha = 0) +
+  geom_sf(aes(geometry = rwa_00$geometry), size = 2, fill = alpha("red",0)) +
+  theme(plot.margin = unit(c(0,0,0,0), "cm"), legend.background = element_rect(color = "black"), 
+        legend.position = "bottom", legend.key.size = unit(1.75, 'cm'), legend.margin=margin(c(5,10,5,5)))
+plot_5.1 = legend_1 + labs(fill = "Fatalities")  
+
+gg_legend_1 = as_ggplot(get_legend(plot_5.1))
+
+plot_6 = 
+  ggplot() + geom_sf(aes(fill = b.join.2$fatalities, geometry = b.join.2$geometry)) +
+  scale_fill_gradient(low = "#ffc4c4", high = "#ff3b3b", space = "Lab", na.value = "grey89",
+                      guide = "colourbar", aesthetics = "fill", limits=c(0,1200)) +
+  geom_sf(aes(geometry = drc_01$geometry), alpha = 0) + 
+  geom_sf(aes(geometry = rwa_01$geometry), alpha = 0) +
+  geom_sf(aes(geometry = rwa_00$geometry), size = 2, fill = alpha("red",0)) +
+  geom_point(data = b.join.2, aes(x = xcoord, y = ycoord, size=radpko_pko_deployed_any), alpha=0.4, shape = 19, colour = "#5b92e5") +
+  xlim(27.112,29.388) + ylim(-2.388,-0.115) + theme_void() +
+  theme(plot.margin = unit(c(0,0,0,0), "cm"), legend.position="none")
+
+##### Export Results #####
+pdf("./results/neighbor_violence_before.pdf")
+plot_4
+dev.off()
+pdf("./results/neighbor_violence_during.pdf")
+plot_5
+dev.off()
+pdf("./results/neighbor_violence_legend.pdf")
+gg_legend_1
+dev.off()
+pdf("./results/neighbor_violence_after.pdf")
+plot_6
+dev.off()
+
+
+dev.off()
+
+rm(list = ls())
 
 ##### Descriptive Statistics Plots and Graphs #####
 library(ggplot2)
