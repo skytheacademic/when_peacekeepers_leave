@@ -591,7 +591,7 @@ a = readRDS("./data/plot.RDS")
 
 
 # same grid
-#### Create ES2 ####
+#### Build ES2 ####
 # PK arrival/presence
 out2 <- att_gt(yname = "acled_fatalities_any", 
                tname = "time", idname = "gid", 
@@ -606,7 +606,8 @@ ggdid(es2,theming = FALSE, title = " ", ylim = c(-4,4)) + geom_errorbarh(color =
   geom_point(shape = 18, colour = "#e5695b") +
   theme_few() + theme(legend.position = "none") + scale_colour_few("Light") +
   geom_errorbarh(color = "black", alpha = 0.3) +
-  coord_cartesian(xlim = c(-2,2))
+  coord_cartesian(xlim = c(-2,2)) + 
+  scale_y_discrete(breaks = seq(21, 231, by = 8))
 dev.off()
 
 # here we see an increase in violence when PKs arrive; because data is agg. at month level,
@@ -618,6 +619,7 @@ dev.off()
 # if you run your experiment again you have a good chance of finding no difference between 
 # groups.
 
+#### Build ES4 ####
 # PK Leaving
 out4 <- att_gt(yname = "acled_fatalities_any", 
                tname = "time", idname = "gid", 
@@ -626,12 +628,15 @@ es4 <- aggte(out4, type = "group")
 saveRDS(es4, "./results/es4.RDS")
 
 #### Plot ES4 ####
+es4 = readRDS("./results/es4.RDS")
 pdf("./results/es4.pdf")
 ggdid(es4,theming = FALSE, title = " ", ylim = c(-4,4)) + geom_errorbarh(color = "white") +
   geom_point(shape = 18, colour = "#5b92e5") +
   theme_few() + theme(legend.position = "none") + scale_colour_few("Light") +
   geom_errorbarh(color = "black", alpha = 0.3) +
-  coord_cartesian(xlim = c(-2,2))
+  coord_cartesian(xlim = c(-2,2)) + 
+  scale_y_discrete(breaks = seq(21, 231, by = 8))
+
 dev.off()
 
 # Neighboring grids:
@@ -647,14 +652,13 @@ saveRDS(es7, "./results/es7.RDS")
 
 #### Plot ES7 ####
 es7 = readRDS("./results/es7.RDS")
-es7.t = tidy(es7)
-
 pdf("./results/es7.pdf")
 ggdid(es7,theming = FALSE, title = " ", ylim = c(-4,4)) + geom_errorbarh(color = "white") +
   geom_point(shape = 18, colour = "#e5695b") +
   theme_few() + theme(legend.position = "none") + scale_colour_few("Light") +
   geom_errorbarh(color = "black", alpha = 0.3) +
-  coord_cartesian(xlim = c(-2,2))
+  coord_cartesian(xlim = c(-2,2)) + 
+  scale_y_discrete(breaks = seq(21, 231, by = 8))
 dev.off()
 
 # ggdid(es7,theming = FALSE, title = " ", ylim = c(-4.5,4.5)) +
@@ -683,7 +687,8 @@ ggdid(es11,theming = FALSE, title = " ", ylim = c(-4,4)) + geom_errorbarh(color 
   geom_point(shape = 18, colour = "#5b92e5") +
   theme_few() + theme(legend.position = "none") + scale_colour_few("Light") +
   geom_errorbarh(color = "black", alpha = 0.3) +
-  coord_cartesian(xlim = c(-2,2))
+  coord_cartesian(xlim = c(-2,2)) + 
+  scale_y_discrete(breaks = seq(21, 231, by = 8))
 dev.off()
 
 
