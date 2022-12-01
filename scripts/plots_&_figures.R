@@ -2,8 +2,9 @@
 # Sky Kunkel #
 # reading in cleaned data
 setwd("../")
-a = readRDS("./data/Kunkel-Atkinson-Warner-final.rds")
-a= as.data.frame(a)
+library(tidyverse)
+a = read_rds("./data/Kunkel-Atkinson-Warner-final.rds")
+#a= as.data.frame(a)
 # Search for violence data
 
 sort(tapply(a$acled_fatalities_violence_against_civilians, a$gid, max))
@@ -697,3 +698,203 @@ dev.off()
 
 
 
+
+
+#### Plot Parallel Trends ####
+
+
+
+
+
+
+
+df = a
+rm(a)
+df$prio_geometry = NULL
+gc()
+library(ggplot2)
+# first treatment (PKs enter, same violence)
+sort(table(df$first_treated), decreasing = T)
+df$treat_period <- ifelse(df$time < 34, 0, 1)
+df$treat_period2 <- ifelse(df$time < 68, 0, 1) # 68 is the largest set of observations
+df$treat_period3 <- ifelse(df$time < 81, 0, 1) # 81 is also the media of non-0 first_treated observations
+df$treat_period4 <- ifelse(df$time < 112, 0, 1)
+df$treat_period5 <- ifelse(df$time < 167, 0, 1)
+
+data <- df %>% dplyr::group_by(gid) %>% 
+  mutate(
+    density_scaled = scale(acled_fatalities_any)
+  )
+
+data$ever_tl_text <- ifelse(data$first_treated > 0, "Treated", "Not Treated")
+
+## Graph:
+require("ggjoy")
+
+p <- ggplot(data = data, aes(time, density_scaled))
+pdf("./results/pt_pks_enter_same.pdf", 10, 8)
+p + #geom_point(aes(color = factor(ever_tl_text)), alpha = .1, shape = 16) +
+  scale_color_manual(values = c("black", "gray44")) +
+  stat_smooth(data = subset(data, treat_period2 == 0), aes(color = factor(ever_tl_text), linetype = factor(ever_tl_text)), method = "lm", fill = "lightgray") +
+  stat_smooth(data = subset(data, treat_period2 == 1), aes(color = factor(ever_tl_text), linetype = factor(ever_tl_text)), method = "lm", fill = "lightgray") +
+  geom_vline(xintercept = 68) +
+  #  theme_safeskies +
+  ggtitle("Examining Parallel Trends Assumption, Treatment in t-68") + xlab("") + ylab("Pr(Fatalities)") +
+  theme(plot.title = element_text(face="bold"), axis.text=element_text(size=11), axis.title = element_text(size = 11),
+        panel.background = element_rect(fill = "transparent", colour = NA), plot.background = element_rect(fill = "transparent", colour = NA),
+        legend.title = element_blank())
+dev.off()
+
+
+# first treatment (PKs enter, neighbor violence)
+rm(data, p)
+data <- df %>% dplyr::group_by(gid) %>% 
+  mutate(
+    density_scaled = scale(neighbor_fatalities_any)
+  )
+
+data$ever_tl_text <- ifelse(data$first_treated > 0, "Treated", "Not Treated")
+
+## Graph:
+require("ggjoy")
+
+p <- ggplot(data = data, aes(time, density_scaled))
+pdf("./results/pt_pks_enter_neighbor.pdf", 10, 8)
+p + #geom_point(aes(color = factor(ever_tl_text)), alpha = .1, shape = 16) +
+  scale_color_manual(values = c("black", "gray44")) +
+  stat_smooth(data = subset(data, treat_period2 == 0), aes(color = factor(ever_tl_text), linetype = factor(ever_tl_text)), method = "lm", fill = "lightgray") +
+  stat_smooth(data = subset(data, treat_period2 == 1), aes(color = factor(ever_tl_text), linetype = factor(ever_tl_text)), method = "lm", fill = "lightgray") +
+  geom_vline(xintercept = 68) +
+  #  theme_safeskies +
+  ggtitle("Examining Parallel Trends Assumption, Treatment in t-68") + xlab("") + ylab("Pr(Fatalities)") +
+  theme(plot.title = element_text(face="bold"), axis.text=element_text(size=11), axis.title = element_text(size = 11),
+        panel.background = element_rect(fill = "transparent", colour = NA), plot.background = element_rect(fill = "transparent", colour = NA),
+        legend.title = element_blank())
+dev.off()
+
+
+rm(data, p)
+# first treatment (when pks leave)
+sort(table(df$first_treated_leave), decreasing = T)
+# 229      38     188     231      84 
+median(df$first_treated_leave[df$first_treated_leave>0])
+df$treat_period <- ifelse(df$time < 38, 0, 1)
+df$treat_period2 <- ifelse(df$time < 84, 0, 1)
+df$treat_period3 <- ifelse(df$time < 188, 0, 1) 
+df$treat_period4 <- ifelse(df$time < 229, 0, 1)
+df$treat_period5 <- ifelse(df$time < 231, 0, 1)
+
+data <- df %>% dplyr::group_by(gid) %>% 
+  mutate(
+    density_scaled = scale(acled_fatalities_any)
+  )
+
+data$ever_tl_text <- ifelse(data$first_treated_leave > 0, "Treated", "Not Treated")
+
+## Graph:
+require("ggjoy")
+
+p <- ggplot(data = data, aes(time, density_scaled))
+pdf("./results/pt_pks_leave_same.pdf", 10, 8)
+p + #geom_point(aes(color = factor(ever_tl_text)), alpha = .1, shape = 16) +
+  scale_color_manual(values = c("black", "gray44")) +
+  stat_smooth(data = subset(data, treat_period3 == 0), aes(color = factor(ever_tl_text), linetype = factor(ever_tl_text)), method = "lm", fill = "lightgray") +
+  stat_smooth(data = subset(data, treat_period3 == 1), aes(color = factor(ever_tl_text), linetype = factor(ever_tl_text)), method = "lm", fill = "lightgray") +
+  geom_vline(xintercept = 188) +
+  #  theme_safeskies +
+  ggtitle("Examining Parallel Trends Assumption, Treatment in t-188") + xlab("") + ylab("Pr(Fatalities)") +
+  theme(plot.title = element_text(face="bold"), axis.text=element_text(size=11), axis.title = element_text(size = 11),
+        panel.background = element_rect(fill = "transparent", colour = NA), plot.background = element_rect(fill = "transparent", colour = NA),
+        legend.title = element_blank())
+dev.off()
+
+
+# first treatment (when pks leave, neighbor violence)
+rm(data, p)
+data <- df %>% dplyr::group_by(gid) %>% 
+  mutate(
+    density_scaled = scale(neighbor_fatalities_any)
+  )
+
+data$ever_tl_text <- ifelse(data$first_treated_leave > 0, "Treated", "Not Treated")
+
+## Graph:
+require("ggjoy")
+
+p <- ggplot(data = data, aes(time, density_scaled))
+pdf("./results/pt_pks_leave_neighbor.pdf", 10, 8)
+p + #geom_point(aes(color = factor(ever_tl_text)), alpha = .1, shape = 16) +
+  scale_color_manual(values = c("black", "gray44")) +
+  stat_smooth(data = subset(data, treat_period3 == 0), aes(color = factor(ever_tl_text), linetype = factor(ever_tl_text)), method = "lm", fill = "lightgray") +
+  stat_smooth(data = subset(data, treat_period3 == 1), aes(color = factor(ever_tl_text), linetype = factor(ever_tl_text)), method = "lm", fill = "lightgray") +
+  geom_vline(xintercept = 188) +
+  #  theme_safeskies +
+  ggtitle("Examining Parallel Trends Assumption, Treatment in t-188") + xlab("") + ylab("Pr(Fatalities)") +
+  theme(plot.title = element_text(face="bold"), axis.text=element_text(size=11), axis.title = element_text(size = 11),
+        panel.background = element_rect(fill = "transparent", colour = NA), plot.background = element_rect(fill = "transparent", colour = NA),
+        legend.title = element_blank())
+dev.off()
+
+
+
+# try group_by time at first treatment and time (and treatment?)
+# then plot avg violence for groups before treatment that were eventually treated and those that weren't
+# first need to drop obs after first treatment
+# df = df[order(df$time, decreasing=FALSE), ] 
+# df = df[order(df$gid, decreasing=FALSE), ]
+# 
+# df1 = df %>%
+#   group_by(gid, group = with(rle(treated), 
+#                             rep(seq_along(values), lengths))) %>%
+#   slice(if (first(treated) == 0) seq_len(n()) else  1L) %>%
+#   ungroup() %>%
+#   select(-group)
+# 
+# 
+# df1 = df1 %>%
+#   group_by(treated, time) %>%
+#   summarize(fatalities = sum(acled_fatalities_any))
+# 
+# 
+# ggplot(df1, aes(time, fatalities, color = treated)) +
+#   stat_summary(geom = 'line') +
+#   geom_vline(xintercept = 0) +
+#   theme_minimal()
+# 
+# 
+# # use str()
+# 
+# 
+# my_countries<-c('usa',"canada")
+# test_results<-c(0,0,0)
+# for(my_country in my_countries){
+#   temp_violence<-NULL
+#   temp_lags<-NULL
+#   temp_dat<-dat[dat$country==my_country,]
+#   good_year<-unique(temp_dat[temp_dat$intervention==1&temp_dat$year==min(temp_dat$year),'year'])
+#   my_years<-unique(temp_dat$year)
+#   my_lags<-my_years-good_year
+#   for(my_lag in my_lags){
+#     if(0>my_lag){
+#       temp_violence<-c(temp_violence,temp_dat[temp_dat$year==my_years[my_lags==my_lag],'violence'])
+#       temp_lags<-c(temp_lags,my_lag)
+#     }
+#   }
+#   temp_results<-cbind(my_country,temp_lags,temp_violence)
+#   test_results<-rbind(test_results,temp_results)
+# }
+# test_results<-test_results[-1,]
+# colnames(test_results)<-c('country','lag','violence')
+# 
+# corr_dat<-NULL
+# for(my_country in my_countries){
+#   temp_dat<-test_results[test_results$country==my_country,]
+#   temp_dat<-temp_dat[order(temp_dat$lag),]
+#   other_countries<-my_countries[my_countries!=my_country]
+#   for(my_other in other_countries){
+#     temp_dat2<-test_results[test_results$country==my_other,]
+#     temp_dat2<-temp_dat2[order(temp_dat2$lag),]
+#    corr_dat<-c(corr_dat,ccf(temp_dat$violence,temp_dat2$violence)$statistic)
+#   }
+# }
+# plot(density(corr_dat))

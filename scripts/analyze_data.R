@@ -34,6 +34,10 @@ length(unique(df$gid))
 out1 <- att_gt(yname = "acled_fatalities_any", tname = "time", idname = "gid", 
               gname = "first_treated", data = df, pl = T, cores = 6)
 es1 <- aggte(out1, type = "group")
+
+pdf("./results/test_plot.pdf", width = 100, height = 100)
+ggdid(out1)
+dev.off()
 summary(es1)
 rm(out1, es1)
 
@@ -60,6 +64,10 @@ out4 <- att_gt(yname = "acled_fatalities_any",
               tname = "time", idname = "gid", 
               gname = "first_treated_leave", data = df, pl = T, cores = 6)
 es4 <- aggte(out4, type = "group")
+es4.2 = aggte(out4.1, type = "group")
+es4.1 = aggte(out4, type = "dynamic")
+ggdid(es4)
+ggdid(es4.1)
 summary(es4)
 rm(out4, es4)
 
