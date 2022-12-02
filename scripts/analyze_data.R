@@ -32,7 +32,7 @@ length(unique(df$gid))
 
 ### model where the outcome is Pr(fatalties)
 out1 <- att_gt(yname = "acled_fatalities_any", tname = "time", idname = "gid", 
-              gname = "first_treated", data = df, pl = T, cores = 6)
+              gname = "first_treated", base_period = "universal",data = df, pl = T, cores = 6)
 es1 <- aggte(out1, type = "group")
 
 pdf("./results/test_plot.pdf", width = 100, height = 100)
