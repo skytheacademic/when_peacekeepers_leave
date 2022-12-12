@@ -76,7 +76,11 @@ acled <- read_csv("./data/acled/1999-01-01-2021-12-31.csv") %>%
                              TRUE ~ country)) %>% 
   # make the date variable a date type then subset to post-1999
   mutate(event_date = dmy(event_date)) %>% 
-  filter(event_date >= "1999-01-01")
+  filter(event_date >= "1999-01-01" & event_date <="2019-01-01")
+
+### subset ACLED data to violence against civilians and battles
+acled = subset(acled, event_type == "Violence against civilians" | event_type == "Explosions/Remote violence" | 
+                 event_type == "Battles")
 
 #### MERGE ACLED DATA WITH PRIO GRID IDS #####
 
@@ -93,38 +97,62 @@ acled <- st_as_sf(acled, coords = c("longitude", "latitude"), crs = proj_crs)
 ### join acled events to prio grid info
 acled <- st_join(acled, prio_shp)
 
+### add VAC events and deaths by actor
+acled$event = 1
+acled$vac_gov_death = 0
+acled$vac_gov_death[acled$interaction == 17] = acled$fatalities[acled$interaction == 17]
+acled$vac_reb_death = 0
+acled$vac_reb_death[acled$interaction == 27] = acled$fatalities[acled$interaction == 27]
+acled$vac_gov_event = 0
+acled$vac_gov_event[acled$interaction == 17] = acled$event[acled$interaction == 17]
+acled$vac_reb_event = 0
+acled$vac_reb_event[acled$interaction == 27] = acled$event[acled$interaction == 27]
+
+### add all violence by actor
+acled$gov_death = 0
+acled$gov_death[acled$interaction > 9 & acled$interaction < 20] = acled$fatalities[acled$interaction > 9 & acled$interaction < 20]
+acled$reb_death = 0
+acled$reb_death[acled$interaction > 19 & acled$interaction < 30] = acled$fatalities[acled$interaction > 19 & acled$interaction < 30]
+acled$gov_event = 0
+acled$gov_event[acled$interaction > 9 & acled$interaction < 20] = acled$event[acled$interaction > 9 & acled$interaction < 20]
+acled$reb_event = 0
+acled$reb_event[acled$interaction > 19 & acled$interaction < 30] = acled$event[acled$interaction > 19 & acled$interaction < 30]
+
+### add battle deaths/events
+acled$bat_death = 0
+acled$bat_death[acled$event_type == "Battles" & acled$inter1 == 1 | acled$inter2 == 2] = 
+  acled$fatalities[acled$event_type == "Battles" & acled$inter1 == 1 | acled$inter2 == 2]
+acled$bat_event = 0
+acled$bat_event[acled$event_type == "Battles" & acled$inter1 == 1 | acled$inter2 == 2] = 
+  acled$event[acled$event_type == "Battles" & acled$inter1 == 1 | acled$inter2 == 2]
+
 ### reshape ACLED long to wide, to aggregate deaths by type
 acled <- acled %>% 
   # get month info
   mutate(month = month(event_date)) %>% 
   # remove extra spatial info, now unneeded
   as_tibble() %>% 
-  # trim to just variables needed
-  select(gid, year, month, event_type, fatalities) %>% 
-  # aggregate
-  group_by(gid, year, month, event_type) %>% 
-  summarize(deaths = sum(fatalities)) %>% 
-  ungroup() %>% 
-  # reshape
-  pivot_wider(id_cols = c("gid", "year", "month"), 
-              names_from = "event_type",
-              values_from = "deaths")
+  # remove un-needed variables
+  select(-c(iso, data_id, event_id_cnty, event_id_no_cnty, time_precision, sub_event_type, actor1, assoc_actor_1, actor2, assoc_actor_2,
+            region, country, admin1, admin2, admin3, location, geo_precision, source, source_scale, notes, timestamp, iso3,
+            xcoord, ycoord, col, row, geometry))
 
 ### clean names
-acled <- acled %>% 
-  clean_names() %>% 
-  rename(fatalities_protests = protests, fatalities_riots = riots,
-         fatalities_violence_against_civilians = violence_against_civilians,
-         fatalities_explosions_remote_violence = explosions_remote_violence,
-         fatalities_battles = battles,
-         fatalities_strategic_developments = strategic_developments)
+# acled <- acled %>% 
+#   clean_names() %>% 
+#   rename(fatalities_protests = protests, 
+#          fatalities_riots = riots,
+#          fatalities_violence_against_civilians = violence_against_civilians,
+#          fatalities_explosions_remote_violence = explosions_remote_violence,
+#          fatalities_battles = battles,
+#          fatalities_strategic_developments = strategic_developments)
 
 ##### MERGE EVERYTHING TOGETHER #####
 
 ### create a full grid of gid-month-years
 all_gids <- sort(unique(c(acled$gid, prio$gid, radpko$gid)))
 df <- expand_grid(gid = all_gids, 
-                  year = seq(1999, 2021, 1), 
+                  year = seq(1999, 2018, 1), 
                   month = seq(1, 12, 1))
 
 ### merge the acled data to the main df
@@ -144,7 +172,7 @@ df <- df %>%
   # some acled events have grids outside terrestrial range; drop these
   filter(gid >= 49182 & gid <= 249344) %>% 
   # some years are outside the range we care about; drop these
-  filter(year >= 1999 & year <= 2021) %>% 
+  filter(year >= 1999 & year <= 2018) %>% 
   # some ACLED data is outside the PRIO static table. No PKO ops here, so drop
   filter(!is.na(row) & !is.na(col))
 
@@ -152,7 +180,7 @@ df <- df %>%
 df <- df %>% 
   relocate(c(row, col), .after = month) %>% 
   select(-c(xcoord, ycoord)) %>% 
-  rename_at(vars(fatalities_protests:fatalities_explosions_remote_violence), 
+  rename_at(vars(fatalities:bat_event), 
             function(x) paste0("acled_", x)) %>% 
   rename_at(vars(units_deployed:afr_unmob), function(x) paste0("radpko_", x)) %>% 
   rename_at(vars(agri_gc:water_ih), function(x) paste0("prio_", x)) 
@@ -180,7 +208,7 @@ df <- df %>%
 
 ##### RECODE VARIABLES #####
 
-### RADPKO data are complete 1999-2021 for Africa, so we recode NA to 0
+### RADPKO data are complete 1999-2018 for Africa, so we recode NA to 0
 df <- df %>% 
   mutate(across(radpko_units_deployed:radpko_afr_unmob, ~replace_na(.x, 0)))
 
@@ -191,19 +219,19 @@ df <- df %>%
 
 ### ACLED are also complete over this time/area, so recode NA to 0 here too
 df <- df %>% 
-  mutate(across(acled_fatalities_protests:acled_fatalities_explosions_remote_violence, 
+  mutate(across(acled_fatalities:acled_bat_event, 
                 ~replace_na(.x, 0)))
 
 ### create an "any fatalities" variable for ACLED
 df <- df %>% 
   mutate(acled_fatalities_any = case_when(rowSums(across(
-    acled_fatalities_protests:acled_fatalities_explosions_remote_violence)) > 0 ~ 1,
+    acled_fatalities:acled_bat_event)) > 0 ~ 1,
     TRUE ~ 0))
 
 ### create a sum fatalaties variable for ACLED
 df <- df %>% 
   mutate(acled_fatalities_all = rowSums(across(
-    acled_fatalities_protests:acled_fatalities_explosions_remote_violence)))
+    acled_fatalities:acled_bat_event)))
 
 ##### CREATE SPATIAL MEASURES #####
 
@@ -243,14 +271,16 @@ out <- foreach(i = 1:nrow(df), .combine = rbind, .options.snow = opts) %dopar% {
   tmp <- df[which(df$year == yr & df$month == mn &
                   df$gid %in% nb_gid[[which(names(nb_gid) == as.character(gi))]]),]
   # compute and store values
-  c(sum(tmp$acled_fatalities_protests, na.rm = T),
-    sum(tmp$acled_fatalities_strategic_developments, na.rm = T),
-    sum(tmp$acled_fatalities_riots, na.rm = T),
-    sum(tmp$acled_fatalities_violence_against_civilians, na.rm = T),
-    sum(tmp$acled_fatalities_battles, na.rm = T),
-    sum(tmp$acled_fatalities_explosions_remote_violence, na.rm = T),
-    ifelse(sum(tmp$acled_fatalities_any, na.rm = T) > 0, 1, 0),
-    sum(tmp$acled_fatalities_all, na.rm = T))
+  c(sum(tmp$acled_vac_gov_death, na.rm = T),
+    sum(tmp$acled_vac_reb_death, na.rm = T),
+    sum(tmp$acled_vac_gov_event, na.rm = T),
+    sum(tmp$acled_vac_reb_event, na.rm = T),
+    sum(tmp$acled_gov_death, na.rm = T),
+    sum(tmp$acled_reb_death, na.rm = T),
+    sum(tmp$acled_gov_event, na.rm = T),
+    sum(tmp$acled_reb_event, na.rm = T),
+    sum(tmp$acled_bat_death, na.rm = T),
+    sum(tmp$acled_bat_event, na.rm = T))
 }
 # turn off progress bar and clusters
 close(pb)
@@ -258,14 +288,16 @@ stopCluster(cl)
 
 ### convert the output into a tibble and rename
 out <- as_tibble(out) %>% 
-  rename(neighbor_fatalities_protests = V1, 
-         neighbor_fatalities_strategic_developments  = V2,
-         neighbor_fatalities_riots = V3,
-         neighbor_fatalities_violence_against_civilians = V4,
-         neighbor_fatalities_battles = V5,
-         neighbor_fatalities_explosions_remote_violence = V6,
-         neighbor_fatalities_any = V7,
-         neighbor_fatalities_all = V8)
+  rename(neighbor_vac_gov_death = V1, 
+         neighbor_vac_reb_death  = V2,
+         neighbor_vac_gov_event = V3,
+         neighbor_vac_reb_event = V4,
+         neighbor_gov_death = V5,
+         neighbor_reb_death = V6,
+         neighbor_gov_event = V7,
+         neighbor_reb_event = V8,
+         neighbor_bat_death = V9,
+         neighbor_bat_event = V10)
 
 ### bind them together
 df <- bind_cols(df, out)
@@ -330,8 +362,8 @@ df <- df %>%
   rename(prio_xcoord = xcoord, prio_ycoord = ycoord, 
          prio_geometry = geometry) %>% 
   relocate(radpko_pko_deployed_any, .after = radpko_afr_unmob) %>% 
-  relocate(c(acled_fatalities_any, acled_fatalities_all),
-           .after = acled_fatalities_explosions_remote_violence) %>% 
+  # relocate(c(acled_fatalities_any, acled_fatalities_all),
+  #          .after = acled_fatalities_explosions_remote_violence) %>% 
   relocate(c(time, first_treated, treated, post_treatment, first_treated_leave,
              treated_leave, post_treatment_leave), .after = month)
 
