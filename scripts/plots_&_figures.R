@@ -743,7 +743,7 @@ p + #geom_point(aes(color = factor(ever_tl_text)), alpha = .1, shape = 16) +
   theme(plot.title = element_text(face="bold"), axis.text=element_text(size=11), axis.title = element_text(size = 11),
         panel.background = element_rect(fill = "transparent", colour = NA), plot.background = element_rect(fill = "transparent", colour = NA),
         legend.title = element_blank())
-dev.off()t
+dev.off()
 
 
 # first treatment (PKs enter, neighbor violence)
