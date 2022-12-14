@@ -76,7 +76,7 @@ acled <- read_csv("./data/acled/1999-01-01-2021-12-31.csv") %>%
                              TRUE ~ country)) %>% 
   # make the date variable a date type then subset to post-1999
   mutate(event_date = dmy(event_date)) %>% 
-  filter(event_date >= "1999-01-01" & event_date <="2019-01-01")
+  filter(event_date >= "1999-01-01" & event_date <"2019-01-01")
 
 ### subset ACLED data to violence against civilians and battles
 acled = subset(acled, event_type == "Violence against civilians" | event_type == "Explosions/Remote violence" | 
@@ -137,6 +137,11 @@ acled <- acled %>%
             region, country, admin1, admin2, admin3, location, geo_precision, source, source_scale, notes, timestamp, iso3,
             xcoord, ycoord, col, row, geometry))
 
+acled <- acled %>% 
+  group_by(gid, year, month) %>% 
+  summarise(across(event:bat_event, sum)) %>% 
+  ungroup()
+
 ### clean names
 # acled <- acled %>% 
 #   clean_names() %>% 
@@ -180,7 +185,7 @@ df <- df %>%
 df <- df %>% 
   relocate(c(row, col), .after = month) %>% 
   select(-c(xcoord, ycoord)) %>% 
-  rename_at(vars(fatalities:bat_event), 
+  rename_at(vars(event:bat_event), 
             function(x) paste0("acled_", x)) %>% 
   rename_at(vars(units_deployed:afr_unmob), function(x) paste0("radpko_", x)) %>% 
   rename_at(vars(agri_gc:water_ih), function(x) paste0("prio_", x)) 
@@ -219,19 +224,19 @@ df <- df %>%
 
 ### ACLED are also complete over this time/area, so recode NA to 0 here too
 df <- df %>% 
-  mutate(across(acled_fatalities:acled_bat_event, 
+  mutate(across(acled_event:acled_bat_event, 
                 ~replace_na(.x, 0)))
 
-### create an "any fatalities" variable for ACLED
-df <- df %>% 
-  mutate(acled_fatalities_any = case_when(rowSums(across(
-    acled_fatalities:acled_bat_event)) > 0 ~ 1,
-    TRUE ~ 0))
-
-### create a sum fatalaties variable for ACLED
-df <- df %>% 
-  mutate(acled_fatalities_all = rowSums(across(
-    acled_fatalities:acled_bat_event)))
+# ### create an "any fatalities" variable for ACLED
+# df <- df %>% 
+#   mutate(acled_fatalities_any = case_when(rowSums(across(
+#     acled_vac_gov_death:acled_bat_event)) > 0 ~ 1,
+#     TRUE ~ 0))
+# 
+# ### create a sum fatalaties variable for ACLED
+# df <- df %>% 
+#   mutate(acled_fatalities_all = rowSums(across(
+#     acled_fatalities:acled_bat_event)))
 
 ##### CREATE SPATIAL MEASURES #####
 
@@ -352,8 +357,8 @@ dd <- dd[,c("gid", "time", "first_treated_leave", "treated_leave",
 # merge back to main df
 df <- left_join(df, dd, by = c("gid", "time"))
 
-### clean uo
-rm(dd, tmp, gi, mn, yr)
+### clean up
+rm(dd)
 
 ##### FINAL CLEANING AND EXPORT #####
 
