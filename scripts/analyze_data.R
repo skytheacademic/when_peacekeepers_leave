@@ -22,11 +22,138 @@ df <- read_rds("./data/Kunkel-Atkinson-Warner-final.rds")
 
 ##### SUMMARY STATISTICS #####
 
+### general look of the data
+head(df)
+
 ### number of years
 sort(unique(df$year))
 
 ### number of cells
 length(unique(df$gid))
+
+##### Diff-in-Diff for if PKOs Reduce VAC in the Same Cell ####
+### DV - total fatalities from GOV
+out1 <- att_gt(yname = "acled_vac_gov_death", tname = "time", idname = "gid", 
+               gname = "first_treated",data = df, pl = T, cores = 6)
+es1 <- aggte(out1, type = "group")
+summary(es1)
+#rm(out1, es1)
+
+### DV - total fatalities from REB
+out2 <- att_gt(yname = "acled_vac_reb_death", tname = "time", idname = "gid", 
+               gname = "first_treated",data = df, pl = T, cores = 6)
+es2 <- aggte(out2, type = "group")
+summary(es2)
+#rm(out2, es2)
+
+### DV - total battle fatalities
+out3 <- att_gt(yname = "acled_bat_death", tname = "time", idname = "gid", 
+               gname = "first_treated",data = df, pl = T, cores = 6)
+es3 <- aggte(out3, type = "group")
+summary(es3)
+#rm(out3, es3)
+
+### DV - total battle events
+out4 <- att_gt(yname = "acled_bat_event", tname = "time", idname = "gid", 
+               gname = "first_treated",data = df, pl = T, cores = 6)
+es4 <- aggte(out4, type = "dynamic")
+summary(es4)
+
+#### DIFF-IN-DIFF FOR IF PKO *LEAVING* REDUCES VIOLENCE IN SAME CELL #####
+
+### DV - total fatalities from GOV
+out5 <- att_gt(yname = "acled_vac_gov_death", 
+               tname = "time", idname = "gid", 
+               gname = "first_treated_leave", data = df, pl = T, cores = 6)
+es5 <- aggte(out5, type = "group")
+summary(es5)
+#rm(out5, es5)
+
+### DV - total fatalities from REB
+out6 <- att_gt(yname = "acled_vac_reb_death", tname = "time", idname = "gid", 
+               gname = "first_treated_leave",data = df, pl = T, cores = 6)
+es6 <- aggte(out6, type = "group")
+summary(es6)
+#rm(out6, es6)
+
+### DV - total battle fatalities
+out7 <- att_gt(yname = "acled_bat_death", tname = "time", idname = "gid", 
+               gname = "first_treated_leave",data = df, pl = T, cores = 6)
+es7 <- aggte(out7, type = "group")
+summary(es7)
+#rm(out7, es7)
+
+### DV - total battle events
+out8 <- att_gt(yname = "acled_bat_event", tname = "time", idname = "gid", 
+               gname = "first_treated_leave",data = df, pl = T, cores = 6)
+es8 <- aggte(out8, type = "group")
+summary(es8)
+
+##### DIFF-IN-DIFF FOR IF PKO REDUCE VIOLENCE IN *NEIGHBORING* CELLS #####
+
+### DV - total fatalities from GOV
+out9 <- att_gt(yname = "neighbor_gov_death", tname = "time", idname = "gid", 
+               gname = "first_treated",data = df, pl = T, cores = 6)
+es9 <- aggte(out9, type = "group")
+summary(es9)
+#rm(out9, es9)
+
+### DV - total fatalities from REB
+out10 <- att_gt(yname = "neighbor_reb_death", tname = "time", idname = "gid", 
+               gname = "first_treated",data = df, pl = T, cores = 6)
+es10 <- aggte(out10, type = "group")
+summary(es10)
+#rm(out10, es10)
+
+### DV - total battle fatalities
+out11 <- att_gt(yname = "neighbor_bat_death", tname = "time", idname = "gid", 
+               gname = "first_treated",data = df, pl = T, cores = 6)
+es11 <- aggte(out11, type = "group")
+summary(es11)
+#rm(out11, es11)
+
+### DV - total battle events
+out12 <- att_gt(yname = "neighbor_bat_event", tname = "time", idname = "gid", 
+               gname = "first_treated",data = df, pl = T, cores = 6)
+es12 <- aggte(out12, type = "group")
+summary(es12)
+
+#### DIFF-IN-DIFF FOR IF PKO *LEAVING* REDUCES VIOLENCE IN NEIGHBORING CELL #####
+
+### DV - total fatalities from GOV
+out13 <- att_gt(yname = "neighbor_gov_death", 
+               tname = "time", idname = "gid", 
+               gname = "first_treated_leave", data = df, pl = T, cores = 6)
+es13 <- aggte(out13, type = "group")
+summary(es13)
+
+### DV - total fatalities from REB
+out14 <- att_gt(yname = "neighbor_reb_death", tname = "time", idname = "gid", 
+               gname = "first_treated_leave",data = df, pl = T, cores = 6)
+es14 <- aggte(out14, type = "group")
+summary(es14)
+#rm(out14, es14)
+
+### DV - total battle fatalities
+out15 <- att_gt(yname = "neighbor_bat_death", tname = "time", idname = "gid", 
+               gname = "first_treated_leave",data = df, pl = T, cores = 6)
+es15 <- aggte(out15, type = "group")
+summary(es15)
+#rm(out15, es15)
+
+### DV - total battle events
+out16 <- att_gt(yname = "neighbor_bat_event", tname = "time", idname = "gid", 
+               gname = "first_treated_leave",data = df, pl = T, cores = 6)
+es16 <- aggte(out16, type = "group")
+summary(es16)
+
+
+
+
+
+
+
+########################## OLD, to be deleted ##################################
 
 ##### DIFF-IN-DIFF FOR IF PKO REDUCE VIOLENCE IN SAME CELL #####
 
