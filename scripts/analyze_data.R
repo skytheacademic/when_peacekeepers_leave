@@ -1,13 +1,13 @@
 #!/usr/bin/env Rscript
 # analyze_data.R
 # Produces all analysis, tables, and figures
-# Zach Warner
+# Zach Warner, Sky Kunkel
 # 9 June 2022
 
 ##### SET UP #####
 
 ### load packages
-library(did); library(sf); library(tidyverse)
+library(did); library(sf); library(tidyverse); library(lubridate); library(ggtext)
 
 ### set working directory ###
 setwd("/Users/zmwarner/github/when_peacekeepers_leave")
@@ -31,362 +31,253 @@ sort(unique(df$year))
 ### number of cells
 length(unique(df$gid))
 
-##### Diff-in-Diff for if PKOs Reduce VAC in the Same Cell ####
-### DV - total fatalities from GOV
-out1 <- att_gt(yname = "acled_vac_gov_death", tname = "time", idname = "gid", 
-               gname = "first_treated",data = df, pl = T, cores = 6)
-es1 <- aggte(out1, type = "group")
-summary(es1)
-#rm(out1, es1)
-
-### DV - total fatalities from REB
-out2 <- att_gt(yname = "acled_vac_reb_death", tname = "time", idname = "gid", 
-               gname = "first_treated",data = df, pl = T, cores = 6)
-es2 <- aggte(out2, type = "group")
-summary(es2)
-#rm(out2, es2)
-
-### DV - total battle fatalities
-out3 <- att_gt(yname = "acled_bat_death", tname = "time", idname = "gid", 
-               gname = "first_treated",data = df, pl = T, cores = 6)
-es3 <- aggte(out3, type = "group")
-summary(es3)
-#rm(out3, es3)
-
-### DV - total battle events
-out4 <- att_gt(yname = "acled_bat_event", tname = "time", idname = "gid", 
-               gname = "first_treated",data = df, pl = T, cores = 6)
-es4 <- aggte(out4, type = "dynamic")
-summary(es4)
-
-#### DIFF-IN-DIFF FOR IF PKO *LEAVING* REDUCES VIOLENCE IN SAME CELL #####
-
-### DV - total fatalities from GOV
-out5 <- att_gt(yname = "acled_vac_gov_death", 
-               tname = "time", idname = "gid", 
-               gname = "first_treated_leave", data = df, pl = T, cores = 6)
-es5 <- aggte(out5, type = "group")
-summary(es5)
-#rm(out5, es5)
-
-### DV - total fatalities from REB
-out6 <- att_gt(yname = "acled_vac_reb_death", tname = "time", idname = "gid", 
-               gname = "first_treated_leave",data = df, pl = T, cores = 6)
-es6 <- aggte(out6, type = "group")
-summary(es6)
-#rm(out6, es6)
-
-### DV - total battle fatalities
-out7 <- att_gt(yname = "acled_bat_death", tname = "time", idname = "gid", 
-               gname = "first_treated_leave",data = df, pl = T, cores = 6)
-es7 <- aggte(out7, type = "group")
-summary(es7)
-#rm(out7, es7)
-
-### DV - total battle events
-out8 <- att_gt(yname = "acled_bat_event", tname = "time", idname = "gid", 
-               gname = "first_treated_leave",data = df, pl = T, cores = 6)
-es8 <- aggte(out8, type = "group")
-summary(es8)
-
-##### DIFF-IN-DIFF FOR IF PKO REDUCE VIOLENCE IN *NEIGHBORING* CELLS #####
-
-### DV - total fatalities from GOV
-out9 <- att_gt(yname = "neighbor_gov_death", tname = "time", idname = "gid", 
-               gname = "first_treated",data = df, pl = T, cores = 6)
-es9 <- aggte(out9, type = "group")
-summary(es9)
-#rm(out9, es9)
-
-### DV - total fatalities from REB
-out10 <- att_gt(yname = "neighbor_reb_death", tname = "time", idname = "gid", 
-               gname = "first_treated",data = df, pl = T, cores = 6)
-es10 <- aggte(out10, type = "group")
-summary(es10)
-#rm(out10, es10)
-
-### DV - total battle fatalities
-out11 <- att_gt(yname = "neighbor_bat_death", tname = "time", idname = "gid", 
-               gname = "first_treated",data = df, pl = T, cores = 6)
-es11 <- aggte(out11, type = "group")
-summary(es11)
-#rm(out11, es11)
-
-### DV - total battle events
-out12 <- att_gt(yname = "neighbor_bat_event", tname = "time", idname = "gid", 
-               gname = "first_treated",data = df, pl = T, cores = 6)
-es12 <- aggte(out12, type = "group")
-summary(es12)
-
-#### DIFF-IN-DIFF FOR IF PKO *LEAVING* REDUCES VIOLENCE IN NEIGHBORING CELL #####
-
-### DV - total fatalities from GOV
-out13 <- att_gt(yname = "neighbor_gov_death", 
-               tname = "time", idname = "gid", 
-               gname = "first_treated_leave", data = df, pl = T, cores = 6)
-es13 <- aggte(out13, type = "group")
-summary(es13)
-
-### DV - total fatalities from REB
-out14 <- att_gt(yname = "neighbor_reb_death", tname = "time", idname = "gid", 
-               gname = "first_treated_leave",data = df, pl = T, cores = 6)
-es14 <- aggte(out14, type = "group")
-summary(es14)
-#rm(out14, es14)
-
-### DV - total battle fatalities
-out15 <- att_gt(yname = "neighbor_bat_death", tname = "time", idname = "gid", 
-               gname = "first_treated_leave",data = df, pl = T, cores = 6)
-es15 <- aggte(out15, type = "group")
-summary(es15)
-#rm(out15, es15)
-
-### DV - total battle events
-out16 <- att_gt(yname = "neighbor_bat_event", tname = "time", idname = "gid", 
-               gname = "first_treated_leave",data = df, pl = T, cores = 6)
-es16 <- aggte(out16, type = "group")
-summary(es16)
-
-
-
-
-
-
-
-########################## OLD, to be deleted ##################################
-
-##### DIFF-IN-DIFF FOR IF PKO REDUCE VIOLENCE IN SAME CELL #####
-
-### model where the outcome is Pr(fatalties)
-out1 <- att_gt(yname = "acled_fatalities_any", tname = "time", idname = "gid", 
-              gname = "first_treated", base_period = "universal",data = df, pl = T, cores = 6)
-es1 <- aggte(out1, type = "group")
-
-pdf("./results/test_plot.pdf", width = 100, height = 100)
-ggdid(out1)
-dev.off()
+##################################### VIOLENT EVENTS #####################################
+###### TOTAL #######
+## Same cell, enter ##
+out1 <- att_gt(yname = "acled_vac_gov_event_all", tname = "time", idname = "gid", 
+               gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
+es1 <- aggte(out1, type = "group", na.rm = T)
+es1_1 <- aggte(out1, type = "dynamic", na.rm = T) # extract for parallel trends plot
 summary(es1)
 rm(out1, es1)
 
-### model where the outcome is # all fatalities
-out2 <- att_gt(yname = "acled_fatalities_all", 
-              tname = "time", idname = "gid", 
-              gname = "first_treated", data = df, pl = T, cores = 6)
-es2 <- aggte(out2, type = "group")
+out2 <- att_gt(yname = "acled_vac_reb_event_all", tname = "time", idname = "gid", 
+               gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
+es2 <- aggte(out2, type = "group", na.rm = T)
 summary(es2)
 rm(out2, es2)
 
-### model where the outcome is # violence against civilians
-out3 <- att_gt(yname = "acled_fatalities_violence_against_civilians", 
-              tname = "time", idname = "gid", 
-              gname = "first_treated", data = df, pl = T, cores = 6)
-es3 <- aggte(out3, type = "group")
+## Neighbor cell, enter ##
+out3 <- att_gt(yname = "neighbor_vac_gov_event_all", tname = "time", idname = "gid", 
+               gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
+es3 <- aggte(out3, type = "group", na.rm = T)
 summary(es3)
 rm(out3, es3)
 
-#### DIFF-IN-DIFF FOR IF PKO *LEAVING* REDUCES VIOLENCE IN SAME CELL #####
-
-### model where the outcome is Pr(fatalties)
-out4 <- att_gt(yname = "acled_fatalities_any", 
-              tname = "time", idname = "gid", 
-              gname = "first_treated_leave", data = df, pl = T, cores = 6)
-es4 <- aggte(out4, type = "group")
-es4.2 = aggte(out4.1, type = "group")
-es4.1 = aggte(out4, type = "dynamic")
-ggdid(es4)
-ggdid(es4.1)
+out4 <- att_gt(yname = "neighbor_vac_gov_event_all", tname = "time", idname = "gid", 
+               gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
+es4 <- aggte(out4, type = "group", na.rm = T)
 summary(es4)
 rm(out4, es4)
 
-### model where the outcome is # all fatalities
-out5 <- att_gt(yname = "acled_fatalities_all", 
-              tname = "time", idname = "gid", 
-              gname = "first_treated_leave", data = df, pl = T, cores = 6)
-es5 <- aggte(out5, type = "group")
+## Same cell, leave ##
+out5 <- att_gt(yname = "acled_vac_gov_event_all", tname = "time", idname = "gid", 
+               gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
+es5 <- aggte(out5, type = "group", na.rm = T)
 summary(es5)
 rm(out5, es5)
 
-### model where the outcome is # violence against civilians
-out6 <- att_gt(yname = "acled_fatalities_violence_against_civilians", 
-              tname = "time", idname = "gid", 
-              gname = "first_treated_leave", data = df, pl = T, cores = 6)
-es6 <- aggte(out6, type = "group")
+out6 <- att_gt(yname = "acled_vac_reb_event_all", tname = "time", idname = "gid", 
+               gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
+es6 <- aggte(out6, type = "group", na.rm = T)
 summary(es6)
 rm(out6, es6)
 
-##### DIFF-IN-DIFF FOR IF PKO REDUCE VIOLENCE IN *NEIGHBORING* CELLS #####
-
-### model where the outcome is Pr(fatalties)
-out7 <- att_gt(yname = "neighbor_fatalities_any", tname = "time", idname = "gid", 
-               gname = "first_treated", data = df, pl = T, cores = 6)
-es7 <- aggte(out7, type = "group")
+## Neighbor cell, leave ##
+out7 <- att_gt(yname = "neighbor_vac_gov_event_all", tname = "time", idname = "gid", 
+               gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
+es7 <- aggte(out7, type = "group", na.rm = T)
 summary(es7)
 rm(out7, es7)
 
-### model where the outcome is # all fatalities
-out8 <- att_gt(yname = "neighbor_fatalities_all", 
-               tname = "time", idname = "gid", 
-               gname = "first_treated", data = df, pl = T, cores = 6)
-es8 <- aggte(out8, type = "group")
+out8 <- att_gt(yname = "neighbor_vac_gov_event_all", tname = "time", idname = "gid", 
+               gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
+es8 <- aggte(out8, type = "group", na.rm = T)
 summary(es8)
 rm(out8, es8)
 
-### model where the outcome is # violence against civilians
-out9 <- att_gt(yname = "neighbor_fatalities_violence_against_civilians", 
-               tname = "time", idname = "gid", 
-               gname = "first_treated", data = df, pl = T, cores = 6)
-es9 <- aggte(out9, type = "group")
-summary(es9)
-rm(out9, es9)
+###### Pr() #######
+## Same cell, enter ##
+out1 <- att_gt(yname = "acled_vac_gov_event_any", tname = "time", idname = "gid", 
+               gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
+es1 <- aggte(out1, type = "group", na.rm = T)
+summary(es1)
+rm(out1, es1)
 
-#### DIFF-IN-DIFF FOR IF PKO *LEAVING* REDUCES VIOLENCE IN *NEIGHBORING* CELLS #####
+out2 <- att_gt(yname = "acled_vac_reb_event_any", tname = "time", idname = "gid", 
+               gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
+es2 <- aggte(out2, type = "group", na.rm = T)
+summary(es2)
+rm(out2, es2)
 
-### model where the outcome is Pr(fatalties)
-out10 <- att_gt(yname = "neighbor_fatalities_any", 
-               tname = "time", idname = "gid", 
-               gname = "first_treated_leave", data = df, pl = T, cores = 6)
-es10 <- aggte(out10, type = "group")
-summary(es10)
-rm(out10, es10)
+## Neighbor cell, enter ##
+out3 <- att_gt(yname = "neighbor_vac_gov_event_any", tname = "time", idname = "gid", 
+               gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
+es3 <- aggte(out3, type = "group", na.rm = T)
+summary(es3)
+rm(out3, es3)
 
-### model where the outcome is # all fatalities
-out11 <- att_gt(yname = "neighbor_fatalities_all", 
-               tname = "time", idname = "gid", 
-               gname = "first_treated_leave", data = df, pl = T, cores = 6)
-es11 <- aggte(out11, type = "group")
-summary(es11)
-rm(out11, es11)
+out4 <- att_gt(yname = "neighbor_vac_gov_event_any", tname = "time", idname = "gid", 
+               gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
+es4 <- aggte(out4, type = "group", na.rm = T)
+summary(es4)
+rm(out4, es4)
 
-### model where the outcome is # violence against civilians
-out12 <- att_gt(yname = "neighbor_fatalities_violence_against_civilians", 
-               tname = "time", idname = "gid", 
-               gname = "first_treated_leave", data = df, pl = T, cores = 6)
-es12 <- aggte(out12, type = "group")
-summary(es12)
-rm(out12, es12)
+## Same cell, leave ##
+out5 <- att_gt(yname = "acled_vac_gov_event_any", tname = "time", idname = "gid", 
+               gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
+es5 <- aggte(out5, type = "group", na.rm = T)
+summary(es5)
+rm(out5, es5)
 
-##### SUBSET TO ONLY COUNTRIES THAT HAVE HAD A PKO #####
-cry <- df$prio_gwno[which(df$radpko_pko_deployed_any == 1)]
-df <- df %>% 
-  filter(prio_gwno %in% cry)
+out6 <- att_gt(yname = "acled_vac_reb_event_any", tname = "time", idname = "gid", 
+               gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
+es6 <- aggte(out6, type = "group", na.rm = T)
+summary(es6)
+rm(out6, es6)
 
-##### DIFF-IN-DIFF FOR IF PKO REDUCE VIOLENCE IN SAME CELL #####
+## Neighbor cell, leave ##
+out7 <- att_gt(yname = "neighbor_vac_gov_event_any", tname = "time", idname = "gid", 
+               gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
+es7 <- aggte(out7, type = "group", na.rm = T)
+summary(es7)
+rm(out7, es7)
 
-### model where the outcome is Pr(fatalties)
-out13 <- att_gt(yname = "acled_fatalities_any", tname = "time", idname = "gid", 
-               gname = "first_treated", data = df, pl = T, cores = 6)
-es13 <- aggte(out13, type = "group")
-summary(es13)
-rm(out13, es13)
+out8 <- att_gt(yname = "neighbor_vac_gov_event_any", tname = "time", idname = "gid", 
+               gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
+es8 <- aggte(out8, type = "group", na.rm = T)
+summary(es8)
+rm(out8, es8)
 
-### model where the outcome is # all fatalities
-out14 <- att_gt(yname = "acled_fatalities_all", 
-               tname = "time", idname = "gid", 
-               gname = "first_treated", data = df, pl = T, cores = 6)
-es14 <- aggte(out14, type = "group")
-summary(es14)
-rm(out14, es14)
+##################################### FATALITIES ##################################### 
+###### Total #######
+## Same cell, enter ##
+out1 <- att_gt(yname = "acled_vac_gov_death_all", tname = "time", idname = "gid", 
+               gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
+es1 <- aggte(out1, type = "group", na.rm = T)
+summary(es1)
+rm(out1, es1)
 
-### model where the outcome is # violence against civilians
-out15 <- att_gt(yname = "acled_fatalities_violence_against_civilians", 
-               tname = "time", idname = "gid", 
-               gname = "first_treated", data = df, pl = T, cores = 6)
-es15 <- aggte(out15, type = "group")
-summary(es15)
-rm(out15, es15)
+out2 <- att_gt(yname = "acled_vac_reb_death_all", tname = "time", idname = "gid", 
+               gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
+es2 <- aggte(out2, type = "group", na.rm = T)
+summary(es2)
+rm(out2, es2)
 
-#### DIFF-IN-DIFF FOR IF PKO *LEAVING* REDUCES VIOLENCE IN SAME CELL #####
+## Neighbor cell, enter ##
+out3 <- att_gt(yname = "neighbor_vac_gov_death_all", tname = "time", idname = "gid", 
+               gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
+es3 <- aggte(out3, type = "group", na.rm = T)
+summary(es3)
+rm(out3, es3)
 
-### model where the outcome is Pr(fatalties)
-out16 <- att_gt(yname = "acled_fatalities_any", 
-               tname = "time", idname = "gid", 
-               gname = "first_treated_leave", data = df, pl = T, cores = 6)
-es16 <- aggte(out16, type = "group")
-summary(es16)
-rm(out16, es16)
+out4 <- att_gt(yname = "neighbor_vac_gov_death_all", tname = "time", idname = "gid", 
+               gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
+es4 <- aggte(out4, type = "group", na.rm = T)
+summary(es4)
+rm(out4, es4)
 
-### model where the outcome is # all fatalities
-out17 <- att_gt(yname = "acled_fatalities_all", 
-               tname = "time", idname = "gid", 
-               gname = "first_treated_leave", data = df, pl = T, cores = 6)
-es17 <- aggte(out17, type = "group")
-summary(es17)
-rm(out17, es17)
+## Same cell, leave ##
+out5 <- att_gt(yname = "acled_vac_gov_death_all", tname = "time", idname = "gid", 
+               gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
+es5 <- aggte(out5, type = "group", na.rm = T)
+summary(es5)
+rm(out5, es5)
 
-### model where the outcome is # violence against civilians
-out18 <- att_gt(yname = "acled_fatalities_violence_against_civilians", 
-               tname = "time", idname = "gid", 
-               gname = "first_treated_leave", data = df, pl = T, cores = 6)
-es18 <- aggte(out18, type = "group")
-summary(es18)
-rm(out18, es18)
+out6 <- att_gt(yname = "acled_vac_reb_death_all", tname = "time", idname = "gid", 
+               gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
+es6 <- aggte(out6, type = "group", na.rm = T)
+summary(es6)
+rm(out6, es6)
 
-##### DIFF-IN-DIFF FOR IF PKO REDUCE VIOLENCE IN *NEIGHBORING* CELLS #####
+## Neighbor cell, leave ##
+out7 <- att_gt(yname = "neighbor_vac_gov_death_all", tname = "time", idname = "gid", 
+               gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
+es7 <- aggte(out7, type = "group", na.rm = T)
+summary(es7)
+rm(out7, es7)
 
-### model where the outcome is Pr(fatalties)
-out19 <- att_gt(yname = "neighbor_fatalities_any", tname = "time", idname = "gid", 
-               gname = "first_treated", data = df, pl = T, cores = 6)
-es19 <- aggte(out19, type = "group")
-summary(es19)
-rm(out19, es19)
+out8 <- att_gt(yname = "neighbor_vac_gov_death_all", tname = "time", idname = "gid", 
+               gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
+es8 <- aggte(out8, type = "group", na.rm = T)
+summary(es8)
+rm(out8, es8)
 
-### model where the outcome is # all fatalities
-out20 <- att_gt(yname = "neighbor_fatalities_all", 
-               tname = "time", idname = "gid", 
-               gname = "first_treated", data = df, pl = T, cores = 6)
-es20 <- aggte(out20, type = "group")
-summary(es20)
-rm(out20, es20)
+###### Pr() #######
+## Same cell, enter ##
+out1 <- att_gt(yname = "acled_vac_gov_death_any", tname = "time", idname = "gid", 
+               gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
+es1 <- aggte(out1, type = "group", na.rm = T)
+summary(es1)
+rm(out1, es1)
 
-### model where the outcome is # violence against civilians
-out21 <- att_gt(yname = "neighbor_fatalities_violence_against_civilians", 
-               tname = "time", idname = "gid", 
-               gname = "first_treated", data = df, pl = T, cores = 6)
-es21 <- aggte(out21, type = "group")
-summary(es21)
-rm(out21, es21)
+out2 <- att_gt(yname = "acled_vac_reb_death_any", tname = "time", idname = "gid", 
+               gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
+es2 <- aggte(out2, type = "group", na.rm = T)
+summary(es2)
+rm(out2, es2)
 
-#### DIFF-IN-DIFF FOR IF PKO *LEAVING* REDUCES VIOLENCE IN *NEIGHBORING* CELLS #####
+## Neighbor cell, enter ##
+out3 <- att_gt(yname = "neighbor_vac_gov_death_any", tname = "time", idname = "gid", 
+               gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
+es3 <- aggte(out3, type = "group", na.rm = T)
+summary(es3)
+rm(out3, es3)
 
-### model where the outcome is Pr(fatalties)
-out22 <- att_gt(yname = "neighbor_fatalities_any", 
-                tname = "time", idname = "gid", 
-                gname = "first_treated_leave", data = df, pl = T, cores = 6)
-es22 <- aggte(out22, type = "group")
-summary(es22)
-rm(out22, es22)
+out4 <- att_gt(yname = "neighbor_vac_gov_death_any", tname = "time", idname = "gid", 
+               gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
+es4 <- aggte(out4, type = "group", na.rm = T)
+summary(es4)
+rm(out4, es4)
 
-### model where the outcome is # all fatalities
-out23 <- att_gt(yname = "neighbor_fatalities_all", 
-                tname = "time", idname = "gid", 
-                gname = "first_treated_leave", data = df, pl = T, cores = 6)
-es23 <- aggte(out23, type = "group")
-summary(es23)
-rm(out23, es23)
+## Same cell, leave ##
+out5 <- att_gt(yname = "acled_vac_gov_death_any", tname = "time", idname = "gid", 
+               gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
+es5 <- aggte(out5, type = "group", na.rm = T)
+summary(es5)
+rm(out5, es5)
 
-### model where the outcome is # violence against civilians
-out24 <- att_gt(yname = "neighbor_fatalities_violence_against_civilians", 
-                tname = "time", idname = "gid", 
-                gname = "first_treated_leave", data = df, pl = T, cores = 6)
-es24 <- aggte(out24, type = "group")
-summary(es24)
-rm(out24, es24)
+out6 <- att_gt(yname = "acled_vac_reb_death_any", tname = "time", idname = "gid", 
+               gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
+es6 <- aggte(out6, type = "group", na.rm = T)
+summary(es6)
+rm(out6, es6)
 
-#
+## Neighbor cell, leave ##
+out7 <- att_gt(yname = "neighbor_vac_gov_death_any", tname = "time", idname = "gid", 
+               gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
+es7 <- aggte(out7, type = "group", na.rm = T)
+summary(es7)
+rm(out7, es7)
 
-
-
-
-
-
-
-
-
-
+out8 <- att_gt(yname = "neighbor_vac_gov_death_any", tname = "time", idname = "gid", 
+               gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
+es8 <- aggte(out8, type = "group", na.rm = T)
+summary(es8)
+rm(out8, es8)
 
 
 
 
+
+### plotting event study ###
+es1_plot <-   data.frame(
+  type          = "dynamic",
+  term = paste0('ATT(', es1$egt, ")"),
+  event.time= es1$egt,
+  estimate  = es1$att.egt,
+  std.error = es1$se.egt,
+  conf.low  = es1$att.egt - es1$crit.val.egt * es1$se.egt,
+  conf.high = es1$att.egt + es1$crit.val.egt  * es1$se.egt,
+  point.conf.low  = es1$att.egt - stats::qnorm(1 - es1$DIDparams$alp/2) * es1$se.egt,
+  point.conf.high = es1$att.egt + stats::qnorm(1 - es1$DIDparams$alp/2) * es1$se.egt
+)
+
+ggplot(data = es1_plot, mapping = aes(x = event.time, y = estimate)) +
+  geom_vline(xintercept = 0-0.05, color = 'grey', size = 1.2, linetype = "dotted") + 
+  geom_ribbon(aes(ymin= point.conf.low, ymax=  point.conf.high), alpha = 0.5, size = 1, fill = "steelblue")+
+  geom_ribbon(aes(ymin=  conf.low, ymax =  conf.high), alpha =  0.3, size = 1, fill = "steelblue")+
+  geom_line(mapping = aes(x = event.time, y=estimate), colour = "black", size = 0.6, linetype = "dashed") +
+  geom_line(size = 1.2, alpha = 2, colour = "darkblue") +
+  geom_hline(yintercept = 0, colour="black", size = 0.25, linetype = "dotted") +
+  xlab('Event time') +
+  ylab("Event-Study Estimate") +
+  scale_x_continuous(breaks = seq(min(es1_plot$event.time), max(es1_plot$event.time), by = 30)) +
+  theme(axis.text.y = element_text(size = 12))+
+  theme(axis.text.x = element_text(size = 12)) +
+  theme(axis.title = element_text(color="black",  size = 12))+
+  theme(plot.title=ggtext::element_markdown(size = 12, color="black", hjust=0, lineheight=1.2))
+### end plotting
 
 
 
@@ -403,21 +294,45 @@ m1 <- glm(acled_fatalities_any ~ treated + post_treatment +
 summary(m1)
 
 
-
+############ OLD, TO DELETE ############ 
+# df <- as_tibble(df) %>% 
+#   rename(neighbor_vac_gov_death_all = ...143,
+#          neighbor_vac_gov_death_any = ...144,
+#          neighbor_vac_reb_death_all  = ...145,
+#          neighbor_vac_reb_death_any = ...146,
+#          neighbor_vac_gov_event_all = ...147,
+#          neighbor_vac_gov_event_any = ...148,
+#          neighbor_vac_reb_event_all = ...149,
+#          neighbor_vac_reb_event_any = ...150,
+#          neighbor_gov_death_all = ...151,
+#          neighbor_gov_death_any = ...152,
+#          neighbor_reb_death_all = ...153,
+#          neighbor_reb_death_any = ...154,
+#          neighbor_gov_event_all = ...155,
+#          neighbor_gov_event_any = ...156,
+#          neighbor_reb_event_all = ...157,
+#          neighbor_reb_event_any = ...158,
+#          neighbor_bat_death_all = ...159,
+#          neighbor_bat_death_any = ...160,
+#          neighbor_bat_event_all = ...161,
+#          neighbor_bat_event_any = ...162)
+# 
+# radpko <- read_csv("./data/radpko/radpko_grid.csv") %>% 
+#   # make the date variable a date type
+#   mutate(date = ymd(date),
+#          month = month(date),
+#          year = year(date)) %>% 
+#   # rename variable for ease of merging
+#   rename(gid = prio.grid) %>%
+#   select(-c(country, mission, date)) %>% 
+#   relocate(c(year, month), .after = gid) %>% 
+#   group_by(gid, year, month) %>% 
+#   summarise(across(units_deployed:afr_unmob, sum)) %>% 
+#   select(c(gid, month, year)) %>%
+#   ungroup()
+# 
+# df = left_join(radpko, df, by = c("gid", "year", "month"))
+# rm(radpko)
 
 ##### VERSION CONTROL #####
 sessionInfO()
-
-
-
-##### OLD TO DELETE
-
-# gids <- sample(unique(df$gid), 2000)
-# dd <- df[which(df$gid %in% gids),]
-# 
-# ### temp
-# library(parallel)
-# Sys.setenv("MC_CORES"=6)
-# options(mc.cores=6)
-# mc.cores <- options("mc.cores")
-# ### end temp

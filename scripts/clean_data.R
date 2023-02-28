@@ -54,6 +54,7 @@ radpko <- read_csv("./data/radpko/radpko_grid.csv") %>%
   mutate(date = ymd(date),
          month = month(date),
          year = year(date)) %>% 
+  filter(year > 1999 & year < 2018) %>% # until data is updated, need to filter out incomplete years
   # rename variable for ease of merging
   rename(gid = prio.grid)
 
@@ -61,10 +62,10 @@ radpko <- read_csv("./data/radpko/radpko_grid.csv") %>%
 ### need to aggregate everything by those variables. all vars are sums/counts,
 ### so we can just sum them all.
 radpko <- radpko %>% 
-  select(-c(country, mission, date)) %>% 
+  select(-c(country, mission, date, capital.lon:gid_center_lat)) %>% 
   relocate(c(year, month), .after = gid) %>% 
   group_by(gid, year, month) %>% 
-  summarise(across(units_deployed:afr_unmob, sum)) %>% 
+  summarise(across(units_deployed:afr_unmob, sum), across(distance_to_capital:pko_africa, mean)) %>% 
   ungroup()
 
 ##### CLEAN ACLED DATA #####
@@ -76,7 +77,7 @@ acled <- read_csv("./data/acled/1999-01-01-2021-12-31.csv") %>%
                              TRUE ~ country)) %>% 
   # make the date variable a date type then subset to post-1999
   mutate(event_date = dmy(event_date)) %>% 
-  filter(event_date >= "1999-01-01" & event_date <"2019-01-01")
+  filter(event_date >= "2000-01-01" & event_date <"2018-01-01")
 
 ### subset ACLED data to violence against civilians and battles
 acled = subset(acled, event_type == "Violence against civilians" | event_type == "Explosions/Remote violence" | 
@@ -99,32 +100,50 @@ acled <- st_join(acled, prio_shp)
 
 ### add VAC events and deaths by actor
 acled$event = 1
-acled$vac_gov_death = 0
-acled$vac_gov_death[acled$interaction == 17] = acled$fatalities[acled$interaction == 17]
-acled$vac_reb_death = 0
-acled$vac_reb_death[acled$interaction == 27] = acled$fatalities[acled$interaction == 27]
-acled$vac_gov_event = 0
-acled$vac_gov_event[acled$interaction == 17] = acled$event[acled$interaction == 17]
-acled$vac_reb_event = 0
-acled$vac_reb_event[acled$interaction == 27] = acled$event[acled$interaction == 27]
+acled$vac_gov_death_all = 0
+acled$vac_gov_death_all[acled$interaction == 17 | acled$interaction == 37] = 
+  acled$fatalities[acled$interaction == 17 | acled$interaction == 37]
+acled$vac_gov_death_any = 0
+acled$vac_gov_death_any[acled$interaction == 17 | acled$interaction == 37] = 1
+acled$vac_reb_death_all = 0
+acled$vac_reb_death_all[acled$interaction == 27] = acled$fatalities[acled$interaction == 27]
+acled$vac_reb_death_any = 0
+acled$vac_reb_death_any[acled$interaction == 27] = 1
+acled$vac_gov_event_all = 0
+acled$vac_gov_event_all[acled$interaction == 17 | acled$interaction == 37] = 
+  acled$event[acled$interaction == 17 | acled$interaction == 37]
+acled$vac_gov_event_any = 0
+acled$vac_gov_event_any[acled$interaction == 17 | acled$interaction == 37] = 1
+acled$vac_reb_event_all = 0
+acled$vac_reb_event_all[acled$interaction == 27] = acled$event[acled$interaction == 27]
+acled$vac_reb_event_any = 0
+acled$vac_reb_event_any[acled$interaction == 27] = 1
 
 ### add all violence by actor
-acled$gov_death = 0
-acled$gov_death[acled$interaction > 9 & acled$interaction < 20] = acled$fatalities[acled$interaction > 9 & acled$interaction < 20]
-acled$reb_death = 0
-acled$reb_death[acled$interaction > 19 & acled$interaction < 30] = acled$fatalities[acled$interaction > 19 & acled$interaction < 30]
-acled$gov_event = 0
-acled$gov_event[acled$interaction > 9 & acled$interaction < 20] = acled$event[acled$interaction > 9 & acled$interaction < 20]
-acled$reb_event = 0
-acled$reb_event[acled$interaction > 19 & acled$interaction < 30] = acled$event[acled$interaction > 19 & acled$interaction < 30]
+acled$gov_death_all = 0
+acled$gov_death_all[acled$interaction > 9 & acled$interaction < 20] = acled$fatalities[acled$interaction > 9 & acled$interaction < 20]
+acled$reb_death_all = 0
+acled$reb_death_all[acled$interaction > 19 & acled$interaction < 30] = acled$fatalities[acled$interaction > 19 & acled$interaction < 30]
+acled$gov_event_all = 0
+acled$gov_event_all[acled$interaction > 9 & acled$interaction < 20] = acled$event[acled$interaction > 9 & acled$interaction < 20]
+acled$reb_event_all = 0
+acled$reb_event_all[acled$interaction > 19 & acled$interaction < 30] = acled$event[acled$interaction > 19 & acled$interaction < 30]
+acled$gov_death_any = 0
+acled$gov_death_any[acled$gov_death_all > 0] = 1
+acled$reb_death_any = 0
+acled$reb_death_any[acled$reb_death_all > 0] = 1
 
 ### add battle deaths/events
-acled$bat_death = 0
-acled$bat_death[acled$event_type == "Battles" & acled$inter1 == 1 | acled$inter2 == 2] = 
+acled$bat_death_all = 0
+acled$bat_death_all[acled$event_type == "Battles" & acled$inter1 == 1 | acled$inter2 == 2] = 
   acled$fatalities[acled$event_type == "Battles" & acled$inter1 == 1 | acled$inter2 == 2]
-acled$bat_event = 0
-acled$bat_event[acled$event_type == "Battles" & acled$inter1 == 1 | acled$inter2 == 2] = 
+acled$bat_event_all = 0
+acled$bat_event_all[acled$event_type == "Battles" & acled$inter1 == 1 | acled$inter2 == 2] = 
   acled$event[acled$event_type == "Battles" & acled$inter1 == 1 | acled$inter2 == 2]
+acled$bat_death_any = 0
+acled$bat_death_any[acled$bat_death_all > 0] = 1
+acled$bat_event_any = 0
+acled$bat_event_any[acled$bat_event_all > 0] = 1
 
 ### reshape ACLED long to wide, to aggregate deaths by type
 acled <- acled %>% 
@@ -139,7 +158,7 @@ acled <- acled %>%
 
 acled <- acled %>% 
   group_by(gid, year, month) %>% 
-  summarise(across(event:bat_event, sum)) %>% 
+  summarise(across(event:bat_event_any, sum)) %>% 
   ungroup()
 
 ### clean names
@@ -157,7 +176,7 @@ acled <- acled %>%
 ### create a full grid of gid-month-years
 all_gids <- sort(unique(c(acled$gid, prio$gid, radpko$gid)))
 df <- expand_grid(gid = all_gids, 
-                  year = seq(1999, 2018, 1), 
+                  year = seq(2000, 2017, 1), 
                   month = seq(1, 12, 1))
 
 ### merge the acled data to the main df
@@ -177,7 +196,7 @@ df <- df %>%
   # some acled events have grids outside terrestrial range; drop these
   filter(gid >= 49182 & gid <= 249344) %>% 
   # some years are outside the range we care about; drop these
-  filter(year >= 1999 & year <= 2018) %>% 
+  filter(year >= 2000 & year <= 2017) %>% 
   # some ACLED data is outside the PRIO static table. No PKO ops here, so drop
   filter(!is.na(row) & !is.na(col))
 
@@ -185,7 +204,7 @@ df <- df %>%
 df <- df %>% 
   relocate(c(row, col), .after = month) %>% 
   select(-c(xcoord, ycoord)) %>% 
-  rename_at(vars(event:bat_event), 
+  rename_at(vars(event:bat_event_any), 
             function(x) paste0("acled_", x)) %>% 
   rename_at(vars(units_deployed:afr_unmob), function(x) paste0("radpko_", x)) %>% 
   rename_at(vars(agri_gc:water_ih), function(x) paste0("prio_", x)) 
@@ -224,8 +243,18 @@ df <- df %>%
 
 ### ACLED are also complete over this time/area, so recode NA to 0 here too
 df <- df %>% 
-  mutate(across(acled_event:acled_bat_event, 
+  mutate(across(acled_event:acled_bat_event_any, 
                 ~replace_na(.x, 0)))
+
+# recode "any" variables to be binary
+df$acled_vac_gov_death_any[df$acled_vac_gov_death_any > 0] = 1
+df$acled_vac_reb_death_any[df$acled_vac_reb_death_any > 0] = 1
+df$acled_vac_gov_event_any[df$acled_vac_gov_event_any > 0] = 1
+df$acled_vac_reb_event_any[df$acled_vac_reb_event_any > 0] = 1
+df$acled_gov_death_any[df$acled_gov_death_any > 0] = 1
+df$acled_reb_death_any[df$acled_reb_death_any > 0] = 1
+df$acled_bat_death_any[df$acled_bat_death_any > 0] = 1
+df$acled_bat_event_any[df$acled_bat_event_any > 0] = 1
 
 # ### create an "any fatalities" variable for ACLED
 # df <- df %>% 
@@ -266,6 +295,7 @@ names(nb_gid) <- nb$gid
 pb <- txtProgressBar(max = nrow(df), style = 3)
 progress <- function(n) setTxtProgressBar(pb, n)
 opts <- list(progress = progress)
+
 # run loop
 out <- foreach(i = 1:nrow(df), .combine = rbind, .options.snow = opts) %dopar% {
   # get grid cell info
@@ -276,16 +306,27 @@ out <- foreach(i = 1:nrow(df), .combine = rbind, .options.snow = opts) %dopar% {
   tmp <- df[which(df$year == yr & df$month == mn &
                   df$gid %in% nb_gid[[which(names(nb_gid) == as.character(gi))]]),]
   # compute and store values
-  c(sum(tmp$acled_vac_gov_death, na.rm = T),
-    sum(tmp$acled_vac_reb_death, na.rm = T),
-    sum(tmp$acled_vac_gov_event, na.rm = T),
-    sum(tmp$acled_vac_reb_event, na.rm = T),
-    sum(tmp$acled_gov_death, na.rm = T),
-    sum(tmp$acled_reb_death, na.rm = T),
-    sum(tmp$acled_gov_event, na.rm = T),
-    sum(tmp$acled_reb_event, na.rm = T),
-    sum(tmp$acled_bat_death, na.rm = T),
-    sum(tmp$acled_bat_event, na.rm = T))
+  c(sum(tmp$acled_vac_gov_death_all, na.rm = T),
+    sum(tmp$acled_vac_gov_death_any, na.rm = T),
+    sum(tmp$acled_vac_reb_death_all, na.rm = T),
+    sum(tmp$acled_vac_reb_death_any, na.rm = T),
+    sum(tmp$acled_vac_gov_event_all, na.rm = T),
+    sum(tmp$acled_vac_gov_event_any, na.rm = T),
+    sum(tmp$acled_vac_reb_event_all, na.rm = T),
+    sum(tmp$acled_vac_reb_event_any, na.rm = T),
+    sum(tmp$acled_gov_death_all, na.rm = T),
+    sum(tmp$acled_gov_death_any, na.rm = T),
+    sum(tmp$acled_reb_death_all, na.rm = T),
+    sum(tmp$acled_reb_death_any, na.rm = T),
+    sum(tmp$acled_gov_event_all, na.rm = T),
+    sum(tmp$acled_gov_event_any, na.rm = T),
+    sum(tmp$acled_reb_event_all, na.rm = T),
+    sum(tmp$acled_reb_event_any, na.rm = T),
+    sum(tmp$acled_bat_death_all, na.rm = T),
+    sum(tmp$acled_bat_death_any, na.rm = T),
+    sum(tmp$acled_bat_event_all, na.rm = T),
+    sum(tmp$acled_bat_event_any, na.rm = T),
+    sum(tmp$radpko_pko_deployed_any, na.rm = T))
 }
 # turn off progress bar and clusters
 close(pb)
@@ -293,16 +334,27 @@ stopCluster(cl)
 
 ### convert the output into a tibble and rename
 out <- as_tibble(out) %>% 
-  rename(neighbor_vac_gov_death = V1, 
-         neighbor_vac_reb_death  = V2,
-         neighbor_vac_gov_event = V3,
-         neighbor_vac_reb_event = V4,
-         neighbor_gov_death = V5,
-         neighbor_reb_death = V6,
-         neighbor_gov_event = V7,
-         neighbor_reb_event = V8,
-         neighbor_bat_death = V9,
-         neighbor_bat_event = V10)
+  rename(neighbor_vac_gov_death_all = V1,
+         neighbor_vac_gov_death_any = V2,
+         neighbor_vac_reb_death_all  = V3,
+         neighbor_vac_reb_death_any = V4,
+         neighbor_vac_gov_event_all = V5,
+         neighbor_vac_gov_event_any = V6,
+         neighbor_vac_reb_event_all = V7,
+         neighbor_vac_reb_event_any = V8,
+         neighbor_gov_death_all = V9,
+         neighbor_gov_death_any = V10,
+         neighbor_reb_death_all = V11,
+         neighbor_reb_death_any = V12,
+         neighbor_gov_event_all = V13,
+         neighbor_gov_event_any = V14,
+         neighbor_reb_event_all = V15,
+         neighbor_reb_event_any = V16,
+         neighbor_bat_death_all = V17,
+         neighbor_bat_death_any = V18,
+         neighbor_bat_event_all = V19,
+         neighbor_bat_event_any = V20,
+         neighbor_pko_any = V21)
 
 ### bind them together
 df <- bind_cols(df, out)
@@ -314,7 +366,7 @@ rm(cl, i, ids, nb, nb_gid, opts, out, pb, prio_shp, progress, st_queen)
 
 ### create a unified time variable. this needs to be a positive integer for `did`
 df <- df %>% 
-  mutate(time = (year-1999)*(12) + month)
+  mutate(time = (year-2000)*(12) + month)
 
 ### split by GID and make some variables
 dd <- df %>% as.data.frame() %>% select(gid, time, radpko_pko_deployed_any)
@@ -374,6 +426,40 @@ df <- df %>%
 
 ### save it
 write_rds(df, "./data/Kunkel-Atkinson-Warner-final.rds")
+
+##### VERSION CONTROL (Sky) #####
+# R version 4.1.0 (2021-05-18)
+# Platform: x86_64-apple-darwin17.0 (64-bit)
+# Running under: macOS Big Sur 11.7.1
+# 
+# Matrix products: default
+# LAPACK: /Library/Frameworks/R.framework/Versions/4.1/Resources/lib/libRlapack.dylib
+# 
+# locale:
+#   [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
+# 
+# attached base packages:
+#   [1] parallel  stats     graphics  grDevices utils     datasets  methods   base     
+# 
+# other attached packages:
+#   [1] forcats_0.5.1    stringr_1.4.0    dplyr_1.0.9      purrr_0.3.4      readr_2.1.2      tidyr_1.2.0      tibble_3.1.7    
+# [8] ggplot2_3.3.6    tidyverse_1.3.1  sf_1.0-3         lubridate_1.8.0  janitor_2.1.0    doSNOW_1.0.20    snow_0.4-3      
+# [15] iterators_1.0.13 foreach_1.5.1   
+# 
+# loaded via a namespace (and not attached):
+#   [1] Rcpp_1.0.8.3       class_7.3-19       assertthat_0.2.1   utf8_1.2.2         R6_2.5.1           cellranger_1.1.0  
+# [7] backports_1.4.1    reprex_2.0.1       e1071_1.7-9        httr_1.4.2         pillar_1.7.0       rlang_1.0.2       
+# [13] readxl_1.4.0       rstudioapi_0.13    bit_4.0.4          munsell_0.5.0      proxy_0.4-26       broom_0.8.0       
+# [19] compiler_4.1.0     modelr_0.1.8       pkgconfig_2.0.3    tidyselect_1.1.2   codetools_0.2-18   fansi_1.0.3       
+# [25] crayon_1.5.1       tzdb_0.3.0         dbplyr_2.1.1       withr_2.5.0        wk_0.5.0           grid_4.1.0        
+# [31] jsonlite_1.8.0     gtable_0.3.0       lifecycle_1.0.1    DBI_1.1.1          magrittr_2.0.3     units_0.7-2       
+# [37] scales_1.2.0       KernSmooth_2.23-20 cli_3.3.0          stringi_1.7.6      vroom_1.5.7        fs_1.5.0          
+# [43] snakecase_0.11.0   xml2_1.3.3         ellipsis_0.3.2     generics_0.1.2     vctrs_0.4.1        s2_1.0.7          
+# [49] tools_4.1.0        bit64_4.0.5        glue_1.6.2         hms_1.1.1          colorspace_2.0-3   classInt_0.4-3    
+# [55] rvest_1.0.1        haven_2.4.3   
+
+
+##### OLD TO DELETE #####
 
 ##### VERSION CONTROL #####
 sessionInfo()
