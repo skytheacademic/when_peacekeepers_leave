@@ -3,224 +3,1154 @@
 # reading in cleaned data
 setwd("../")
 library(did); library(sf); library(tidyverse); library(lubridate); library(ggtext)
-a = read_rds("./data/Kunkel-Atkinson-Warner-final.rds")
-#a= as.data.frame(a)
+setwd("/Users/kunkel3/Documents/GitHub/when_peacekeepers_leave")
+df = read_rds("./data/Kunkel-Atkinson-Warner-final.rds")
 
 ######### make parallel trends plots ######### 
-## Same cell, enter ##
-out1 <- att_gt(yname = "acled_vac_gov_event_all", tname = "time", idname = "gid", 
-               gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
-es1 <- aggte(out1, type = "dynamic", na.rm = T) 
-summary(es1)
-rm(out1, es1)
 
+##################################### VIOLENT EVENTS #####################################
+###### TOTAL #######
+## Same cell, enter ##
+set.seed(8675309) # hey jenny
+out1 <- att_gt(yname = "acled_vac_gov_event_all", tname = "time", idname = "gid", 
+               gname = "first_treated",data = df, pl = T, cores = 1, allow_unbalanced_panel = T)
+es1 <- aggte(out1, type = "dynamic", na.rm = T) # extract for parallel trends plot
+es1_plot <-   data.frame(
+  type          = "dynamic",
+  term = paste0('ATT(', es1$egt, ")"),
+  event.time= es1$egt,
+  estimate  = es1$att.egt,
+  std.error = es1$se.egt,
+  conf.low  = es1$att.egt - es1$crit.val.egt * es1$se.egt,
+  conf.high = es1$att.egt + es1$crit.val.egt  * es1$se.egt,
+  point.conf.low  = es1$att.egt - stats::qnorm(1 - es1$DIDparams$alp/2) * es1$se.egt,
+  point.conf.high = es1$att.egt + stats::qnorm(1 - es1$DIDparams$alp/2) * es1$se.egt
+) %>%
+  filter(event.time < 1)
+
+pdf("./results/event_study_pt/1.pdf")
+ggplot(data = es1_plot, mapping = aes(x = event.time, y = estimate)) +
+  geom_vline(xintercept = 0-0.05, color = 'grey', linewidth = 1.2, linetype = "dotted") + 
+  geom_ribbon(aes(ymin= point.conf.low, ymax=  point.conf.high), alpha = 0.5, linewidth = 1, fill = "steelblue")+
+  geom_ribbon(aes(ymin=  conf.low, ymax =  conf.high), alpha =  0.3, linewidth = 1, fill = "steelblue")+
+  geom_line(mapping = aes(x = event.time, y=estimate), colour = "black", linewidth = 0.6, linetype = "dashed") +
+  geom_line(size = 1.2, alpha = 2, colour = "darkblue") +
+  geom_hline(yintercept = 0, colour="black", size = 0.25, linetype = "dotted") +
+  xlab('Event time') +
+  ylab("Event-Study Estimate") +
+  scale_x_continuous(breaks = seq(min(es1_plot$event.time), max(es1_plot$event.time), by = 30)) +
+  theme(axis.text.y = element_text(size = 12))+
+  theme(axis.text.x = element_text(size = 12)) +
+  theme(axis.title = element_text(color="black",  size = 12))+
+  theme(plot.title=ggtext::element_markdown(size = 12, color="black", hjust=0, lineheight=1.2))
+dev.off()
+rm(es1, es1_plot, out1)
+
+
+set.seed(8675309) # hey jenny
 out2 <- att_gt(yname = "acled_vac_reb_event_all", tname = "time", idname = "gid", 
                gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es2 <- aggte(out2, type = "dynamic", na.rm = T)
-summary(es2)
-rm(out2, es2)
+es2_plot <-   data.frame(
+  type          = "dynamic",
+  term = paste0('ATT(', es2$egt, ")"),
+  event.time= es2$egt,
+  estimate  = es2$att.egt,
+  std.error = es2$se.egt,
+  conf.low  = es2$att.egt - es2$crit.val.egt * es2$se.egt,
+  conf.high = es2$att.egt + es2$crit.val.egt  * es2$se.egt,
+  point.conf.low  = es2$att.egt - stats::qnorm(1 - es2$DIDparams$alp/2) * es2$se.egt,
+  point.conf.high = es2$att.egt + stats::qnorm(1 - es2$DIDparams$alp/2) * es2$se.egt
+) %>%
+  filter(event.time < 1)
+
+pdf("./results/event_study_pt/2.pdf")
+ggplot(data = es2_plot, mapping = aes(x = event.time, y = estimate)) +
+  geom_vline(xintercept = 0-0.05, color = 'grey', linewidth = 1.2, linetype = "dotted") + 
+  geom_ribbon(aes(ymin= point.conf.low, ymax=  point.conf.high), alpha = 0.5, linewidth = 1, fill = "steelblue")+
+  geom_ribbon(aes(ymin=  conf.low, ymax =  conf.high), alpha =  0.3, linewidth = 1, fill = "steelblue")+
+  geom_line(mapping = aes(x = event.time, y=estimate), colour = "black", linewidth = 0.6, linetype = "dashed") +
+  geom_line(size = 1.2, alpha = 2, colour = "darkblue") +
+  geom_hline(yintercept = 0, colour="black", size = 0.25, linetype = "dotted") +
+  xlab('Event time') +
+  ylab("Event-Study Estimate") +
+  scale_x_continuous(breaks = seq(min(es2_plot$event.time), max(es2_plot$event.time), by = 30)) +
+  theme(axis.text.y = element_text(size = 12))+
+  theme(axis.text.x = element_text(size = 12)) +
+  theme(axis.title = element_text(color="black",  size = 12))+
+  theme(plot.title=ggtext::element_markdown(size = 12, color="black", hjust=0, lineheight=1.2))
+dev.off()
+rm(es2, es2_plot, out2)
 
 ## Neighbor cell, enter ##
+set.seed(8675309) # hey jenny
 out3 <- att_gt(yname = "neighbor_vac_gov_event_all", tname = "time", idname = "gid", 
                gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es3 <- aggte(out3, type = "dynamic", na.rm = T)
-summary(es3)
-rm(out3, es3)
+es3_plot <-   data.frame(
+  type          = "dynamic",
+  term = paste0('ATT(', es3$egt, ")"),
+  event.time= es3$egt,
+  estimate  = es3$att.egt,
+  std.error = es3$se.egt,
+  conf.low  = es3$att.egt - es3$crit.val.egt * es3$se.egt,
+  conf.high = es3$att.egt + es3$crit.val.egt  * es3$se.egt,
+  point.conf.low  = es3$att.egt - stats::qnorm(1 - es3$DIDparams$alp/2) * es3$se.egt,
+  point.conf.high = es3$att.egt + stats::qnorm(1 - es3$DIDparams$alp/2) * es3$se.egt
+) %>%
+  filter(event.time < 1)
 
-out4 <- att_gt(yname = "neighbor_vac_gov_event_all", tname = "time", idname = "gid", 
+pdf("./results/event_study_pt/3.pdf")
+ggplot(data = es3_plot, mapping = aes(x = event.time, y = estimate)) +
+  geom_vline(xintercept = 0-0.05, color = 'grey', linewidth = 1.2, linetype = "dotted") + 
+  geom_ribbon(aes(ymin= point.conf.low, ymax=  point.conf.high), alpha = 0.5, linewidth = 1, fill = "steelblue")+
+  geom_ribbon(aes(ymin=  conf.low, ymax =  conf.high), alpha =  0.3, linewidth = 1, fill = "steelblue")+
+  geom_line(mapping = aes(x = event.time, y=estimate), colour = "black", linewidth = 0.6, linetype = "dashed") +
+  geom_line(size = 1.2, alpha = 2, colour = "darkblue") +
+  geom_hline(yintercept = 0, colour="black", size = 0.25, linetype = "dotted") +
+  xlab('Event time') +
+  ylab("Event-Study Estimate") +
+  scale_x_continuous(breaks = seq(min(es3_plot$event.time), max(es3_plot$event.time), by = 30)) +
+  theme(axis.text.y = element_text(size = 12))+
+  theme(axis.text.x = element_text(size = 12)) +
+  theme(axis.title = element_text(color="black",  size = 12))+
+  theme(plot.title=ggtext::element_markdown(size = 12, color="black", hjust=0, lineheight=1.2))
+dev.off()
+rm(es3, es3_plot, out3)
+
+set.seed(8675309) # hey jenny
+out4 <- att_gt(yname = "neighbor_vac_reb_event_all", tname = "time", idname = "gid", 
                gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es4 <- aggte(out4, type = "dynamic", na.rm = T)
-summary(es4)
-rm(out4, es4)
+es4_plot <-   data.frame(
+  type          = "dynamic",
+  term = paste0('ATT(', es4$egt, ")"),
+  event.time= es4$egt,
+  estimate  = es4$att.egt,
+  std.error = es4$se.egt,
+  conf.low  = es4$att.egt - es4$crit.val.egt * es4$se.egt,
+  conf.high = es4$att.egt + es4$crit.val.egt  * es4$se.egt,
+  point.conf.low  = es4$att.egt - stats::qnorm(1 - es4$DIDparams$alp/2) * es4$se.egt,
+  point.conf.high = es4$att.egt + stats::qnorm(1 - es4$DIDparams$alp/2) * es4$se.egt
+) %>%
+  filter(event.time < 1)
+
+pdf("./results/event_study_pt/4.pdf")
+ggplot(data = es4_plot, mapping = aes(x = event.time, y = estimate)) +
+  geom_vline(xintercept = 0-0.05, color = 'grey', linewidth = 1.2, linetype = "dotted") + 
+  geom_ribbon(aes(ymin= point.conf.low, ymax=  point.conf.high), alpha = 0.5, linewidth = 1, fill = "steelblue")+
+  geom_ribbon(aes(ymin=  conf.low, ymax =  conf.high), alpha =  0.3, linewidth = 1, fill = "steelblue")+
+  geom_line(mapping = aes(x = event.time, y=estimate), colour = "black", linewidth = 0.6, linetype = "dashed") +
+  geom_line(size = 1.2, alpha = 2, colour = "darkblue") +
+  geom_hline(yintercept = 0, colour="black", size = 0.25, linetype = "dotted") +
+  xlab('Event time') +
+  ylab("Event-Study Estimate") +
+  scale_x_continuous(breaks = seq(min(es4_plot$event.time), max(es4_plot$event.time), by = 30)) +
+  theme(axis.text.y = element_text(size = 12))+
+  theme(axis.text.x = element_text(size = 12)) +
+  theme(axis.title = element_text(color="black",  size = 12))+
+  theme(plot.title=ggtext::element_markdown(size = 12, color="black", hjust=0, lineheight=1.2))
+dev.off()
+rm(es4, es4_plot, out4)
 
 ## Same cell, leave ##
+set.seed(8675309) # hey jenny
 out5 <- att_gt(yname = "acled_vac_gov_event_all", tname = "time", idname = "gid", 
                gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es5 <- aggte(out5, type = "dynamic", na.rm = T)
-summary(es5)
-rm(out5, es5)
+es5_plot <-   data.frame(
+  type          = "dynamic",
+  term = paste0('ATT(', es5$egt, ")"),
+  event.time= es5$egt,
+  estimate  = es5$att.egt,
+  std.error = es5$se.egt,
+  conf.low  = es5$att.egt - es5$crit.val.egt * es5$se.egt,
+  conf.high = es5$att.egt + es5$crit.val.egt  * es5$se.egt,
+  point.conf.low  = es5$att.egt - stats::qnorm(1 - es5$DIDparams$alp/2) * es5$se.egt,
+  point.conf.high = es5$att.egt + stats::qnorm(1 - es5$DIDparams$alp/2) * es5$se.egt
+) %>%
+  filter(event.time < 1)
 
+pdf("./results/event_study_pt/5.pdf")
+ggplot(data = es5_plot, mapping = aes(x = event.time, y = estimate)) +
+  geom_vline(xintercept = 0-0.05, color = 'grey', linewidth = 1.2, linetype = "dotted") + 
+  geom_ribbon(aes(ymin= point.conf.low, ymax=  point.conf.high), alpha = 0.5, linewidth = 1, fill = "steelblue")+
+  geom_ribbon(aes(ymin=  conf.low, ymax =  conf.high), alpha =  0.3, linewidth = 1, fill = "steelblue")+
+  geom_line(mapping = aes(x = event.time, y=estimate), colour = "black", linewidth = 0.6, linetype = "dashed") +
+  geom_line(size = 1.2, alpha = 2, colour = "darkblue") +
+  geom_hline(yintercept = 0, colour="black", size = 0.25, linetype = "dotted") +
+  xlab('Event time') +
+  ylab("Event-Study Estimate") +
+  scale_x_continuous(breaks = seq(min(es5_plot$event.time), max(es5_plot$event.time), by = 30)) +
+  theme(axis.text.y = element_text(size = 12))+
+  theme(axis.text.x = element_text(size = 12)) +
+  theme(axis.title = element_text(color="black",  size = 12))+
+  theme(plot.title=ggtext::element_markdown(size = 12, color="black", hjust=0, lineheight=1.2))
+dev.off()
+rm(es5, es5_plot, out5)
+
+set.seed(8675309) # hey jenny
 out6 <- att_gt(yname = "acled_vac_reb_event_all", tname = "time", idname = "gid", 
                gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es6 <- aggte(out6, type = "dynamic", na.rm = T)
-summary(es6)
-rm(out6, es6)
+es6_plot <-   data.frame(
+  type          = "dynamic",
+  term = paste0('ATT(', es6$egt, ")"),
+  event.time= es6$egt,
+  estimate  = es6$att.egt,
+  std.error = es6$se.egt,
+  conf.low  = es6$att.egt - es6$crit.val.egt * es6$se.egt,
+  conf.high = es6$att.egt + es6$crit.val.egt  * es6$se.egt,
+  point.conf.low  = es6$att.egt - stats::qnorm(1 - es6$DIDparams$alp/2) * es6$se.egt,
+  point.conf.high = es6$att.egt + stats::qnorm(1 - es6$DIDparams$alp/2) * es6$se.egt
+) %>%
+  filter(event.time < 1)
+
+pdf("./results/event_study_pt/6.pdf")
+ggplot(data = es6_plot, mapping = aes(x = event.time, y = estimate)) +
+  geom_vline(xintercept = 0-0.05, color = 'grey', linewidth = 1.2, linetype = "dotted") + 
+  geom_ribbon(aes(ymin= point.conf.low, ymax=  point.conf.high), alpha = 0.5, linewidth = 1, fill = "steelblue")+
+  geom_ribbon(aes(ymin=  conf.low, ymax =  conf.high), alpha =  0.3, linewidth = 1, fill = "steelblue")+
+  geom_line(mapping = aes(x = event.time, y=estimate), colour = "black", linewidth = 0.6, linetype = "dashed") +
+  geom_line(size = 1.2, alpha = 2, colour = "darkblue") +
+  geom_hline(yintercept = 0, colour="black", size = 0.25, linetype = "dotted") +
+  xlab('Event time') +
+  ylab("Event-Study Estimate") +
+  scale_x_continuous(breaks = seq(min(es6_plot$event.time), max(es6_plot$event.time), by = 30)) +
+  theme(axis.text.y = element_text(size = 12))+
+  theme(axis.text.x = element_text(size = 12)) +
+  theme(axis.title = element_text(color="black",  size = 12))+
+  theme(plot.title=ggtext::element_markdown(size = 12, color="black", hjust=0, lineheight=1.2))
+dev.off()
+rm(es6, es6_plot, out6)
 
 ## Neighbor cell, leave ##
+set.seed(8675309) # hey jenny
 out7 <- att_gt(yname = "neighbor_vac_gov_event_all", tname = "time", idname = "gid", 
                gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es7 <- aggte(out7, type = "dynamic", na.rm = T)
-summary(es7)
-rm(out7, es7)
+es7_plot <-   data.frame(
+  type          = "dynamic",
+  term = paste0('ATT(', es7$egt, ")"),
+  event.time= es7$egt,
+  estimate  = es7$att.egt,
+  std.error = es7$se.egt,
+  conf.low  = es7$att.egt - es7$crit.val.egt * es7$se.egt,
+  conf.high = es7$att.egt + es7$crit.val.egt  * es7$se.egt,
+  point.conf.low  = es7$att.egt - stats::qnorm(1 - es7$DIDparams$alp/2) * es7$se.egt,
+  point.conf.high = es7$att.egt + stats::qnorm(1 - es7$DIDparams$alp/2) * es7$se.egt
+) %>%
+  filter(event.time < 1)
 
-out8 <- att_gt(yname = "neighbor_vac_gov_event_all", tname = "time", idname = "gid", 
+pdf("./results/event_study_pt/7.pdf")
+ggplot(data = es7_plot, mapping = aes(x = event.time, y = estimate)) +
+  geom_vline(xintercept = 0-0.05, color = 'grey', linewidth = 1.2, linetype = "dotted") + 
+  geom_ribbon(aes(ymin= point.conf.low, ymax=  point.conf.high), alpha = 0.5, linewidth = 1, fill = "steelblue")+
+  geom_ribbon(aes(ymin=  conf.low, ymax =  conf.high), alpha =  0.3, linewidth = 1, fill = "steelblue")+
+  geom_line(mapping = aes(x = event.time, y=estimate), colour = "black", linewidth = 0.6, linetype = "dashed") +
+  geom_line(size = 1.2, alpha = 2, colour = "darkblue") +
+  geom_hline(yintercept = 0, colour="black", size = 0.25, linetype = "dotted") +
+  xlab('Event time') +
+  ylab("Event-Study Estimate") +
+  scale_x_continuous(breaks = seq(min(es7_plot$event.time), max(es7_plot$event.time), by = 30)) +
+  theme(axis.text.y = element_text(size = 12))+
+  theme(axis.text.x = element_text(size = 12)) +
+  theme(axis.title = element_text(color="black",  size = 12))+
+  theme(plot.title=ggtext::element_markdown(size = 12, color="black", hjust=0, lineheight=1.2))
+dev.off()
+rm(es7, es7_plot, out7)
+
+set.seed(8675309) # hey jenny
+out8 <- att_gt(yname = "neighbor_vac_reb_event_all", tname = "time", idname = "gid", 
                gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es8 <- aggte(out8, type = "dynamic", na.rm = T)
-summary(es8)
-rm(out8, es8)
+es8_plot <-   data.frame(
+  type          = "dynamic",
+  term = paste0('ATT(', es8$egt, ")"),
+  event.time= es8$egt,
+  estimate  = es8$att.egt,
+  std.error = es8$se.egt,
+  conf.low  = es8$att.egt - es8$crit.val.egt * es8$se.egt,
+  conf.high = es8$att.egt + es8$crit.val.egt  * es8$se.egt,
+  point.conf.low  = es8$att.egt - stats::qnorm(1 - es8$DIDparams$alp/2) * es8$se.egt,
+  point.conf.high = es8$att.egt + stats::qnorm(1 - es8$DIDparams$alp/2) * es8$se.egt
+) %>%
+  filter(event.time < 1)
+
+pdf("./results/event_study_pt/8.pdf")
+ggplot(data = es8_plot, mapping = aes(x = event.time, y = estimate)) +
+  geom_vline(xintercept = 0-0.05, color = 'grey', linewidth = 1.2, linetype = "dotted") + 
+  geom_ribbon(aes(ymin= point.conf.low, ymax=  point.conf.high), alpha = 0.5, linewidth = 1, fill = "steelblue")+
+  geom_ribbon(aes(ymin=  conf.low, ymax =  conf.high), alpha =  0.3, linewidth = 1, fill = "steelblue")+
+  geom_line(mapping = aes(x = event.time, y=estimate), colour = "black", linewidth = 0.6, linetype = "dashed") +
+  geom_line(size = 1.2, alpha = 2, colour = "darkblue") +
+  geom_hline(yintercept = 0, colour="black", size = 0.25, linetype = "dotted") +
+  xlab('Event time') +
+  ylab("Event-Study Estimate") +
+  scale_x_continuous(breaks = seq(min(es8_plot$event.time), max(es8_plot$event.time), by = 30)) +
+  theme(axis.text.y = element_text(size = 12))+
+  theme(axis.text.x = element_text(size = 12)) +
+  theme(axis.title = element_text(color="black",  size = 12))+
+  theme(plot.title=ggtext::element_markdown(size = 12, color="black", hjust=0, lineheight=1.2))
+dev.off()
+rm(es8, es8_plot, out8)
 
 ###### Pr() #######
 ## Same cell, enter ##
+set.seed(8675309) # hey jenny
 out1 <- att_gt(yname = "acled_vac_gov_event_any", tname = "time", idname = "gid", 
                gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es1 <- aggte(out1, type = "dynamic", na.rm = T)
-summary(es1)
-rm(out1, es1)
+es1_plot <-   data.frame(
+  type          = "dynamic",
+  term = paste0('ATT(', es1$egt, ")"),
+  event.time= es1$egt,
+  estimate  = es1$att.egt,
+  std.error = es1$se.egt,
+  conf.low  = es1$att.egt - es1$crit.val.egt * es1$se.egt,
+  conf.high = es1$att.egt + es1$crit.val.egt  * es1$se.egt,
+  point.conf.low  = es1$att.egt - stats::qnorm(1 - es1$DIDparams$alp/2) * es1$se.egt,
+  point.conf.high = es1$att.egt + stats::qnorm(1 - es1$DIDparams$alp/2) * es1$se.egt
+) %>%
+  filter(event.time < 1)
 
+pdf("./results/event_study_pt/9.pdf")
+ggplot(data = es1_plot, mapping = aes(x = event.time, y = estimate)) +
+  geom_vline(xintercept = 0-0.05, color = 'grey', linewidth = 1.2, linetype = "dotted") + 
+  geom_ribbon(aes(ymin= point.conf.low, ymax=  point.conf.high), alpha = 0.5, linewidth = 1, fill = "steelblue")+
+  geom_ribbon(aes(ymin=  conf.low, ymax =  conf.high), alpha =  0.3, linewidth = 1, fill = "steelblue")+
+  geom_line(mapping = aes(x = event.time, y=estimate), colour = "black", linewidth = 0.6, linetype = "dashed") +
+  geom_line(size = 1.2, alpha = 2, colour = "darkblue") +
+  geom_hline(yintercept = 0, colour="black", size = 0.25, linetype = "dotted") +
+  xlab('Event time') +
+  ylab("Event-Study Estimate") +
+  scale_x_continuous(breaks = seq(min(es1_plot$event.time), max(es1_plot$event.time), by = 30)) +
+  theme(axis.text.y = element_text(size = 12))+
+  theme(axis.text.x = element_text(size = 12)) +
+  theme(axis.title = element_text(color="black",  size = 12))+
+  theme(plot.title=ggtext::element_markdown(size = 12, color="black", hjust=0, lineheight=1.2))
+dev.off()
+rm(es1, es1_plot, out1)
+
+set.seed(8675309) # hey jenny
 out2 <- att_gt(yname = "acled_vac_reb_event_any", tname = "time", idname = "gid", 
                gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es2 <- aggte(out2, type = "dynamic", na.rm = T)
-summary(es2)
-rm(out2, es2)
+es2_plot <-   data.frame(
+  type          = "dynamic",
+  term = paste0('ATT(', es2$egt, ")"),
+  event.time= es2$egt,
+  estimate  = es2$att.egt,
+  std.error = es2$se.egt,
+  conf.low  = es2$att.egt - es2$crit.val.egt * es2$se.egt,
+  conf.high = es2$att.egt + es2$crit.val.egt  * es2$se.egt,
+  point.conf.low  = es2$att.egt - stats::qnorm(1 - es2$DIDparams$alp/2) * es2$se.egt,
+  point.conf.high = es2$att.egt + stats::qnorm(1 - es2$DIDparams$alp/2) * es2$se.egt
+) %>%
+  filter(event.time < 1)
+
+pdf("./results/event_study_pt/10.pdf")
+ggplot(data = es2_plot, mapping = aes(x = event.time, y = estimate)) +
+  geom_vline(xintercept = 0-0.05, color = 'grey', linewidth = 1.2, linetype = "dotted") + 
+  geom_ribbon(aes(ymin= point.conf.low, ymax=  point.conf.high), alpha = 0.5, linewidth = 1, fill = "steelblue")+
+  geom_ribbon(aes(ymin=  conf.low, ymax =  conf.high), alpha =  0.3, linewidth = 1, fill = "steelblue")+
+  geom_line(mapping = aes(x = event.time, y=estimate), colour = "black", linewidth = 0.6, linetype = "dashed") +
+  geom_line(size = 1.2, alpha = 2, colour = "darkblue") +
+  geom_hline(yintercept = 0, colour="black", size = 0.25, linetype = "dotted") +
+  xlab('Event time') +
+  ylab("Event-Study Estimate") +
+  scale_x_continuous(breaks = seq(min(es2_plot$event.time), max(es2_plot$event.time), by = 30)) +
+  theme(axis.text.y = element_text(size = 12))+
+  theme(axis.text.x = element_text(size = 12)) +
+  theme(axis.title = element_text(color="black",  size = 12))+
+  theme(plot.title=ggtext::element_markdown(size = 12, color="black", hjust=0, lineheight=1.2))
+dev.off()
+rm(es2, es2_plot, out2)
 
 ## Neighbor cell, enter ##
+set.seed(8675309) # hey jenny
 out3 <- att_gt(yname = "neighbor_vac_gov_event_any", tname = "time", idname = "gid", 
                gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es3 <- aggte(out3, type = "dynamic", na.rm = T)
-summary(es3)
-rm(out3, es3)
+es3_plot <-   data.frame(
+  type          = "dynamic",
+  term = paste0('ATT(', es3$egt, ")"),
+  event.time= es3$egt,
+  estimate  = es3$att.egt,
+  std.error = es3$se.egt,
+  conf.low  = es3$att.egt - es3$crit.val.egt * es3$se.egt,
+  conf.high = es3$att.egt + es3$crit.val.egt  * es3$se.egt,
+  point.conf.low  = es3$att.egt - stats::qnorm(1 - es3$DIDparams$alp/2) * es3$se.egt,
+  point.conf.high = es3$att.egt + stats::qnorm(1 - es3$DIDparams$alp/2) * es3$se.egt
+) %>%
+  filter(event.time < 1)
 
-out4 <- att_gt(yname = "neighbor_vac_gov_event_any", tname = "time", idname = "gid", 
+pdf("./results/event_study_pt/11.pdf")
+ggplot(data = es3_plot, mapping = aes(x = event.time, y = estimate)) +
+  geom_vline(xintercept = 0-0.05, color = 'grey', linewidth = 1.2, linetype = "dotted") + 
+  geom_ribbon(aes(ymin= point.conf.low, ymax=  point.conf.high), alpha = 0.5, linewidth = 1, fill = "steelblue")+
+  geom_ribbon(aes(ymin=  conf.low, ymax =  conf.high), alpha =  0.3, linewidth = 1, fill = "steelblue")+
+  geom_line(mapping = aes(x = event.time, y=estimate), colour = "black", linewidth = 0.6, linetype = "dashed") +
+  geom_line(size = 1.2, alpha = 2, colour = "darkblue") +
+  geom_hline(yintercept = 0, colour="black", size = 0.25, linetype = "dotted") +
+  xlab('Event time') +
+  ylab("Event-Study Estimate") +
+  scale_x_continuous(breaks = seq(min(es3_plot$event.time), max(es3_plot$event.time), by = 30)) +
+  theme(axis.text.y = element_text(size = 12))+
+  theme(axis.text.x = element_text(size = 12)) +
+  theme(axis.title = element_text(color="black",  size = 12))+
+  theme(plot.title=ggtext::element_markdown(size = 12, color="black", hjust=0, lineheight=1.2))
+dev.off()
+rm(es3, es3_plot, out3)
+
+set.seed(8675309) # hey jenny
+out4 <- att_gt(yname = "neighbor_vac_reb_event_any", tname = "time", idname = "gid", 
                gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es4 <- aggte(out4, type = "dynamic", na.rm = T)
-summary(es4)
-rm(out4, es4)
+es4_plot <-   data.frame(
+  type          = "dynamic",
+  term = paste0('ATT(', es4$egt, ")"),
+  event.time= es4$egt,
+  estimate  = es4$att.egt,
+  std.error = es4$se.egt,
+  conf.low  = es4$att.egt - es4$crit.val.egt * es4$se.egt,
+  conf.high = es4$att.egt + es4$crit.val.egt  * es4$se.egt,
+  point.conf.low  = es4$att.egt - stats::qnorm(1 - es4$DIDparams$alp/2) * es4$se.egt,
+  point.conf.high = es4$att.egt + stats::qnorm(1 - es4$DIDparams$alp/2) * es4$se.egt
+) %>%
+  filter(event.time < 1)
+
+pdf("./results/event_study_pt/12.pdf")
+ggplot(data = es4_plot, mapping = aes(x = event.time, y = estimate)) +
+  geom_vline(xintercept = 0-0.05, color = 'grey', linewidth = 1.2, linetype = "dotted") + 
+  geom_ribbon(aes(ymin= point.conf.low, ymax=  point.conf.high), alpha = 0.5, linewidth = 1, fill = "steelblue")+
+  geom_ribbon(aes(ymin=  conf.low, ymax =  conf.high), alpha =  0.3, linewidth = 1, fill = "steelblue")+
+  geom_line(mapping = aes(x = event.time, y=estimate), colour = "black", linewidth = 0.6, linetype = "dashed") +
+  geom_line(size = 1.2, alpha = 2, colour = "darkblue") +
+  geom_hline(yintercept = 0, colour="black", size = 0.25, linetype = "dotted") +
+  xlab('Event time') +
+  ylab("Event-Study Estimate") +
+  scale_x_continuous(breaks = seq(min(es4_plot$event.time), max(es4_plot$event.time), by = 30)) +
+  theme(axis.text.y = element_text(size = 12))+
+  theme(axis.text.x = element_text(size = 12)) +
+  theme(axis.title = element_text(color="black",  size = 12))+
+  theme(plot.title=ggtext::element_markdown(size = 12, color="black", hjust=0, lineheight=1.2))
+dev.off()
+rm(es4, es4_plot, out4)
 
 ## Same cell, leave ##
+set.seed(8675309) # hey jenny
 out5 <- att_gt(yname = "acled_vac_gov_event_any", tname = "time", idname = "gid", 
                gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es5 <- aggte(out5, type = "dynamic", na.rm = T)
-summary(es5)
-rm(out5, es5)
+es5_plot <-   data.frame(
+  type          = "dynamic",
+  term = paste0('ATT(', es5$egt, ")"),
+  event.time= es5$egt,
+  estimate  = es5$att.egt,
+  std.error = es5$se.egt,
+  conf.low  = es5$att.egt - es5$crit.val.egt * es5$se.egt,
+  conf.high = es5$att.egt + es5$crit.val.egt  * es5$se.egt,
+  point.conf.low  = es5$att.egt - stats::qnorm(1 - es5$DIDparams$alp/2) * es5$se.egt,
+  point.conf.high = es5$att.egt + stats::qnorm(1 - es5$DIDparams$alp/2) * es5$se.egt
+) %>%
+  filter(event.time < 1)
 
+pdf("./results/event_study_pt/13.pdf")
+ggplot(data = es5_plot, mapping = aes(x = event.time, y = estimate)) +
+  geom_vline(xintercept = 0-0.05, color = 'grey', linewidth = 1.2, linetype = "dotted") + 
+  geom_ribbon(aes(ymin= point.conf.low, ymax=  point.conf.high), alpha = 0.5, linewidth = 1, fill = "steelblue")+
+  geom_ribbon(aes(ymin=  conf.low, ymax =  conf.high), alpha =  0.3, linewidth = 1, fill = "steelblue")+
+  geom_line(mapping = aes(x = event.time, y=estimate), colour = "black", linewidth = 0.6, linetype = "dashed") +
+  geom_line(size = 1.2, alpha = 2, colour = "darkblue") +
+  geom_hline(yintercept = 0, colour="black", size = 0.25, linetype = "dotted") +
+  xlab('Event time') +
+  ylab("Event-Study Estimate") +
+  scale_x_continuous(breaks = seq(min(es5_plot$event.time), max(es5_plot$event.time), by = 30)) +
+  theme(axis.text.y = element_text(size = 12))+
+  theme(axis.text.x = element_text(size = 12)) +
+  theme(axis.title = element_text(color="black",  size = 12))+
+  theme(plot.title=ggtext::element_markdown(size = 12, color="black", hjust=0, lineheight=1.2))
+dev.off()
+rm(es5, es5_plot, out5)
+
+set.seed(8675309) # hey jenny
 out6 <- att_gt(yname = "acled_vac_reb_event_any", tname = "time", idname = "gid", 
                gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es6 <- aggte(out6, type = "dynamic", na.rm = T)
-summary(es6)
-rm(out6, es6)
+es6_plot <-   data.frame(
+  type          = "dynamic",
+  term = paste0('ATT(', es6$egt, ")"),
+  event.time= es6$egt,
+  estimate  = es6$att.egt,
+  std.error = es6$se.egt,
+  conf.low  = es6$att.egt - es6$crit.val.egt * es6$se.egt,
+  conf.high = es6$att.egt + es6$crit.val.egt  * es6$se.egt,
+  point.conf.low  = es6$att.egt - stats::qnorm(1 - es6$DIDparams$alp/2) * es6$se.egt,
+  point.conf.high = es6$att.egt + stats::qnorm(1 - es6$DIDparams$alp/2) * es6$se.egt
+) %>%
+  filter(event.time < 1)
+
+pdf("./results/event_study_pt/14.pdf")
+ggplot(data = es6_plot, mapping = aes(x = event.time, y = estimate)) +
+  geom_vline(xintercept = 0-0.05, color = 'grey', linewidth = 1.2, linetype = "dotted") + 
+  geom_ribbon(aes(ymin= point.conf.low, ymax=  point.conf.high), alpha = 0.5, linewidth = 1, fill = "steelblue")+
+  geom_ribbon(aes(ymin=  conf.low, ymax =  conf.high), alpha =  0.3, linewidth = 1, fill = "steelblue")+
+  geom_line(mapping = aes(x = event.time, y=estimate), colour = "black", linewidth = 0.6, linetype = "dashed") +
+  geom_line(size = 1.2, alpha = 2, colour = "darkblue") +
+  geom_hline(yintercept = 0, colour="black", size = 0.25, linetype = "dotted") +
+  xlab('Event time') +
+  ylab("Event-Study Estimate") +
+  scale_x_continuous(breaks = seq(min(es6_plot$event.time), max(es6_plot$event.time), by = 30)) +
+  theme(axis.text.y = element_text(size = 12))+
+  theme(axis.text.x = element_text(size = 12)) +
+  theme(axis.title = element_text(color="black",  size = 12))+
+  theme(plot.title=ggtext::element_markdown(size = 12, color="black", hjust=0, lineheight=1.2))
+dev.off()
+rm(es6, es6_plot, out6)
 
 ## Neighbor cell, leave ##
+set.seed(8675309) # hey jenny
 out7 <- att_gt(yname = "neighbor_vac_gov_event_any", tname = "time", idname = "gid", 
                gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es7 <- aggte(out7, type = "dynamic", na.rm = T)
-summary(es7)
-rm(out7, es7)
+es7_plot <-   data.frame(
+  type          = "dynamic",
+  term = paste0('ATT(', es7$egt, ")"),
+  event.time= es7$egt,
+  estimate  = es7$att.egt,
+  std.error = es7$se.egt,
+  conf.low  = es7$att.egt - es7$crit.val.egt * es7$se.egt,
+  conf.high = es7$att.egt + es7$crit.val.egt  * es7$se.egt,
+  point.conf.low  = es7$att.egt - stats::qnorm(1 - es7$DIDparams$alp/2) * es7$se.egt,
+  point.conf.high = es7$att.egt + stats::qnorm(1 - es7$DIDparams$alp/2) * es7$se.egt
+) %>%
+  filter(event.time < 1)
 
-out8 <- att_gt(yname = "neighbor_vac_gov_event_any", tname = "time", idname = "gid", 
+pdf("./results/event_study_pt/15.pdf")
+ggplot(data = es7_plot, mapping = aes(x = event.time, y = estimate)) +
+  geom_vline(xintercept = 0-0.05, color = 'grey', linewidth = 1.2, linetype = "dotted") + 
+  geom_ribbon(aes(ymin= point.conf.low, ymax=  point.conf.high), alpha = 0.5, linewidth = 1, fill = "steelblue")+
+  geom_ribbon(aes(ymin=  conf.low, ymax =  conf.high), alpha =  0.3, linewidth = 1, fill = "steelblue")+
+  geom_line(mapping = aes(x = event.time, y=estimate), colour = "black", linewidth = 0.6, linetype = "dashed") +
+  geom_line(size = 1.2, alpha = 2, colour = "darkblue") +
+  geom_hline(yintercept = 0, colour="black", size = 0.25, linetype = "dotted") +
+  xlab('Event time') +
+  ylab("Event-Study Estimate") +
+  scale_x_continuous(breaks = seq(min(es7_plot$event.time), max(es7_plot$event.time), by = 30)) +
+  theme(axis.text.y = element_text(size = 12))+
+  theme(axis.text.x = element_text(size = 12)) +
+  theme(axis.title = element_text(color="black",  size = 12))+
+  theme(plot.title=ggtext::element_markdown(size = 12, color="black", hjust=0, lineheight=1.2))
+dev.off()
+rm(es7, es7_plot, out7)
+
+set.seed(8675309) # hey jenny
+out8 <- att_gt(yname = "neighbor_vac_reb_event_any", tname = "time", idname = "gid", 
                gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es8 <- aggte(out8, type = "dynamic", na.rm = T)
-summary(es8)
-rm(out8, es8)
+es8_plot <-   data.frame(
+  type          = "dynamic",
+  term = paste0('ATT(', es8$egt, ")"),
+  event.time= es8$egt,
+  estimate  = es8$att.egt,
+  std.error = es8$se.egt,
+  conf.low  = es8$att.egt - es8$crit.val.egt * es8$se.egt,
+  conf.high = es8$att.egt + es8$crit.val.egt  * es8$se.egt,
+  point.conf.low  = es8$att.egt - stats::qnorm(1 - es8$DIDparams$alp/2) * es8$se.egt,
+  point.conf.high = es8$att.egt + stats::qnorm(1 - es8$DIDparams$alp/2) * es8$se.egt
+) %>%
+  filter(event.time < 1)
 
-###### Total #######
+pdf("./results/event_study_pt/16.pdf")
+ggplot(data = es8_plot, mapping = aes(x = event.time, y = estimate)) +
+  geom_vline(xintercept = 0-0.05, color = 'grey', linewidth = 1.2, linetype = "dotted") + 
+  geom_ribbon(aes(ymin= point.conf.low, ymax=  point.conf.high), alpha = 0.5, linewidth = 1, fill = "steelblue")+
+  geom_ribbon(aes(ymin=  conf.low, ymax =  conf.high), alpha =  0.3, linewidth = 1, fill = "steelblue")+
+  geom_line(mapping = aes(x = event.time, y=estimate), colour = "black", linewidth = 0.6, linetype = "dashed") +
+  geom_line(size = 1.2, alpha = 2, colour = "darkblue") +
+  geom_hline(yintercept = 0, colour="black", size = 0.25, linetype = "dotted") +
+  xlab('Event time') +
+  ylab("Event-Study Estimate") +
+  scale_x_continuous(breaks = seq(min(es8_plot$event.time), max(es8_plot$event.time), by = 30)) +
+  theme(axis.text.y = element_text(size = 12))+
+  theme(axis.text.x = element_text(size = 12)) +
+  theme(axis.title = element_text(color="black",  size = 12))+
+  theme(plot.title=ggtext::element_markdown(size = 12, color="black", hjust=0, lineheight=1.2))
+dev.off()
+rm(es8, es8_plot, out8)
+
+##################################### FATALITIES ##################################### 
+###### TOTAL #######
 ## Same cell, enter ##
+set.seed(8675309) # hey jenny
 out1 <- att_gt(yname = "acled_vac_gov_death_all", tname = "time", idname = "gid", 
-               gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
-es1 <- aggte(out1, type = "dynamic", na.rm = T)
-summary(es1)
-rm(out1, es1)
+               gname = "first_treated",data = df, pl = T, cores = 1, allow_unbalanced_panel = T)
+es1 <- aggte(out1, type = "dynamic", na.rm = T) # extract for parallel trends plot
+es1_plot <-   data.frame(
+  type          = "dynamic",
+  term = paste0('ATT(', es1$egt, ")"),
+  event.time= es1$egt,
+  estimate  = es1$att.egt,
+  std.error = es1$se.egt,
+  conf.low  = es1$att.egt - es1$crit.val.egt * es1$se.egt,
+  conf.high = es1$att.egt + es1$crit.val.egt  * es1$se.egt,
+  point.conf.low  = es1$att.egt - stats::qnorm(1 - es1$DIDparams$alp/2) * es1$se.egt,
+  point.conf.high = es1$att.egt + stats::qnorm(1 - es1$DIDparams$alp/2) * es1$se.egt
+) %>%
+  filter(event.time < 1)
 
+pdf("./results/event_study_pt/17.pdf")
+ggplot(data = es1_plot, mapping = aes(x = event.time, y = estimate)) +
+  geom_vline(xintercept = 0-0.05, color = 'grey', linewidth = 1.2, linetype = "dotted") + 
+  geom_ribbon(aes(ymin= point.conf.low, ymax=  point.conf.high), alpha = 0.5, linewidth = 1, fill = "steelblue")+
+  geom_ribbon(aes(ymin=  conf.low, ymax =  conf.high), alpha =  0.3, linewidth = 1, fill = "steelblue")+
+  geom_line(mapping = aes(x = event.time, y=estimate), colour = "black", linewidth = 0.6, linetype = "dashed") +
+  geom_line(size = 1.2, alpha = 2, colour = "darkblue") +
+  geom_hline(yintercept = 0, colour="black", size = 0.25, linetype = "dotted") +
+  xlab('Event time') +
+  ylab("Event-Study Estimate") +
+  scale_x_continuous(breaks = seq(min(es1_plot$event.time), max(es1_plot$event.time), by = 30)) +
+  theme(axis.text.y = element_text(size = 12))+
+  theme(axis.text.x = element_text(size = 12)) +
+  theme(axis.title = element_text(color="black",  size = 12))+
+  theme(plot.title=ggtext::element_markdown(size = 12, color="black", hjust=0, lineheight=1.2))
+dev.off()
+rm(es1, es1_plot, out1)
+
+
+set.seed(8675309) # hey jenny
 out2 <- att_gt(yname = "acled_vac_reb_death_all", tname = "time", idname = "gid", 
                gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es2 <- aggte(out2, type = "dynamic", na.rm = T)
-summary(es2)
-rm(out2, es2)
+es2_plot <-   data.frame(
+  type          = "dynamic",
+  term = paste0('ATT(', es2$egt, ")"),
+  event.time= es2$egt,
+  estimate  = es2$att.egt,
+  std.error = es2$se.egt,
+  conf.low  = es2$att.egt - es2$crit.val.egt * es2$se.egt,
+  conf.high = es2$att.egt + es2$crit.val.egt  * es2$se.egt,
+  point.conf.low  = es2$att.egt - stats::qnorm(1 - es2$DIDparams$alp/2) * es2$se.egt,
+  point.conf.high = es2$att.egt + stats::qnorm(1 - es2$DIDparams$alp/2) * es2$se.egt
+) %>%
+  filter(event.time < 1)
+
+pdf("./results/event_study_pt/18.pdf")
+ggplot(data = es2_plot, mapping = aes(x = event.time, y = estimate)) +
+  geom_vline(xintercept = 0-0.05, color = 'grey', linewidth = 1.2, linetype = "dotted") + 
+  geom_ribbon(aes(ymin= point.conf.low, ymax=  point.conf.high), alpha = 0.5, linewidth = 1, fill = "steelblue")+
+  geom_ribbon(aes(ymin=  conf.low, ymax =  conf.high), alpha =  0.3, linewidth = 1, fill = "steelblue")+
+  geom_line(mapping = aes(x = event.time, y=estimate), colour = "black", linewidth = 0.6, linetype = "dashed") +
+  geom_line(size = 1.2, alpha = 2, colour = "darkblue") +
+  geom_hline(yintercept = 0, colour="black", size = 0.25, linetype = "dotted") +
+  xlab('Event time') +
+  ylab("Event-Study Estimate") +
+  scale_x_continuous(breaks = seq(min(es2_plot$event.time), max(es2_plot$event.time), by = 30)) +
+  theme(axis.text.y = element_text(size = 12))+
+  theme(axis.text.x = element_text(size = 12)) +
+  theme(axis.title = element_text(color="black",  size = 12))+
+  theme(plot.title=ggtext::element_markdown(size = 12, color="black", hjust=0, lineheight=1.2))
+dev.off()
+rm(es2, es2_plot, out2)
 
 ## Neighbor cell, enter ##
+set.seed(8675309) # hey jenny
 out3 <- att_gt(yname = "neighbor_vac_gov_death_all", tname = "time", idname = "gid", 
                gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es3 <- aggte(out3, type = "dynamic", na.rm = T)
-summary(es3)
-rm(out3, es3)
+es3_plot <-   data.frame(
+  type          = "dynamic",
+  term = paste0('ATT(', es3$egt, ")"),
+  event.time= es3$egt,
+  estimate  = es3$att.egt,
+  std.error = es3$se.egt,
+  conf.low  = es3$att.egt - es3$crit.val.egt * es3$se.egt,
+  conf.high = es3$att.egt + es3$crit.val.egt  * es3$se.egt,
+  point.conf.low  = es3$att.egt - stats::qnorm(1 - es3$DIDparams$alp/2) * es3$se.egt,
+  point.conf.high = es3$att.egt + stats::qnorm(1 - es3$DIDparams$alp/2) * es3$se.egt
+) %>%
+  filter(event.time < 1)
 
-out4 <- att_gt(yname = "neighbor_vac_gov_death_all", tname = "time", idname = "gid", 
+pdf("./results/event_study_pt/19.pdf")
+ggplot(data = es3_plot, mapping = aes(x = event.time, y = estimate)) +
+  geom_vline(xintercept = 0-0.05, color = 'grey', linewidth = 1.2, linetype = "dotted") + 
+  geom_ribbon(aes(ymin= point.conf.low, ymax=  point.conf.high), alpha = 0.5, linewidth = 1, fill = "steelblue")+
+  geom_ribbon(aes(ymin=  conf.low, ymax =  conf.high), alpha =  0.3, linewidth = 1, fill = "steelblue")+
+  geom_line(mapping = aes(x = event.time, y=estimate), colour = "black", linewidth = 0.6, linetype = "dashed") +
+  geom_line(size = 1.2, alpha = 2, colour = "darkblue") +
+  geom_hline(yintercept = 0, colour="black", size = 0.25, linetype = "dotted") +
+  xlab('Event time') +
+  ylab("Event-Study Estimate") +
+  scale_x_continuous(breaks = seq(min(es3_plot$event.time), max(es3_plot$event.time), by = 30)) +
+  theme(axis.text.y = element_text(size = 12))+
+  theme(axis.text.x = element_text(size = 12)) +
+  theme(axis.title = element_text(color="black",  size = 12))+
+  theme(plot.title=ggtext::element_markdown(size = 12, color="black", hjust=0, lineheight=1.2))
+dev.off()
+rm(es3, es3_plot, out3)
+
+set.seed(8675309) # hey jenny
+out4 <- att_gt(yname = "neighbor_vac_reb_death_all", tname = "time", idname = "gid", 
                gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es4 <- aggte(out4, type = "dynamic", na.rm = T)
-summary(es4)
-rm(out4, es4)
+es4_plot <-   data.frame(
+  type          = "dynamic",
+  term = paste0('ATT(', es4$egt, ")"),
+  event.time= es4$egt,
+  estimate  = es4$att.egt,
+  std.error = es4$se.egt,
+  conf.low  = es4$att.egt - es4$crit.val.egt * es4$se.egt,
+  conf.high = es4$att.egt + es4$crit.val.egt  * es4$se.egt,
+  point.conf.low  = es4$att.egt - stats::qnorm(1 - es4$DIDparams$alp/2) * es4$se.egt,
+  point.conf.high = es4$att.egt + stats::qnorm(1 - es4$DIDparams$alp/2) * es4$se.egt
+) %>%
+  filter(event.time < 1)
+
+pdf("./results/event_study_pt/20.pdf")
+ggplot(data = es4_plot, mapping = aes(x = event.time, y = estimate)) +
+  geom_vline(xintercept = 0-0.05, color = 'grey', linewidth = 1.2, linetype = "dotted") + 
+  geom_ribbon(aes(ymin= point.conf.low, ymax=  point.conf.high), alpha = 0.5, linewidth = 1, fill = "steelblue")+
+  geom_ribbon(aes(ymin=  conf.low, ymax =  conf.high), alpha =  0.3, linewidth = 1, fill = "steelblue")+
+  geom_line(mapping = aes(x = event.time, y=estimate), colour = "black", linewidth = 0.6, linetype = "dashed") +
+  geom_line(size = 1.2, alpha = 2, colour = "darkblue") +
+  geom_hline(yintercept = 0, colour="black", size = 0.25, linetype = "dotted") +
+  xlab('Event time') +
+  ylab("Event-Study Estimate") +
+  scale_x_continuous(breaks = seq(min(es4_plot$event.time), max(es4_plot$event.time), by = 30)) +
+  theme(axis.text.y = element_text(size = 12))+
+  theme(axis.text.x = element_text(size = 12)) +
+  theme(axis.title = element_text(color="black",  size = 12))+
+  theme(plot.title=ggtext::element_markdown(size = 12, color="black", hjust=0, lineheight=1.2))
+dev.off()
+rm(es4, es4_plot, out4)
 
 ## Same cell, leave ##
+set.seed(8675309) # hey jenny
 out5 <- att_gt(yname = "acled_vac_gov_death_all", tname = "time", idname = "gid", 
                gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es5 <- aggte(out5, type = "dynamic", na.rm = T)
-summary(es5)
-rm(out5, es5)
+es5_plot <-   data.frame(
+  type          = "dynamic",
+  term = paste0('ATT(', es5$egt, ")"),
+  event.time= es5$egt,
+  estimate  = es5$att.egt,
+  std.error = es5$se.egt,
+  conf.low  = es5$att.egt - es5$crit.val.egt * es5$se.egt,
+  conf.high = es5$att.egt + es5$crit.val.egt  * es5$se.egt,
+  point.conf.low  = es5$att.egt - stats::qnorm(1 - es5$DIDparams$alp/2) * es5$se.egt,
+  point.conf.high = es5$att.egt + stats::qnorm(1 - es5$DIDparams$alp/2) * es5$se.egt
+) %>%
+  filter(event.time < 1)
 
+pdf("./results/event_study_pt/21.pdf")
+ggplot(data = es5_plot, mapping = aes(x = event.time, y = estimate)) +
+  geom_vline(xintercept = 0-0.05, color = 'grey', linewidth = 1.2, linetype = "dotted") + 
+  geom_ribbon(aes(ymin= point.conf.low, ymax=  point.conf.high), alpha = 0.5, linewidth = 1, fill = "steelblue")+
+  geom_ribbon(aes(ymin=  conf.low, ymax =  conf.high), alpha =  0.3, linewidth = 1, fill = "steelblue")+
+  geom_line(mapping = aes(x = event.time, y=estimate), colour = "black", linewidth = 0.6, linetype = "dashed") +
+  geom_line(size = 1.2, alpha = 2, colour = "darkblue") +
+  geom_hline(yintercept = 0, colour="black", size = 0.25, linetype = "dotted") +
+  xlab('Event time') +
+  ylab("Event-Study Estimate") +
+  scale_x_continuous(breaks = seq(min(es5_plot$event.time), max(es5_plot$event.time), by = 30)) +
+  theme(axis.text.y = element_text(size = 12))+
+  theme(axis.text.x = element_text(size = 12)) +
+  theme(axis.title = element_text(color="black",  size = 12))+
+  theme(plot.title=ggtext::element_markdown(size = 12, color="black", hjust=0, lineheight=1.2))
+dev.off()
+rm(es5, es5_plot, out5)
+
+set.seed(8675309) # hey jenny
 out6 <- att_gt(yname = "acled_vac_reb_death_all", tname = "time", idname = "gid", 
                gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es6 <- aggte(out6, type = "dynamic", na.rm = T)
-summary(es6)
-rm(out6, es6)
+es6_plot <-   data.frame(
+  type          = "dynamic",
+  term = paste0('ATT(', es6$egt, ")"),
+  event.time= es6$egt,
+  estimate  = es6$att.egt,
+  std.error = es6$se.egt,
+  conf.low  = es6$att.egt - es6$crit.val.egt * es6$se.egt,
+  conf.high = es6$att.egt + es6$crit.val.egt  * es6$se.egt,
+  point.conf.low  = es6$att.egt - stats::qnorm(1 - es6$DIDparams$alp/2) * es6$se.egt,
+  point.conf.high = es6$att.egt + stats::qnorm(1 - es6$DIDparams$alp/2) * es6$se.egt
+) %>%
+  filter(event.time < 1)
+
+pdf("./results/event_study_pt/22.pdf")
+ggplot(data = es6_plot, mapping = aes(x = event.time, y = estimate)) +
+  geom_vline(xintercept = 0-0.05, color = 'grey', linewidth = 1.2, linetype = "dotted") + 
+  geom_ribbon(aes(ymin= point.conf.low, ymax=  point.conf.high), alpha = 0.5, linewidth = 1, fill = "steelblue")+
+  geom_ribbon(aes(ymin=  conf.low, ymax =  conf.high), alpha =  0.3, linewidth = 1, fill = "steelblue")+
+  geom_line(mapping = aes(x = event.time, y=estimate), colour = "black", linewidth = 0.6, linetype = "dashed") +
+  geom_line(size = 1.2, alpha = 2, colour = "darkblue") +
+  geom_hline(yintercept = 0, colour="black", size = 0.25, linetype = "dotted") +
+  xlab('Event time') +
+  ylab("Event-Study Estimate") +
+  scale_x_continuous(breaks = seq(min(es6_plot$event.time), max(es6_plot$event.time), by = 30)) +
+  theme(axis.text.y = element_text(size = 12))+
+  theme(axis.text.x = element_text(size = 12)) +
+  theme(axis.title = element_text(color="black",  size = 12))+
+  theme(plot.title=ggtext::element_markdown(size = 12, color="black", hjust=0, lineheight=1.2))
+dev.off()
+rm(es6, es6_plot, out6)
 
 ## Neighbor cell, leave ##
+set.seed(8675309) # hey jenny
 out7 <- att_gt(yname = "neighbor_vac_gov_death_all", tname = "time", idname = "gid", 
                gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es7 <- aggte(out7, type = "dynamic", na.rm = T)
-summary(es7)
-rm(out7, es7)
+es7_plot <-   data.frame(
+  type          = "dynamic",
+  term = paste0('ATT(', es7$egt, ")"),
+  event.time= es7$egt,
+  estimate  = es7$att.egt,
+  std.error = es7$se.egt,
+  conf.low  = es7$att.egt - es7$crit.val.egt * es7$se.egt,
+  conf.high = es7$att.egt + es7$crit.val.egt  * es7$se.egt,
+  point.conf.low  = es7$att.egt - stats::qnorm(1 - es7$DIDparams$alp/2) * es7$se.egt,
+  point.conf.high = es7$att.egt + stats::qnorm(1 - es7$DIDparams$alp/2) * es7$se.egt
+) %>%
+  filter(event.time < 1)
 
-out8 <- att_gt(yname = "neighbor_vac_gov_death_all", tname = "time", idname = "gid", 
+pdf("./results/event_study_pt/23.pdf")
+ggplot(data = es7_plot, mapping = aes(x = event.time, y = estimate)) +
+  geom_vline(xintercept = 0-0.05, color = 'grey', linewidth = 1.2, linetype = "dotted") + 
+  geom_ribbon(aes(ymin= point.conf.low, ymax=  point.conf.high), alpha = 0.5, linewidth = 1, fill = "steelblue")+
+  geom_ribbon(aes(ymin=  conf.low, ymax =  conf.high), alpha =  0.3, linewidth = 1, fill = "steelblue")+
+  geom_line(mapping = aes(x = event.time, y=estimate), colour = "black", linewidth = 0.6, linetype = "dashed") +
+  geom_line(size = 1.2, alpha = 2, colour = "darkblue") +
+  geom_hline(yintercept = 0, colour="black", size = 0.25, linetype = "dotted") +
+  xlab('Event time') +
+  ylab("Event-Study Estimate") +
+  scale_x_continuous(breaks = seq(min(es7_plot$event.time), max(es7_plot$event.time), by = 30)) +
+  theme(axis.text.y = element_text(size = 12))+
+  theme(axis.text.x = element_text(size = 12)) +
+  theme(axis.title = element_text(color="black",  size = 12))+
+  theme(plot.title=ggtext::element_markdown(size = 12, color="black", hjust=0, lineheight=1.2))
+dev.off()
+rm(es7, es7_plot, out7)
+
+set.seed(8675309) # hey jenny
+out8 <- att_gt(yname = "neighbor_vac_reb_death_all", tname = "time", idname = "gid", 
                gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es8 <- aggte(out8, type = "dynamic", na.rm = T)
-summary(es8)
-rm(out8, es8)
+es8_plot <-   data.frame(
+  type          = "dynamic",
+  term = paste0('ATT(', es8$egt, ")"),
+  event.time= es8$egt,
+  estimate  = es8$att.egt,
+  std.error = es8$se.egt,
+  conf.low  = es8$att.egt - es8$crit.val.egt * es8$se.egt,
+  conf.high = es8$att.egt + es8$crit.val.egt  * es8$se.egt,
+  point.conf.low  = es8$att.egt - stats::qnorm(1 - es8$DIDparams$alp/2) * es8$se.egt,
+  point.conf.high = es8$att.egt + stats::qnorm(1 - es8$DIDparams$alp/2) * es8$se.egt
+) %>%
+  filter(event.time < 1)
+
+pdf("./results/event_study_pt/24.pdf")
+ggplot(data = es8_plot, mapping = aes(x = event.time, y = estimate)) +
+  geom_vline(xintercept = 0-0.05, color = 'grey', linewidth = 1.2, linetype = "dotted") + 
+  geom_ribbon(aes(ymin= point.conf.low, ymax=  point.conf.high), alpha = 0.5, linewidth = 1, fill = "steelblue")+
+  geom_ribbon(aes(ymin=  conf.low, ymax =  conf.high), alpha =  0.3, linewidth = 1, fill = "steelblue")+
+  geom_line(mapping = aes(x = event.time, y=estimate), colour = "black", linewidth = 0.6, linetype = "dashed") +
+  geom_line(size = 1.2, alpha = 2, colour = "darkblue") +
+  geom_hline(yintercept = 0, colour="black", size = 0.25, linetype = "dotted") +
+  xlab('Event time') +
+  ylab("Event-Study Estimate") +
+  scale_x_continuous(breaks = seq(min(es8_plot$event.time), max(es8_plot$event.time), by = 30)) +
+  theme(axis.text.y = element_text(size = 12))+
+  theme(axis.text.x = element_text(size = 12)) +
+  theme(axis.title = element_text(color="black",  size = 12))+
+  theme(plot.title=ggtext::element_markdown(size = 12, color="black", hjust=0, lineheight=1.2))
+dev.off()
+rm(es8, es8_plot, out8)
 
 ###### Pr() #######
 ## Same cell, enter ##
+set.seed(8675309) # hey jenny
 out1 <- att_gt(yname = "acled_vac_gov_death_any", tname = "time", idname = "gid", 
                gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es1 <- aggte(out1, type = "dynamic", na.rm = T)
-summary(es1)
-rm(out1, es1)
+es1_plot <-   data.frame(
+  type          = "dynamic",
+  term = paste0('ATT(', es1$egt, ")"),
+  event.time= es1$egt,
+  estimate  = es1$att.egt,
+  std.error = es1$se.egt,
+  conf.low  = es1$att.egt - es1$crit.val.egt * es1$se.egt,
+  conf.high = es1$att.egt + es1$crit.val.egt  * es1$se.egt,
+  point.conf.low  = es1$att.egt - stats::qnorm(1 - es1$DIDparams$alp/2) * es1$se.egt,
+  point.conf.high = es1$att.egt + stats::qnorm(1 - es1$DIDparams$alp/2) * es1$se.egt
+) %>%
+  filter(event.time < 1)
 
+pdf("./results/event_study_pt/25.pdf")
+ggplot(data = es1_plot, mapping = aes(x = event.time, y = estimate)) +
+  geom_vline(xintercept = 0-0.05, color = 'grey', linewidth = 1.2, linetype = "dotted") + 
+  geom_ribbon(aes(ymin= point.conf.low, ymax=  point.conf.high), alpha = 0.5, linewidth = 1, fill = "steelblue")+
+  geom_ribbon(aes(ymin=  conf.low, ymax =  conf.high), alpha =  0.3, linewidth = 1, fill = "steelblue")+
+  geom_line(mapping = aes(x = event.time, y=estimate), colour = "black", linewidth = 0.6, linetype = "dashed") +
+  geom_line(size = 1.2, alpha = 2, colour = "darkblue") +
+  geom_hline(yintercept = 0, colour="black", size = 0.25, linetype = "dotted") +
+  xlab('Event time') +
+  ylab("Event-Study Estimate") +
+  scale_x_continuous(breaks = seq(min(es1_plot$event.time), max(es1_plot$event.time), by = 30)) +
+  theme(axis.text.y = element_text(size = 12))+
+  theme(axis.text.x = element_text(size = 12)) +
+  theme(axis.title = element_text(color="black",  size = 12))+
+  theme(plot.title=ggtext::element_markdown(size = 12, color="black", hjust=0, lineheight=1.2))
+dev.off()
+rm(es1, es1_plot, out1)
+
+set.seed(8675309) # hey jenny
 out2 <- att_gt(yname = "acled_vac_reb_death_any", tname = "time", idname = "gid", 
                gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es2 <- aggte(out2, type = "dynamic", na.rm = T)
-summary(es2)
-rm(out2, es2)
+es2_plot <-   data.frame(
+  type          = "dynamic",
+  term = paste0('ATT(', es2$egt, ")"),
+  event.time= es2$egt,
+  estimate  = es2$att.egt,
+  std.error = es2$se.egt,
+  conf.low  = es2$att.egt - es2$crit.val.egt * es2$se.egt,
+  conf.high = es2$att.egt + es2$crit.val.egt  * es2$se.egt,
+  point.conf.low  = es2$att.egt - stats::qnorm(1 - es2$DIDparams$alp/2) * es2$se.egt,
+  point.conf.high = es2$att.egt + stats::qnorm(1 - es2$DIDparams$alp/2) * es2$se.egt
+) %>%
+  filter(event.time < 1)
+
+pdf("./results/event_study_pt/26.pdf")
+ggplot(data = es2_plot, mapping = aes(x = event.time, y = estimate)) +
+  geom_vline(xintercept = 0-0.05, color = 'grey', linewidth = 1.2, linetype = "dotted") + 
+  geom_ribbon(aes(ymin= point.conf.low, ymax=  point.conf.high), alpha = 0.5, linewidth = 1, fill = "steelblue")+
+  geom_ribbon(aes(ymin=  conf.low, ymax =  conf.high), alpha =  0.3, linewidth = 1, fill = "steelblue")+
+  geom_line(mapping = aes(x = event.time, y=estimate), colour = "black", linewidth = 0.6, linetype = "dashed") +
+  geom_line(size = 1.2, alpha = 2, colour = "darkblue") +
+  geom_hline(yintercept = 0, colour="black", size = 0.25, linetype = "dotted") +
+  xlab('Event time') +
+  ylab("Event-Study Estimate") +
+  scale_x_continuous(breaks = seq(min(es2_plot$event.time), max(es2_plot$event.time), by = 30)) +
+  theme(axis.text.y = element_text(size = 12))+
+  theme(axis.text.x = element_text(size = 12)) +
+  theme(axis.title = element_text(color="black",  size = 12))+
+  theme(plot.title=ggtext::element_markdown(size = 12, color="black", hjust=0, lineheight=1.2))
+dev.off()
+rm(es2, es2_plot, out2)
 
 ## Neighbor cell, enter ##
+set.seed(8675309) # hey jenny
 out3 <- att_gt(yname = "neighbor_vac_gov_death_any", tname = "time", idname = "gid", 
                gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es3 <- aggte(out3, type = "dynamic", na.rm = T)
-summary(es3)
-rm(out3, es3)
+es3_plot <-   data.frame(
+  type          = "dynamic",
+  term = paste0('ATT(', es3$egt, ")"),
+  event.time= es3$egt,
+  estimate  = es3$att.egt,
+  std.error = es3$se.egt,
+  conf.low  = es3$att.egt - es3$crit.val.egt * es3$se.egt,
+  conf.high = es3$att.egt + es3$crit.val.egt  * es3$se.egt,
+  point.conf.low  = es3$att.egt - stats::qnorm(1 - es3$DIDparams$alp/2) * es3$se.egt,
+  point.conf.high = es3$att.egt + stats::qnorm(1 - es3$DIDparams$alp/2) * es3$se.egt
+) %>%
+  filter(event.time < 1)
 
-out4 <- att_gt(yname = "neighbor_vac_gov_death_any", tname = "time", idname = "gid", 
+pdf("./results/event_study_pt/27.pdf")
+ggplot(data = es3_plot, mapping = aes(x = event.time, y = estimate)) +
+  geom_vline(xintercept = 0-0.05, color = 'grey', linewidth = 1.2, linetype = "dotted") + 
+  geom_ribbon(aes(ymin= point.conf.low, ymax=  point.conf.high), alpha = 0.5, linewidth = 1, fill = "steelblue")+
+  geom_ribbon(aes(ymin=  conf.low, ymax =  conf.high), alpha =  0.3, linewidth = 1, fill = "steelblue")+
+  geom_line(mapping = aes(x = event.time, y=estimate), colour = "black", linewidth = 0.6, linetype = "dashed") +
+  geom_line(size = 1.2, alpha = 2, colour = "darkblue") +
+  geom_hline(yintercept = 0, colour="black", size = 0.25, linetype = "dotted") +
+  xlab('Event time') +
+  ylab("Event-Study Estimate") +
+  scale_x_continuous(breaks = seq(min(es3_plot$event.time), max(es3_plot$event.time), by = 30)) +
+  theme(axis.text.y = element_text(size = 12))+
+  theme(axis.text.x = element_text(size = 12)) +
+  theme(axis.title = element_text(color="black",  size = 12))+
+  theme(plot.title=ggtext::element_markdown(size = 12, color="black", hjust=0, lineheight=1.2))
+dev.off()
+rm(es3, es3_plot, out3)
+
+set.seed(8675309) # hey jenny
+out4 <- att_gt(yname = "neighbor_vac_reb_death_any", tname = "time", idname = "gid", 
                gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es4 <- aggte(out4, type = "dynamic", na.rm = T)
-summary(es4)
-rm(out4, es4)
+es4_plot <-   data.frame(
+  type          = "dynamic",
+  term = paste0('ATT(', es4$egt, ")"),
+  event.time= es4$egt,
+  estimate  = es4$att.egt,
+  std.error = es4$se.egt,
+  conf.low  = es4$att.egt - es4$crit.val.egt * es4$se.egt,
+  conf.high = es4$att.egt + es4$crit.val.egt  * es4$se.egt,
+  point.conf.low  = es4$att.egt - stats::qnorm(1 - es4$DIDparams$alp/2) * es4$se.egt,
+  point.conf.high = es4$att.egt + stats::qnorm(1 - es4$DIDparams$alp/2) * es4$se.egt
+) %>%
+  filter(event.time < 1)
+
+pdf("./results/event_study_pt/28.pdf")
+ggplot(data = es4_plot, mapping = aes(x = event.time, y = estimate)) +
+  geom_vline(xintercept = 0-0.05, color = 'grey', linewidth = 1.2, linetype = "dotted") + 
+  geom_ribbon(aes(ymin= point.conf.low, ymax=  point.conf.high), alpha = 0.5, linewidth = 1, fill = "steelblue")+
+  geom_ribbon(aes(ymin=  conf.low, ymax =  conf.high), alpha =  0.3, linewidth = 1, fill = "steelblue")+
+  geom_line(mapping = aes(x = event.time, y=estimate), colour = "black", linewidth = 0.6, linetype = "dashed") +
+  geom_line(size = 1.2, alpha = 2, colour = "darkblue") +
+  geom_hline(yintercept = 0, colour="black", size = 0.25, linetype = "dotted") +
+  xlab('Event time') +
+  ylab("Event-Study Estimate") +
+  scale_x_continuous(breaks = seq(min(es4_plot$event.time), max(es4_plot$event.time), by = 30)) +
+  theme(axis.text.y = element_text(size = 12))+
+  theme(axis.text.x = element_text(size = 12)) +
+  theme(axis.title = element_text(color="black",  size = 12))+
+  theme(plot.title=ggtext::element_markdown(size = 12, color="black", hjust=0, lineheight=1.2))
+dev.off()
+rm(es4, es4_plot, out4)
 
 ## Same cell, leave ##
+set.seed(8675309) # hey jenny
 out5 <- att_gt(yname = "acled_vac_gov_death_any", tname = "time", idname = "gid", 
                gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es5 <- aggte(out5, type = "dynamic", na.rm = T)
-summary(es5)
-rm(out5, es5)
+es5_plot <-   data.frame(
+  type          = "dynamic",
+  term = paste0('ATT(', es5$egt, ")"),
+  event.time= es5$egt,
+  estimate  = es5$att.egt,
+  std.error = es5$se.egt,
+  conf.low  = es5$att.egt - es5$crit.val.egt * es5$se.egt,
+  conf.high = es5$att.egt + es5$crit.val.egt  * es5$se.egt,
+  point.conf.low  = es5$att.egt - stats::qnorm(1 - es5$DIDparams$alp/2) * es5$se.egt,
+  point.conf.high = es5$att.egt + stats::qnorm(1 - es5$DIDparams$alp/2) * es5$se.egt
+) %>%
+  filter(event.time < 1)
 
+pdf("./results/event_study_pt/29.pdf")
+ggplot(data = es5_plot, mapping = aes(x = event.time, y = estimate)) +
+  geom_vline(xintercept = 0-0.05, color = 'grey', linewidth = 1.2, linetype = "dotted") + 
+  geom_ribbon(aes(ymin= point.conf.low, ymax=  point.conf.high), alpha = 0.5, linewidth = 1, fill = "steelblue")+
+  geom_ribbon(aes(ymin=  conf.low, ymax =  conf.high), alpha =  0.3, linewidth = 1, fill = "steelblue")+
+  geom_line(mapping = aes(x = event.time, y=estimate), colour = "black", linewidth = 0.6, linetype = "dashed") +
+  geom_line(size = 1.2, alpha = 2, colour = "darkblue") +
+  geom_hline(yintercept = 0, colour="black", size = 0.25, linetype = "dotted") +
+  xlab('Event time') +
+  ylab("Event-Study Estimate") +
+  scale_x_continuous(breaks = seq(min(es5_plot$event.time), max(es5_plot$event.time), by = 30)) +
+  theme(axis.text.y = element_text(size = 12))+
+  theme(axis.text.x = element_text(size = 12)) +
+  theme(axis.title = element_text(color="black",  size = 12))+
+  theme(plot.title=ggtext::element_markdown(size = 12, color="black", hjust=0, lineheight=1.2))
+dev.off()
+rm(es5, es5_plot, out5)
+
+set.seed(8675309) # hey jenny
 out6 <- att_gt(yname = "acled_vac_reb_death_any", tname = "time", idname = "gid", 
                gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es6 <- aggte(out6, type = "dynamic", na.rm = T)
-summary(es6)
-rm(out6, es6)
+es6_plot <-   data.frame(
+  type          = "dynamic",
+  term = paste0('ATT(', es6$egt, ")"),
+  event.time= es6$egt,
+  estimate  = es6$att.egt,
+  std.error = es6$se.egt,
+  conf.low  = es6$att.egt - es6$crit.val.egt * es6$se.egt,
+  conf.high = es6$att.egt + es6$crit.val.egt  * es6$se.egt,
+  point.conf.low  = es6$att.egt - stats::qnorm(1 - es6$DIDparams$alp/2) * es6$se.egt,
+  point.conf.high = es6$att.egt + stats::qnorm(1 - es6$DIDparams$alp/2) * es6$se.egt
+) %>%
+  filter(event.time < 1)
+
+pdf("./results/event_study_pt/30.pdf")
+ggplot(data = es6_plot, mapping = aes(x = event.time, y = estimate)) +
+  geom_vline(xintercept = 0-0.05, color = 'grey', linewidth = 1.2, linetype = "dotted") + 
+  geom_ribbon(aes(ymin= point.conf.low, ymax=  point.conf.high), alpha = 0.5, linewidth = 1, fill = "steelblue")+
+  geom_ribbon(aes(ymin=  conf.low, ymax =  conf.high), alpha =  0.3, linewidth = 1, fill = "steelblue")+
+  geom_line(mapping = aes(x = event.time, y=estimate), colour = "black", linewidth = 0.6, linetype = "dashed") +
+  geom_line(size = 1.2, alpha = 2, colour = "darkblue") +
+  geom_hline(yintercept = 0, colour="black", size = 0.25, linetype = "dotted") +
+  xlab('Event time') +
+  ylab("Event-Study Estimate") +
+  scale_x_continuous(breaks = seq(min(es6_plot$event.time), max(es6_plot$event.time), by = 30)) +
+  theme(axis.text.y = element_text(size = 12))+
+  theme(axis.text.x = element_text(size = 12)) +
+  theme(axis.title = element_text(color="black",  size = 12))+
+  theme(plot.title=ggtext::element_markdown(size = 12, color="black", hjust=0, lineheight=1.2))
+dev.off()
+rm(es6, es6_plot, out6)
 
 ## Neighbor cell, leave ##
+set.seed(8675309) # hey jenny
 out7 <- att_gt(yname = "neighbor_vac_gov_death_any", tname = "time", idname = "gid", 
                gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es7 <- aggte(out7, type = "dynamic", na.rm = T)
-summary(es7)
-rm(out7, es7)
+es7_plot <-   data.frame(
+  type          = "dynamic",
+  term = paste0('ATT(', es7$egt, ")"),
+  event.time= es7$egt,
+  estimate  = es7$att.egt,
+  std.error = es7$se.egt,
+  conf.low  = es7$att.egt - es7$crit.val.egt * es7$se.egt,
+  conf.high = es7$att.egt + es7$crit.val.egt  * es7$se.egt,
+  point.conf.low  = es7$att.egt - stats::qnorm(1 - es7$DIDparams$alp/2) * es7$se.egt,
+  point.conf.high = es7$att.egt + stats::qnorm(1 - es7$DIDparams$alp/2) * es7$se.egt
+) %>%
+  filter(event.time < 1)
 
-out8 <- att_gt(yname = "neighbor_vac_gov_death_any", tname = "time", idname = "gid", 
+pdf("./results/event_study_pt/31.pdf")
+ggplot(data = es7_plot, mapping = aes(x = event.time, y = estimate)) +
+  geom_vline(xintercept = 0-0.05, color = 'grey', linewidth = 1.2, linetype = "dotted") + 
+  geom_ribbon(aes(ymin= point.conf.low, ymax=  point.conf.high), alpha = 0.5, linewidth = 1, fill = "steelblue")+
+  geom_ribbon(aes(ymin=  conf.low, ymax =  conf.high), alpha =  0.3, linewidth = 1, fill = "steelblue")+
+  geom_line(mapping = aes(x = event.time, y=estimate), colour = "black", linewidth = 0.6, linetype = "dashed") +
+  geom_line(size = 1.2, alpha = 2, colour = "darkblue") +
+  geom_hline(yintercept = 0, colour="black", size = 0.25, linetype = "dotted") +
+  xlab('Event time') +
+  ylab("Event-Study Estimate") +
+  scale_x_continuous(breaks = seq(min(es7_plot$event.time), max(es7_plot$event.time), by = 30)) +
+  theme(axis.text.y = element_text(size = 12))+
+  theme(axis.text.x = element_text(size = 12)) +
+  theme(axis.title = element_text(color="black",  size = 12))+
+  theme(plot.title=ggtext::element_markdown(size = 12, color="black", hjust=0, lineheight=1.2))
+dev.off()
+rm(es7, es7_plot, out7)
+
+set.seed(8675309) # hey jenny
+out8 <- att_gt(yname = "neighbor_vac_reb_death_any", tname = "time", idname = "gid", 
                gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es8 <- aggte(out8, type = "dynamic", na.rm = T)
-summary(es8)
-rm(out8, es8)
+es8_plot <-   data.frame(
+  type          = "dynamic",
+  term = paste0('ATT(', es8$egt, ")"),
+  event.time= es8$egt,
+  estimate  = es8$att.egt,
+  std.error = es8$se.egt,
+  conf.low  = es8$att.egt - es8$crit.val.egt * es8$se.egt,
+  conf.high = es8$att.egt + es8$crit.val.egt  * es8$se.egt,
+  point.conf.low  = es8$att.egt - stats::qnorm(1 - es8$DIDparams$alp/2) * es8$se.egt,
+  point.conf.high = es8$att.egt + stats::qnorm(1 - es8$DIDparams$alp/2) * es8$se.egt
+) %>%
+  filter(event.time < 1)
 
-
-
-
+pdf("./results/event_study_pt/32.pdf")
+ggplot(data = es8_plot, mapping = aes(x = event.time, y = estimate)) +
+  geom_vline(xintercept = 0-0.05, color = 'grey', linewidth = 1.2, linetype = "dotted") + 
+  geom_ribbon(aes(ymin= point.conf.low, ymax=  point.conf.high), alpha = 0.5, linewidth = 1, fill = "steelblue")+
+  geom_ribbon(aes(ymin=  conf.low, ymax =  conf.high), alpha =  0.3, linewidth = 1, fill = "steelblue")+
+  geom_line(mapping = aes(x = event.time, y=estimate), colour = "black", linewidth = 0.6, linetype = "dashed") +
+  geom_line(size = 1.2, alpha = 2, colour = "darkblue") +
+  geom_hline(yintercept = 0, colour="black", size = 0.25, linetype = "dotted") +
+  xlab('Event time') +
+  ylab("Event-Study Estimate") +
+  scale_x_continuous(breaks = seq(min(es8_plot$event.time), max(es8_plot$event.time), by = 30)) +
+  theme(axis.text.y = element_text(size = 12))+
+  theme(axis.text.x = element_text(size = 12)) +
+  theme(axis.title = element_text(color="black",  size = 12))+
+  theme(plot.title=ggtext::element_markdown(size = 12, color="black", hjust=0, lineheight=1.2))
+dev.off()
+rm(es8, es8_plot, out8)
 
 ### plotting event study ###
 es1_plot <-   data.frame(
@@ -233,13 +1163,14 @@ es1_plot <-   data.frame(
   conf.high = es1$att.egt + es1$crit.val.egt  * es1$se.egt,
   point.conf.low  = es1$att.egt - stats::qnorm(1 - es1$DIDparams$alp/2) * es1$se.egt,
   point.conf.high = es1$att.egt + stats::qnorm(1 - es1$DIDparams$alp/2) * es1$se.egt
-)
+) %>%
+  filter(event.time < 1)
 
 ggplot(data = es1_plot, mapping = aes(x = event.time, y = estimate)) +
-  geom_vline(xintercept = 0-0.05, color = 'grey', size = 1.2, linetype = "dotted") + 
-  geom_ribbon(aes(ymin= point.conf.low, ymax=  point.conf.high), alpha = 0.5, size = 1, fill = "steelblue")+
-  geom_ribbon(aes(ymin=  conf.low, ymax =  conf.high), alpha =  0.3, size = 1, fill = "steelblue")+
-  geom_line(mapping = aes(x = event.time, y=estimate), colour = "black", size = 0.6, linetype = "dashed") +
+  geom_vline(xintercept = 0-0.05, color = 'grey', linewidth = 1.2, linetype = "dotted") + 
+  geom_ribbon(aes(ymin= point.conf.low, ymax=  point.conf.high), alpha = 0.5, linewidth = 1, fill = "steelblue")+
+  geom_ribbon(aes(ymin=  conf.low, ymax =  conf.high), alpha =  0.3, linewidth = 1, fill = "steelblue")+
+  geom_line(mapping = aes(x = event.time, y=estimate), colour = "black", linewidth = 0.6, linetype = "dashed") +
   geom_line(size = 1.2, alpha = 2, colour = "darkblue") +
   geom_hline(yintercept = 0, colour="black", size = 0.25, linetype = "dotted") +
   xlab('Event time') +
