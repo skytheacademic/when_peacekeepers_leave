@@ -30,17 +30,18 @@ sort(unique(df$year))
 
 ### number of cells
 length(unique(df$gid))
-
+options(max.print = 20)
 ##################################### VIOLENT EVENTS #####################################
 ###### TOTAL #######
 ## Same cell, enter ##
+set.seed(8675309) # hey jenny
 out1 <- att_gt(yname = "acled_vac_gov_event_all", tname = "time", idname = "gid", 
-               gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
+               gname = "first_treated",data = df, pl = T, cores = 1, allow_unbalanced_panel = T)
 es1 <- aggte(out1, type = "group", na.rm = T)
-es1_1 <- aggte(out1, type = "dynamic", na.rm = T) # extract for parallel trends plot
 summary(es1)
 rm(out1, es1)
 
+set.seed(8675309) # hey jenny
 out2 <- att_gt(yname = "acled_vac_reb_event_all", tname = "time", idname = "gid", 
                gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es2 <- aggte(out2, type = "group", na.rm = T)
@@ -48,25 +49,29 @@ summary(es2)
 rm(out2, es2)
 
 ## Neighbor cell, enter ##
+set.seed(8675309) # hey jenny
 out3 <- att_gt(yname = "neighbor_vac_gov_event_all", tname = "time", idname = "gid", 
                gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es3 <- aggte(out3, type = "group", na.rm = T)
 summary(es3)
 rm(out3, es3)
 
-out4 <- att_gt(yname = "neighbor_vac_gov_event_all", tname = "time", idname = "gid", 
+set.seed(8675309) # hey jenny
+out4 <- att_gt(yname = "neighbor_vac_reb_event_all", tname = "time", idname = "gid", 
                gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es4 <- aggte(out4, type = "group", na.rm = T)
 summary(es4)
 rm(out4, es4)
 
 ## Same cell, leave ##
+set.seed(8675309) # hey jenny
 out5 <- att_gt(yname = "acled_vac_gov_event_all", tname = "time", idname = "gid", 
                gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es5 <- aggte(out5, type = "group", na.rm = T)
 summary(es5)
 rm(out5, es5)
 
+set.seed(8675309) # hey jenny
 out6 <- att_gt(yname = "acled_vac_reb_event_all", tname = "time", idname = "gid", 
                gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es6 <- aggte(out6, type = "group", na.rm = T)
@@ -74,13 +79,15 @@ summary(es6)
 rm(out6, es6)
 
 ## Neighbor cell, leave ##
+set.seed(8675309) # hey jenny
 out7 <- att_gt(yname = "neighbor_vac_gov_event_all", tname = "time", idname = "gid", 
                gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es7 <- aggte(out7, type = "group", na.rm = T)
 summary(es7)
 rm(out7, es7)
 
-out8 <- att_gt(yname = "neighbor_vac_gov_event_all", tname = "time", idname = "gid", 
+set.seed(8675309) # hey jenny
+out8 <- att_gt(yname = "neighbor_vac_reb_event_all", tname = "time", idname = "gid", 
                gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es8 <- aggte(out8, type = "group", na.rm = T)
 summary(es8)
@@ -88,12 +95,14 @@ rm(out8, es8)
 
 ###### Pr() #######
 ## Same cell, enter ##
+set.seed(8675309) # hey jenny
 out1 <- att_gt(yname = "acled_vac_gov_event_any", tname = "time", idname = "gid", 
                gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es1 <- aggte(out1, type = "group", na.rm = T)
 summary(es1)
 rm(out1, es1)
 
+set.seed(8675309) # hey jenny
 out2 <- att_gt(yname = "acled_vac_reb_event_any", tname = "time", idname = "gid", 
                gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es2 <- aggte(out2, type = "group", na.rm = T)
@@ -101,25 +110,29 @@ summary(es2)
 rm(out2, es2)
 
 ## Neighbor cell, enter ##
+set.seed(8675309) # hey jenny
 out3 <- att_gt(yname = "neighbor_vac_gov_event_any", tname = "time", idname = "gid", 
                gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es3 <- aggte(out3, type = "group", na.rm = T)
 summary(es3)
 rm(out3, es3)
 
-out4 <- att_gt(yname = "neighbor_vac_gov_event_any", tname = "time", idname = "gid", 
+set.seed(8675309) # hey jenny
+out4 <- att_gt(yname = "neighbor_vac_reb_event_any", tname = "time", idname = "gid", 
                gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es4 <- aggte(out4, type = "group", na.rm = T)
 summary(es4)
 rm(out4, es4)
 
 ## Same cell, leave ##
+set.seed(8675309) # hey jenny
 out5 <- att_gt(yname = "acled_vac_gov_event_any", tname = "time", idname = "gid", 
                gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es5 <- aggte(out5, type = "group", na.rm = T)
 summary(es5)
 rm(out5, es5)
 
+set.seed(8675309) # hey jenny
 out6 <- att_gt(yname = "acled_vac_reb_event_any", tname = "time", idname = "gid", 
                gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es6 <- aggte(out6, type = "group", na.rm = T)
@@ -127,13 +140,15 @@ summary(es6)
 rm(out6, es6)
 
 ## Neighbor cell, leave ##
+set.seed(8675309) # hey jenny
 out7 <- att_gt(yname = "neighbor_vac_gov_event_any", tname = "time", idname = "gid", 
                gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es7 <- aggte(out7, type = "group", na.rm = T)
 summary(es7)
 rm(out7, es7)
 
-out8 <- att_gt(yname = "neighbor_vac_gov_event_any", tname = "time", idname = "gid", 
+set.seed(8675309) # hey jenny
+out8 <- att_gt(yname = "neighbor_vac_reb_event_any", tname = "time", idname = "gid", 
                gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es8 <- aggte(out8, type = "group", na.rm = T)
 summary(es8)
@@ -142,12 +157,14 @@ rm(out8, es8)
 ##################################### FATALITIES ##################################### 
 ###### Total #######
 ## Same cell, enter ##
+set.seed(8675309) # hey jenny
 out1 <- att_gt(yname = "acled_vac_gov_death_all", tname = "time", idname = "gid", 
                gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es1 <- aggte(out1, type = "group", na.rm = T)
 summary(es1)
 rm(out1, es1)
 
+set.seed(8675309) # hey jenny
 out2 <- att_gt(yname = "acled_vac_reb_death_all", tname = "time", idname = "gid", 
                gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es2 <- aggte(out2, type = "group", na.rm = T)
@@ -155,25 +172,29 @@ summary(es2)
 rm(out2, es2)
 
 ## Neighbor cell, enter ##
+set.seed(8675309) # hey jenny
 out3 <- att_gt(yname = "neighbor_vac_gov_death_all", tname = "time", idname = "gid", 
                gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es3 <- aggte(out3, type = "group", na.rm = T)
 summary(es3)
 rm(out3, es3)
 
-out4 <- att_gt(yname = "neighbor_vac_gov_death_all", tname = "time", idname = "gid", 
+set.seed(8675309) # hey jenny
+out4 <- att_gt(yname = "neighbor_vac_reb_death_all", tname = "time", idname = "gid", 
                gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es4 <- aggte(out4, type = "group", na.rm = T)
 summary(es4)
 rm(out4, es4)
 
 ## Same cell, leave ##
+set.seed(8675309) # hey jenny
 out5 <- att_gt(yname = "acled_vac_gov_death_all", tname = "time", idname = "gid", 
                gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es5 <- aggte(out5, type = "group", na.rm = T)
 summary(es5)
 rm(out5, es5)
 
+set.seed(8675309) # hey jenny
 out6 <- att_gt(yname = "acled_vac_reb_death_all", tname = "time", idname = "gid", 
                gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es6 <- aggte(out6, type = "group", na.rm = T)
@@ -181,13 +202,15 @@ summary(es6)
 rm(out6, es6)
 
 ## Neighbor cell, leave ##
+set.seed(8675309) # hey jenny
 out7 <- att_gt(yname = "neighbor_vac_gov_death_all", tname = "time", idname = "gid", 
                gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es7 <- aggte(out7, type = "group", na.rm = T)
 summary(es7)
 rm(out7, es7)
 
-out8 <- att_gt(yname = "neighbor_vac_gov_death_all", tname = "time", idname = "gid", 
+set.seed(8675309) # hey jenny
+out8 <- att_gt(yname = "neighbor_vac_reb_death_all", tname = "time", idname = "gid", 
                gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es8 <- aggte(out8, type = "group", na.rm = T)
 summary(es8)
@@ -195,38 +218,44 @@ rm(out8, es8)
 
 ###### Pr() #######
 ## Same cell, enter ##
+set.seed(8675309) # hey jenny
 out1 <- att_gt(yname = "acled_vac_gov_death_any", tname = "time", idname = "gid", 
                gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es1 <- aggte(out1, type = "group", na.rm = T)
 summary(es1)
 rm(out1, es1)
 
+set.seed(8675309) # hey jenny
 out2 <- att_gt(yname = "acled_vac_reb_death_any", tname = "time", idname = "gid", 
                gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
-es2 <- aggte(out2, type = "group", na.rm = T)
+es2 <- aggte(out2, type = "dynamic", na.rm = T)
 summary(es2)
 rm(out2, es2)
 
 ## Neighbor cell, enter ##
+set.seed(8675309) # hey jenny
 out3 <- att_gt(yname = "neighbor_vac_gov_death_any", tname = "time", idname = "gid", 
                gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es3 <- aggte(out3, type = "group", na.rm = T)
 summary(es3)
 rm(out3, es3)
 
-out4 <- att_gt(yname = "neighbor_vac_gov_death_any", tname = "time", idname = "gid", 
+set.seed(8675309) # hey jenny
+out4 <- att_gt(yname = "neighbor_vac_reb_death_any", tname = "time", idname = "gid", 
                gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es4 <- aggte(out4, type = "group", na.rm = T)
 summary(es4)
 rm(out4, es4)
 
 ## Same cell, leave ##
+set.seed(8675309) # hey jenny
 out5 <- att_gt(yname = "acled_vac_gov_death_any", tname = "time", idname = "gid", 
                gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es5 <- aggte(out5, type = "group", na.rm = T)
 summary(es5)
 rm(out5, es5)
 
+set.seed(8675309) # hey jenny
 out6 <- att_gt(yname = "acled_vac_reb_death_any", tname = "time", idname = "gid", 
                gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es6 <- aggte(out6, type = "group", na.rm = T)
@@ -234,13 +263,15 @@ summary(es6)
 rm(out6, es6)
 
 ## Neighbor cell, leave ##
+set.seed(8675309) # hey jenny
 out7 <- att_gt(yname = "neighbor_vac_gov_death_any", tname = "time", idname = "gid", 
                gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es7 <- aggte(out7, type = "group", na.rm = T)
 summary(es7)
 rm(out7, es7)
 
-out8 <- att_gt(yname = "neighbor_vac_gov_death_any", tname = "time", idname = "gid", 
+set.seed(8675309) # hey jenny
+out8 <- att_gt(yname = "neighbor_vac_reb_death_any", tname = "time", idname = "gid", 
                gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es8 <- aggte(out8, type = "group", na.rm = T)
 summary(es8)
@@ -248,9 +279,6 @@ rm(out8, es8)
 
 
 
-
-
-### plotting event study ###
 es1_plot <-   data.frame(
   type          = "dynamic",
   term = paste0('ATT(', es1$egt, ")"),
@@ -261,18 +289,46 @@ es1_plot <-   data.frame(
   conf.high = es1$att.egt + es1$crit.val.egt  * es1$se.egt,
   point.conf.low  = es1$att.egt - stats::qnorm(1 - es1$DIDparams$alp/2) * es1$se.egt,
   point.conf.high = es1$att.egt + stats::qnorm(1 - es1$DIDparams$alp/2) * es1$se.egt
-)
+) %>%
+  filter(event.time < 1)
 
 ggplot(data = es1_plot, mapping = aes(x = event.time, y = estimate)) +
+  geom_vline(xintercept = 0-0.05, color = 'grey', linewidth = 1.2, linetype = "dotted") + 
+  geom_ribbon(aes(ymin= point.conf.low, ymax=  point.conf.high), alpha = 0.5, size = 1, fill = "steelblue")+
+  geom_ribbon(aes(ymin=  conf.low, ymax =  conf.high), alpha =  0.3, size = 1, fill = "steelblue")+
+  geom_line(mapping = aes(x = event.time, y=estimate), colour = "black", linewidth = 0.6, linetype = "dashed") +
+  geom_line(size = 1.2, alpha = 2, colour = "darkblue") +
+  geom_hline(yintercept = 0, colour="black", size = 0.25, linetype = "dotted") +
+  xlab('Event time') +
+  ylab("Event-Study Estimate") +
+  scale_x_continuous(breaks = seq(min(es1_plot$event.time), max(es1_plot$event.time), by = 30)) +
+  theme(axis.text.y = element_text(size = 12))+
+  theme(axis.text.x = element_text(size = 12)) +
+  theme(axis.title = element_text(color="black",  size = 12))+
+  theme(plot.title=ggtext::element_markdown(size = 12, color="black", hjust=0, lineheight=1.2))
+
+### plotting event study ###
+es1_1_plot <-   data.frame(
+  type          = "dynamic",
+  term = paste0('ATT(', es1_1$egt, ")"),
+  event.time= es1_1$egt,
+  estimate  = es1_1$att.egt,
+  std.error = es1_1$se.egt,
+  conf.low  = es1_1$att.egt - es1_1$crit.val.egt * es1_1$se.egt,
+  conf.high = es1_1$att.egt + es1_1$crit.val.egt  * es1_1$se.egt,
+  point.conf.low  = es1_1$att.egt - stats::qnorm(1 - es1_1$DIDparams$alp/2) * es1_1$se.egt,
+  point.conf.high = es1_1$att.egt + stats::qnorm(1 - es1_1$DIDparams$alp/2) * es1_1$se.egt
+)
+
+ggplot(data = es1_1_plot, mapping = aes(x = event.time, y = estimate)) +
   geom_vline(xintercept = 0-0.05, color = 'grey', size = 1.2, linetype = "dotted") + 
   geom_ribbon(aes(ymin= point.conf.low, ymax=  point.conf.high), alpha = 0.5, size = 1, fill = "steelblue")+
   geom_ribbon(aes(ymin=  conf.low, ymax =  conf.high), alpha =  0.3, size = 1, fill = "steelblue")+
   geom_line(mapping = aes(x = event.time, y=estimate), colour = "black", size = 0.6, linetype = "dashed") +
   geom_line(size = 1.2, alpha = 2, colour = "darkblue") +
   geom_hline(yintercept = 0, colour="black", size = 0.25, linetype = "dotted") +
-  xlab('Event time') +
-  ylab("Event-Study Estimate") +
-  scale_x_continuous(breaks = seq(min(es1_plot$event.time), max(es1_plot$event.time), by = 30)) +
+  xlab('Event time') + ylab("Event-Study Estimate") +
+  scale_x_continuous(breaks = seq(min(es1_1_plot$event.time), 0, by = 10)) +
   theme(axis.text.y = element_text(size = 12))+
   theme(axis.text.x = element_text(size = 12)) +
   theme(axis.title = element_text(color="black",  size = 12))+
