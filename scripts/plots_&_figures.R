@@ -1407,7 +1407,7 @@ plot_3 =
   geom_sf(aes(geometry = uga_00$geometry), size = 2, fill = alpha("red",0)) +
   geom_point(data = b.join.2, aes(x = prio_xcoord, y = prio_ycoord, size=radpko_pko_deployed_any), alpha=0.4, shape = 19, colour = "#5b92e5") +
   xlim(29.12,31.38) + ylim(0.61,2.88) + theme_void() +
-  theme(plot.margin = unit(c(0,0,0,0), "cm"), legend.position="none")
+  theme(plot.margin = unit(c(0,0,0,0), "cm", labs(fill = "Fatalities")), legend.position="none")
 
 ##### plot 2 vertical ####
 # p_2 = 
@@ -1446,7 +1446,11 @@ dev.off()
 
 rm(list = ls())
 
-
+svg("./drc_ug.svg", height = 10, width = 15)
+ggarrange(plot_1, NULL, plot_2, NULL, plot_3, nrow = 1,
+          labels = c("6 Months Before", "", "3 Years of PK Presence", "", "6 Months After"),
+          legend = "none", label.y = 0.2, label.x = 0.15, widths = c(1, 0.05, 1, 0.05, 1))
+dev.off()
 #### Search for violence displacement grid ####
 
 # Search for displacement grids
