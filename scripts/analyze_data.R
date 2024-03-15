@@ -1,7 +1,7 @@
 #!/usr/bin/env Rscript
 # analyze_data.R
 # Produces all analysis, tables, and figures
-# Zach Warner, Sky Kunkel
+# Sky Kunkel, Zach Warner
 # 9 June 2022
 
 ##### SET UP #####
@@ -32,6 +32,11 @@ sort(unique(df$year))
 length(unique(df$gid))
 options(max.print = 20)
 ##################################### VIOLENT EVENTS #####################################
+
+# make dataframe to save values
+results = data.frame() %>%
+  mutate(time = NA, cell = NA, actor = NA, dv = NA, dv_type = NA, att = NA, se = NA)
+
 ###### TOTAL #######
 ## Same cell, enter ##
 set.seed(8675309) # hey jenny
@@ -39,6 +44,8 @@ out1 <- att_gt(yname = "acled_vac_gov_event_all", tname = "time", idname = "gid"
                gname = "first_treated",data = df, pl = T, cores = 1, allow_unbalanced_panel = T)
 es1 <- aggte(out1, type = "group", na.rm = T)
 summary(es1)
+results = rbind(results, data.frame(time = "Enter", cell = "Same", actor = "GOV", dv = "Total", dv_type = "Event",
+                                    att = es1$overall.att, se = es1$overall.se))
 rm(out1, es1)
 
 set.seed(8675309) # hey jenny
@@ -46,6 +53,8 @@ out2 <- att_gt(yname = "acled_vac_reb_event_all", tname = "time", idname = "gid"
                gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es2 <- aggte(out2, type = "group", na.rm = T)
 summary(es2)
+results = rbind(results, data.frame(time = "Enter", cell = "Same", actor = "REB", dv = "Total", dv_type = "Event",
+                                    att = es2$overall.att, se = es2$overall.se))
 rm(out2, es2)
 
 ## Neighbor cell, enter ##
@@ -54,12 +63,16 @@ out3 <- att_gt(yname = "neighbor_vac_gov_event_all", tname = "time", idname = "g
                gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es3 <- aggte(out3, type = "group", na.rm = T)
 summary(es3)
+results = rbind(results, data.frame(time = "Enter", cell = "Neighbor", actor = "GOV", dv = "Total", dv_type = "Event",
+                                    att = es3$overall.att, se = es3$overall.se))
 rm(out3, es3)
 
 set.seed(8675309) # hey jenny
 out4 <- att_gt(yname = "neighbor_vac_reb_event_all", tname = "time", idname = "gid", 
                gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es4 <- aggte(out4, type = "group", na.rm = T)
+results = rbind(results, data.frame(time = "Enter", cell = "Neighbor", actor = "REB", dv = "Total", dv_type = "Event",
+                                    att = es4$overall.att, se = es4$overall.se))
 summary(es4)
 rm(out4, es4)
 
@@ -69,6 +82,8 @@ out5 <- att_gt(yname = "acled_vac_gov_event_all", tname = "time", idname = "gid"
                gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es5 <- aggte(out5, type = "group", na.rm = T)
 summary(es5)
+results = rbind(results, data.frame(time = "Leave", cell = "Same", actor = "GOV", dv = "Total", dv_type = "Event",
+                                    att = es5$overall.att, se = es5$overall.se))
 rm(out5, es5)
 
 set.seed(8675309) # hey jenny
@@ -76,6 +91,8 @@ out6 <- att_gt(yname = "acled_vac_reb_event_all", tname = "time", idname = "gid"
                gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es6 <- aggte(out6, type = "group", na.rm = T)
 summary(es6)
+results = rbind(results, data.frame(time = "Leave", cell = "Same", actor = "REB", dv = "Total", dv_type = "Event",
+                                    att = es6$overall.att, se = es6$overall.se))
 rm(out6, es6)
 
 ## Neighbor cell, leave ##
@@ -84,6 +101,8 @@ out7 <- att_gt(yname = "neighbor_vac_gov_event_all", tname = "time", idname = "g
                gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es7 <- aggte(out7, type = "group", na.rm = T)
 summary(es7)
+results = rbind(results, data.frame(time = "Leave", cell = "Neighbor", actor = "GOV", dv = "Total", dv_type = "Event",
+                                    att = es7$overall.att, se = es7$overall.se))
 rm(out7, es7)
 
 set.seed(8675309) # hey jenny
@@ -91,6 +110,8 @@ out8 <- att_gt(yname = "neighbor_vac_reb_event_all", tname = "time", idname = "g
                gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es8 <- aggte(out8, type = "group", na.rm = T)
 summary(es8)
+results = rbind(results, data.frame(time = "Leave", cell = "Neighbor", actor = "REB", dv = "Total", dv_type = "Event",
+                                    att = es8$overall.att, se = es8$overall.se))
 rm(out8, es8)
 
 ###### Pr() #######
@@ -100,6 +121,8 @@ out1 <- att_gt(yname = "acled_vac_gov_event_any", tname = "time", idname = "gid"
                gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es1 <- aggte(out1, type = "group", na.rm = T)
 summary(es1)
+results = rbind(results, data.frame(time = "Enter", cell = "Same", actor = "GOV", dv = "Binary",
+                                    att = es1$overall.att, se = es1$overall.se))
 rm(out1, es1)
 
 set.seed(8675309) # hey jenny
@@ -107,6 +130,8 @@ out2 <- att_gt(yname = "acled_vac_reb_event_any", tname = "time", idname = "gid"
                gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es2 <- aggte(out2, type = "group", na.rm = T)
 summary(es2)
+results = rbind(results, data.frame(time = "Enter", cell = "Same", actor = "REB", dv = "Binary", dv_type = "Event",
+                                    att = es2$overall.att, se = es2$overall.se))
 rm(out2, es2)
 
 ## Neighbor cell, enter ##
@@ -115,6 +140,8 @@ out3 <- att_gt(yname = "neighbor_vac_gov_event_any", tname = "time", idname = "g
                gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es3 <- aggte(out3, type = "group", na.rm = T)
 summary(es3)
+results = rbind(results, data.frame(time = "Enter", cell = "Neighbor", actor = "GOV", dv = "Binary", dv_type = "Event",
+                                    att = es3$overall.att, se = es3$overall.se))
 rm(out3, es3)
 
 set.seed(8675309) # hey jenny
@@ -122,6 +149,8 @@ out4 <- att_gt(yname = "neighbor_vac_reb_event_any", tname = "time", idname = "g
                gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es4 <- aggte(out4, type = "group", na.rm = T)
 summary(es4)
+results = rbind(results, data.frame(time = "Enter", cell = "Neighbor", actor = "REB", dv = "Binary", dv_type = "Event",
+                                    att = es4$overall.att, se = es4$overall.se))
 rm(out4, es4)
 
 ## Same cell, leave ##
@@ -130,6 +159,8 @@ out5 <- att_gt(yname = "acled_vac_gov_event_any", tname = "time", idname = "gid"
                gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es5 <- aggte(out5, type = "group", na.rm = T)
 summary(es5)
+results = rbind(results, data.frame(time = "Leave", cell = "Same", actor = "GOV", dv = "Binary", dv_type = "Event",
+                                    att = es5$overall.att, se = es5$overall.se))
 rm(out5, es5)
 
 set.seed(8675309) # hey jenny
@@ -137,6 +168,8 @@ out6 <- att_gt(yname = "acled_vac_reb_event_any", tname = "time", idname = "gid"
                gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es6 <- aggte(out6, type = "group", na.rm = T)
 summary(es6)
+results = rbind(results, data.frame(time = "Leave", cell = "Same", actor = "REB", dv = "Binary", dv_type = "Event",
+                                    att = es6$overall.att, se = es6$overall.se))
 rm(out6, es6)
 
 ## Neighbor cell, leave ##
@@ -145,6 +178,8 @@ out7 <- att_gt(yname = "neighbor_vac_gov_event_any", tname = "time", idname = "g
                gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es7 <- aggte(out7, type = "group", na.rm = T)
 summary(es7)
+results = rbind(results, data.frame(time = "Leave", cell = "Neighbor", actor = "GOV", dv = "Binary", dv_type = "Event",
+                                    att = es7$overall.att, se = es7$overall.se))
 rm(out7, es7)
 
 set.seed(8675309) # hey jenny
@@ -152,6 +187,8 @@ out8 <- att_gt(yname = "neighbor_vac_reb_event_any", tname = "time", idname = "g
                gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es8 <- aggte(out8, type = "group", na.rm = T)
 summary(es8)
+results = rbind(results, data.frame(time = "Leave", cell = "Neighbor", actor = "REB", dv = "Binary", dv_type = "Event",
+                                    att = es8$overall.att, se = es8$overall.se))
 rm(out8, es8)
 
 ##################################### FATALITIES ##################################### 
@@ -162,6 +199,8 @@ out1 <- att_gt(yname = "acled_vac_gov_death_all", tname = "time", idname = "gid"
                gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es1 <- aggte(out1, type = "group", na.rm = T)
 summary(es1)
+results = rbind(results, data.frame(time = "Enter", cell = "Same", actor = "GOV", dv = "Total", dv_type = "Death",
+                                    att = es1$overall.att, se = es1$overall.se))
 rm(out1, es1)
 
 set.seed(8675309) # hey jenny
@@ -169,6 +208,8 @@ out2 <- att_gt(yname = "acled_vac_reb_death_all", tname = "time", idname = "gid"
                gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es2 <- aggte(out2, type = "group", na.rm = T)
 summary(es2)
+results = rbind(results, data.frame(time = "Enter", cell = "Same", actor = "REB", dv = "Total", dv_type = "Death",
+                                    att = es2$overall.att, se = es2$overall.se))
 rm(out2, es2)
 
 ## Neighbor cell, enter ##
@@ -177,6 +218,8 @@ out3 <- att_gt(yname = "neighbor_vac_gov_death_all", tname = "time", idname = "g
                gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es3 <- aggte(out3, type = "group", na.rm = T)
 summary(es3)
+results = rbind(results, data.frame(time = "Enter", cell = "Neighbor", actor = "GOV", dv = "Total", dv_type = "Death",
+                                    att = es3$overall.att, se = es3$overall.se))
 rm(out3, es3)
 
 set.seed(8675309) # hey jenny
@@ -184,6 +227,8 @@ out4 <- att_gt(yname = "neighbor_vac_reb_death_all", tname = "time", idname = "g
                gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es4 <- aggte(out4, type = "group", na.rm = T)
 summary(es4)
+results = rbind(results, data.frame(time = "Enter", cell = "Neighbor", actor = "REB", dv = "Total", dv_type = "Death",
+                                    att = es4$overall.att, se = es4$overall.se))
 rm(out4, es4)
 
 ## Same cell, leave ##
@@ -192,6 +237,8 @@ out5 <- att_gt(yname = "acled_vac_gov_death_all", tname = "time", idname = "gid"
                gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es5 <- aggte(out5, type = "group", na.rm = T)
 summary(es5)
+results = rbind(results, data.frame(time = "Leave", cell = "Same", actor = "GOV", dv = "Total", dv_type = "Death",
+                                    att = es5$overall.att, se = es5$overall.se))
 rm(out5, es5)
 
 set.seed(8675309) # hey jenny
@@ -199,6 +246,8 @@ out6 <- att_gt(yname = "acled_vac_reb_death_all", tname = "time", idname = "gid"
                gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es6 <- aggte(out6, type = "group", na.rm = T)
 summary(es6)
+results = rbind(results, data.frame(time = "Leave", cell = "Same", actor = "REB", dv = "Total", dv_type = "Death",
+                                    att = es6$overall.att, se = es6$overall.se))
 rm(out6, es6)
 
 ## Neighbor cell, leave ##
@@ -207,6 +256,8 @@ out7 <- att_gt(yname = "neighbor_vac_gov_death_all", tname = "time", idname = "g
                gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es7 <- aggte(out7, type = "group", na.rm = T)
 summary(es7)
+results = rbind(results, data.frame(time = "Leave", cell = "Neighbor", actor = "GOV", dv = "Total", dv_type = "Death",
+                                    att = es7$overall.att, se = es7$overall.se))
 rm(out7, es7)
 
 set.seed(8675309) # hey jenny
@@ -214,6 +265,8 @@ out8 <- att_gt(yname = "neighbor_vac_reb_death_all", tname = "time", idname = "g
                gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es8 <- aggte(out8, type = "group", na.rm = T)
 summary(es8)
+results = rbind(results, data.frame(time = "Leave", cell = "Neighbor", actor = "REB", dv = "Total", dv_type = "Death",
+                                    att = es8$overall.att, se = es8$overall.se))
 rm(out8, es8)
 
 ###### Pr() #######
@@ -222,6 +275,8 @@ set.seed(8675309) # hey jenny
 out1 <- att_gt(yname = "acled_vac_gov_death_any", tname = "time", idname = "gid", 
                gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es1 <- aggte(out1, type = "group", na.rm = T)
+results = rbind(results, data.frame(time = "Enter", cell = "Same", actor = "GOV", dv = "Binary", dv_type = "Death",
+                                    att = es1$overall.att, se = es1$overall.se))
 summary(es1)
 rm(out1, es1)
 
@@ -230,6 +285,8 @@ out2 <- att_gt(yname = "acled_vac_reb_death_any", tname = "time", idname = "gid"
                gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es2 <- aggte(out2, type = "dynamic", na.rm = T)
 summary(es2)
+results = rbind(results, data.frame(time = "Enter", cell = "Same", actor = "REB", dv = "Binary", dv_type = "Death",
+                                    att = es2$overall.att, se = es2$overall.se))
 rm(out2, es2)
 
 ## Neighbor cell, enter ##
@@ -238,6 +295,8 @@ out3 <- att_gt(yname = "neighbor_vac_gov_death_any", tname = "time", idname = "g
                gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es3 <- aggte(out3, type = "group", na.rm = T)
 summary(es3)
+results = rbind(results, data.frame(time = "Enter", cell = "Neighbor", actor = "GOV", dv = "Binary", dv_type = "Death",
+                                    att = es3$overall.att, se = es3$overall.se))
 rm(out3, es3)
 
 set.seed(8675309) # hey jenny
@@ -245,6 +304,8 @@ out4 <- att_gt(yname = "neighbor_vac_reb_death_any", tname = "time", idname = "g
                gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es4 <- aggte(out4, type = "group", na.rm = T)
 summary(es4)
+results = rbind(results, data.frame(time = "Enter", cell = "Neighbor", actor = "REB", dv = "Binary", dv_type = "Death",
+                                    att = es4$overall.att, se = es4$overall.se))
 rm(out4, es4)
 
 ## Same cell, leave ##
@@ -253,6 +314,8 @@ out5 <- att_gt(yname = "acled_vac_gov_death_any", tname = "time", idname = "gid"
                gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es5 <- aggte(out5, type = "group", na.rm = T)
 summary(es5)
+results = rbind(results, data.frame(time = "Leave", cell = "Same", actor = "GOV", dv = "Binary", dv_type = "Death",
+                                    att = es5$overall.att, se = es5$overall.se))
 rm(out5, es5)
 
 set.seed(8675309) # hey jenny
@@ -260,6 +323,8 @@ out6 <- att_gt(yname = "acled_vac_reb_death_any", tname = "time", idname = "gid"
                gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es6 <- aggte(out6, type = "group", na.rm = T)
 summary(es6)
+results = rbind(results, data.frame(time = "Leave", cell = "Same", actor = "REB", dv = "Binary", dv_type = "Death",
+                                    att = es6$overall.att, se = es6$overall.se))
 rm(out6, es6)
 
 ## Neighbor cell, leave ##
@@ -268,6 +333,8 @@ out7 <- att_gt(yname = "neighbor_vac_gov_death_any", tname = "time", idname = "g
                gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es7 <- aggte(out7, type = "group", na.rm = T)
 summary(es7)
+results = rbind(results, data.frame(time = "Leave", cell = "Neighbor", actor = "GOV", dv = "Binary", dv_type = "Death",
+                                    att = es7$overall.att, se = es7$overall.se))
 rm(out7, es7)
 
 set.seed(8675309) # hey jenny
@@ -275,8 +342,11 @@ out8 <- att_gt(yname = "neighbor_vac_reb_death_any", tname = "time", idname = "g
                gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es8 <- aggte(out8, type = "group", na.rm = T)
 summary(es8)
+results = rbind(results, data.frame(time = "Leave", cell = "Neighbor", actor = "REB", dv = "Binary", dv_type = "Death",
+                                    att = es8$overall.att, se = es8$overall.se))
 rm(out8, es8)
 
+saveRDS(results, "./results/main_models.RDS")
 
 
 es1_plot <-   data.frame(
@@ -348,47 +418,6 @@ df <- df %>%
 m1 <- glm(acled_fatalities_any ~ treated + post_treatment + 
             treated*post_treatment, data = df)
 summary(m1)
-
-
-############ OLD, TO DELETE ############ 
-# df <- as_tibble(df) %>% 
-#   rename(neighbor_vac_gov_death_all = ...143,
-#          neighbor_vac_gov_death_any = ...144,
-#          neighbor_vac_reb_death_all  = ...145,
-#          neighbor_vac_reb_death_any = ...146,
-#          neighbor_vac_gov_event_all = ...147,
-#          neighbor_vac_gov_event_any = ...148,
-#          neighbor_vac_reb_event_all = ...149,
-#          neighbor_vac_reb_event_any = ...150,
-#          neighbor_gov_death_all = ...151,
-#          neighbor_gov_death_any = ...152,
-#          neighbor_reb_death_all = ...153,
-#          neighbor_reb_death_any = ...154,
-#          neighbor_gov_event_all = ...155,
-#          neighbor_gov_event_any = ...156,
-#          neighbor_reb_event_all = ...157,
-#          neighbor_reb_event_any = ...158,
-#          neighbor_bat_death_all = ...159,
-#          neighbor_bat_death_any = ...160,
-#          neighbor_bat_event_all = ...161,
-#          neighbor_bat_event_any = ...162)
-# 
-# radpko <- read_csv("./data/radpko/radpko_grid.csv") %>% 
-#   # make the date variable a date type
-#   mutate(date = ymd(date),
-#          month = month(date),
-#          year = year(date)) %>% 
-#   # rename variable for ease of merging
-#   rename(gid = prio.grid) %>%
-#   select(-c(country, mission, date)) %>% 
-#   relocate(c(year, month), .after = gid) %>% 
-#   group_by(gid, year, month) %>% 
-#   summarise(across(units_deployed:afr_unmob, sum)) %>% 
-#   select(c(gid, month, year)) %>%
-#   ungroup()
-# 
-# df = left_join(radpko, df, by = c("gid", "year", "month"))
-# rm(radpko)
 
 ##### VERSION CONTROL #####
 sessionInfO()
