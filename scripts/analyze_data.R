@@ -121,7 +121,7 @@ out1 <- att_gt(yname = "acled_vac_gov_event_any", tname = "time", idname = "gid"
                gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
 es1 <- aggte(out1, type = "group", na.rm = T)
 summary(es1)
-results = rbind(results, data.frame(time = "Enter", cell = "Same", actor = "GOV", dv = "Binary",
+results = rbind(results, data.frame(time = "Enter", cell = "Same", actor = "GOV", dv = "Binary", dv_type = "Event",
                                     att = es1$overall.att, se = es1$overall.se))
 rm(out1, es1)
 
