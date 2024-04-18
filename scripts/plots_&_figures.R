@@ -4,9 +4,221 @@
 setwd("../")
 library(did); library(sf); library(tidyverse); library(lubridate); library(ggtext)
 setwd("/Users/kunkel3/Documents/GitHub/when_peacekeepers_leave")
-df = read_rds("./data/Kunkel-Atkinson-Warner-final.rds")
+
+##### PLOT MAIN RESULTS #####
+df = read_rds("./results/main_models.RDS")
+
+##### Entrance - same - total #####
+d_enter_same_total = df %>%
+  filter(time == "Enter" & cell == "Same" & dv == "Total" & dv_type == "Event")
+
+pdf("./results/enter_same_total.pdf", width = 6, height = 4)
+ggplot(d_enter_same_total, aes(x = att, y = factor(actor), color = actor)) +
+  geom_point(position = position_dodge(width = 0.8), size = 3) +
+  geom_errorbarh(aes(xmin = att - se, xmax = att + se),
+                 height = 0.2, position = position_dodge(width = 0.8)) +
+  facet_wrap(~dv + time + cell, scales = "free") +
+  scale_color_manual(values = c("GOV" = "#4D858E", "REB" = "#E38030")) +
+  theme_minimal() +
+  labs(title = "", x = "ATT", y = "") +
+  theme(strip.text.x = element_blank(), 
+        axis.title.y = element_blank(),
+        axis.ticks.y = element_blank(), 
+        axis.text.y.right = element_blank(),
+        legend.position = "none", 
+        axis.text = element_text(size = 14),
+        axis.title = element_text(size = 16)) +
+  scale_x_continuous(limits = c(-0.7, 0.7), breaks = seq(-0.7, 0.7, 0.2)) +
+  guides(color = guide_legend(override.aes = list(linetype = c(0, 0)))) +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "darkgrey", size = 0.5)
+dev.off()
+
+##### Exit - same - total #####
+d_leave_same_total = df %>%
+  filter(time == "Leave" & cell == "Same" & dv == "Total" & dv_type == "Event")
+
+pdf("./results/leave_same_total.pdf", width = 6, height = 4)
+ggplot(d_leave_same_total, aes(x = att, y = factor(actor), color = actor)) +
+  geom_point(position = position_dodge(width = 0.8), size = 3) +
+  geom_errorbarh(aes(xmin = att - se, xmax = att + se),
+                 height = 0.2, position = position_dodge(width = 0.8)) +
+  facet_wrap(~dv + time + cell, scales = "free") +
+  scale_color_manual(values = c("GOV" = "#4D858E", "REB" = "#E38030")) +
+  theme_minimal() +
+  labs(title = "", x = "ATT", y = "") +
+  theme(strip.text.x = element_blank(), 
+        axis.title.y = element_blank(),
+        axis.ticks.y = element_blank(), 
+        axis.text.y.right = element_blank(),
+        legend.position = "none", 
+        axis.text = element_text(size = 14),
+        axis.title = element_text(size = 16)) +
+  scale_x_continuous(limits = c(-0.7, 0.7), breaks = seq(-0.7, 0.7, 0.2)) +
+  guides(color = guide_legend(override.aes = list(linetype = c(0, 0)))) +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "darkgrey", size = 0.5)
+dev.off()
+
+
+
+##### Entrance - neighbor - total #####
+d_enter_neighbor_total = df %>%
+  filter(time == "Enter" & cell == "Neighbor" & dv == "Total" & dv_type == "Event")
+
+pdf("./results/enter_neighbor_total.pdf", width = 6, height = 4)
+ggplot(d_enter_neighbor_total, aes(x = att, y = factor(actor), color = actor)) +
+  geom_point(position = position_dodge(width = 0.8), size = 3) +
+  geom_errorbarh(aes(xmin = att - se, xmax = att + se),
+                 height = 0.2, position = position_dodge(width = 0.8)) +
+  facet_wrap(~dv + time + cell, scales = "free") +
+  scale_color_manual(values = c("GOV" = "#4D858E", "REB" = "#E38030")) +
+  theme_minimal() +
+  labs(title = "", x = "ATT", y = "") +
+  theme(strip.text.x = element_blank(), 
+        axis.title.y = element_blank(),
+        axis.ticks.y = element_blank(), 
+        axis.text.y.right = element_blank(),
+        legend.position = "none", 
+        axis.text = element_text(size = 14),
+        axis.title = element_text(size = 16)) +
+  scale_x_continuous(limits = c(-0.7, 0.7), breaks = seq(-0.7, 0.7, 0.2)) +
+  guides(color = guide_legend(override.aes = list(linetype = c(0, 0)))) +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "darkgrey", size = 0.5)
+dev.off()
+
+
+##### Exit - neighbor - total #####
+d_leave_neighbor_total = df %>%
+  filter(time == "Leave" & cell == "Neighbor" & dv == "Total" & dv_type == "Event")
+
+pdf("./results/leave_neighbor_total.pdf", width = 6, height = 4)
+ggplot(d_leave_neighbor_total, aes(x = att, y = factor(actor), color = actor)) +
+  geom_point(position = position_dodge(width = 0.8), size = 3) +
+  geom_errorbarh(aes(xmin = att - se, xmax = att + se),
+                 height = 0.2, position = position_dodge(width = 0.8)) +
+  facet_wrap(~dv + time + cell, scales = "free") +
+  scale_color_manual(values = c("GOV" = "#4D858E", "REB" = "#E38030")) +
+  theme_minimal() +
+  labs(title = "", x = "ATT", y = "") +
+  theme(strip.text.x = element_blank(), 
+        axis.title.y = element_blank(),
+        axis.ticks.y = element_blank(), 
+        axis.text.y.right = element_blank(),
+        legend.position = "none", 
+        axis.text = element_text(size = 14),
+        axis.title = element_text(size = 16)) +
+  scale_x_continuous(limits = c(-0.7, 0.7), breaks = seq(-0.7, 0.7, 0.2)) +
+  guides(color = guide_legend(override.aes = list(linetype = c(0, 0)))) +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "darkgrey", size = 0.5)
+dev.off()
+
+
+
+# Pr()
+d_enter_same_pr = df %>%
+  filter(time == "Enter" & cell == "Same" & dv == "Binary" & dv_type == "Event")
+
+pdf("./results/enter_same_pr.pdf", width = 6, height = 4)
+ggplot(d_enter_same_pr, aes(x = att, y = factor(actor), color = actor)) +
+  geom_point(position = position_dodge(width = 0.8), size = 3) +
+  geom_errorbarh(aes(xmin = att - se, xmax = att + se),
+                 height = 0.2, position = position_dodge(width = 0.8)) +
+  facet_wrap(~dv + time + cell, scales = "free") +
+  scale_color_manual(values = c("GOV" = "#4D858E", "REB" = "#E38030")) +
+  theme_minimal() +
+  labs(title = "", x = "ATT", y = "") +
+  theme(strip.text.x = element_blank(), 
+        axis.title.y = element_blank(),
+        axis.ticks.y = element_blank(), 
+        axis.text.y.right = element_blank(),
+        legend.position = "none", 
+        axis.text = element_text(size = 14),
+        axis.title = element_text(size = 16)) +
+  scale_x_continuous(limits = c(-0.3, 0.3), breaks = seq(-0.3, 0.3, 0.1),
+                     labels = function(x) sprintf("%.1f", x)) +
+  guides(color = guide_legend(override.aes = list(linetype = c(0, 0)))) +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "darkgrey", size = 0.5)
+dev.off()
+
+d_enter_neighbor_pr = df %>%
+  filter(time == "Enter" & cell == "Neighbor" & dv == "Binary" & dv_type == "Event")
+
+pdf("./results/enter_neighbor_pr.pdf", width = 6, height = 4)
+ggplot(d_enter_neighbor_pr, aes(x = att, y = factor(actor), color = actor)) +
+  geom_point(position = position_dodge(width = 0.8), size = 3) +
+  geom_errorbarh(aes(xmin = att - se, xmax = att + se),
+                 height = 0.2, position = position_dodge(width = 0.8)) +
+  facet_wrap(~dv + time + cell, scales = "free") +
+  scale_color_manual(values = c("GOV" = "#4D858E", "REB" = "#E38030")) +
+  theme_minimal() +
+  labs(title = "", x = "ATT", y = "") +
+  theme(strip.text.x = element_blank(), 
+        axis.title.y = element_blank(),
+        axis.ticks.y = element_blank(), 
+        axis.text.y.right = element_blank(),
+        legend.position = "none", 
+        axis.text = element_text(size = 14),
+        axis.title = element_text(size = 16)) +
+  scale_x_continuous(limits = c(-0.3, 0.3), breaks = seq(-0.3, 0.3, 0.1),
+                     labels = function(x) sprintf("%.1f", x)) +
+  guides(color = guide_legend(override.aes = list(linetype = c(0, 0)))) +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "darkgrey", size = 0.5)
+dev.off()
+
+d_leave_same_pr = df %>%
+  filter(time == "Leave" & cell == "Same" & dv == "Binary" & dv_type == "Event")
+
+pdf("./results/leave_same_pr.pdf", width = 6, height = 4)
+ggplot(d_leave_same_pr, aes(x = att, y = factor(actor), color = actor)) +
+  geom_point(position = position_dodge(width = 0.8), size = 3) +
+  geom_errorbarh(aes(xmin = att - se, xmax = att + se),
+                 height = 0.2, position = position_dodge(width = 0.8)) +
+  facet_wrap(~dv + time + cell, scales = "free") +
+  scale_color_manual(values = c("GOV" = "#4D858E", "REB" = "#E38030")) +
+  theme_minimal() +
+  labs(title = "", x = "ATT", y = "") +
+  theme(strip.text.x = element_blank(), 
+        axis.title.y = element_blank(),
+        axis.ticks.y = element_blank(), 
+        axis.text.y.right = element_blank(),
+        legend.position = "none", 
+        axis.text = element_text(size = 14),
+        axis.title = element_text(size = 16)) +
+  scale_x_continuous(limits = c(-0.3, 0.3), breaks = seq(-0.3, 0.3, 0.1),
+                     labels = function(x) sprintf("%.1f", x)) +
+  guides(color = guide_legend(override.aes = list(linetype = c(0, 0)))) +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "darkgrey", size = 0.5)
+dev.off()
+
+d_leave_neighbor_pr = df %>%
+  filter(time == "Leave" & cell == "Neighbor" & dv == "Binary" & dv_type == "Event")
+
+pdf("./results/leave_neighbor_pr.pdf", width = 6, height = 4)
+ggplot(d_leave_neighbor_pr, aes(x = att, y = factor(actor), color = actor)) +
+  geom_point(position = position_dodge(width = 0.8), size = 3) +
+  geom_errorbarh(aes(xmin = att - se, xmax = att + se),
+                 height = 0.2, position = position_dodge(width = 0.8)) +
+  facet_wrap(~dv + time + cell, scales = "free") +
+  scale_color_manual(values = c("GOV" = "#4D858E", "REB" = "#E38030")) +
+  theme_minimal() +
+  labs(title = "", x = "ATT", y = "") +
+  theme(strip.text.x = element_blank(), 
+        axis.title.y = element_blank(),
+        axis.ticks.y = element_blank(), 
+        axis.text.y.right = element_blank(),
+        legend.position = "none", 
+        axis.text = element_text(size = 14),
+        axis.title = element_text(size = 16)) +
+  scale_x_continuous(limits = c(-0.3, 0.3), breaks = seq(-0.3, 0.3, 0.1),
+                     labels = function(x) sprintf("%.1f", x)) +
+  guides(color = guide_legend(override.aes = list(linetype = c(0, 0)))) +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "darkgrey", size = 0.5)
+dev.off()
+
+
 
 ######### make parallel trends plots ######### 
+rm(list = ls())
+df = read_rds("./data/Kunkel-Atkinson-Warner-final.rds")
 
 ##################################### VIOLENT EVENTS #####################################
 ###### TOTAL #######
