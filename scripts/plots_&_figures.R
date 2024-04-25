@@ -5,7 +5,135 @@ setwd("../")
 library(did); library(sf); library(tidyverse); library(lubridate); library(ggtext)
 setwd("/Users/kunkel3/Documents/GitHub/when_peacekeepers_leave")
 
+### Make summary tables - main paper ###
+rm(list = ls())
+df_tab_1 = read_rds("./results/main_models.RDS") %>%
+  slice(1:8)
+
+# Add asterisks for statistical significance
+# if ATT divided by SE is greater than 1.96 (for a 95% confidence interval), mark with an asterisk
+df_tab_1$ATT <- ifelse(abs(df_tab_1$att / df_tab_1$se) > 1.96, paste0(formatC(df_tab_1$att, format = "f", digits = 4), "*"), formatC(df_tab_1$att, format = "f", digits = 4))
+df_tab_1$SE <- formatC(df_tab_1$se, format = "f", digits = 4)  # Format SE to 4 decimal places
+df_tab_1$att = NULL
+df_tab_1$se = NULL
+df_tab_1$dv = NULL
+df_tab_1$dv_type = NULL
+
+# Adjust column names to reflect the table
+colnames(df_tab_1) <- c("Time", "Cell", "Actor", "ATT", "SE")
+
+# Create the xtable object
+xtable_obj <- xtable(
+  df_tab_1,
+  caption = "Table for our main results testing the temporal effects of peacekeeper entrance 
+  and exit on the total events of violence against civilians. * $=$ p-value lower than 0.05; 
+  bootstrapped standard errors are used to calculate the confidence intervals.",
+  label = "tab:main_results_total",
+  digits = 4  # Set decimal places
+)
+
+# Adjust alignments to include vertical lines between columns
+align(xtable_obj) <- "|l|l|l|l|r|r|"
+
+# Print the LaTex table
+print(
+  xtable_obj,
+  include.rownames = FALSE,  # No row numbers
+  caption.placement = "bottom",  # Caption at the bottom
+  sanitize.text.function = identity  # Retains LaTex text formatting
+)
+
+rm(list = ls())
+df_tab_2 = read_rds("./results/main_models.RDS") %>%
+  slice(9:16)
+
+# Add asterisks for statistical significance
+# if ATT divided by SE is greater than 1.96 (for a 95% confidence interval), mark with an asterisk
+df_tab_2$ATT <- ifelse(abs(df_tab_2$att / df_tab_2$se) > 1.96, paste0(formatC(df_tab_2$att, format = "f", digits = 4), "*"), formatC(df_tab_2$att, format = "f", digits = 4))
+df_tab_2$SE <- formatC(df_tab_2$se, format = "f", digits = 4)  # Format SE to 4 decimal places
+df_tab_2$att = NULL
+df_tab_2$se = NULL
+df_tab_2$dv = NULL
+df_tab_2$dv_type = NULL
+# Adjust column names to reflect the table
+colnames(df_tab_2) <- c("Time", "Cell", "Actor", "ATT", "SE")
+
+# Create the xtable object
+xtable_obj <- xtable(
+  df_tab_2,
+  caption = "Table for our main results testing the temporal effects of peacekeeper entrance 
+  and exit on the probability of violence against civilians. * $=$ p-value lower than 0.05; 
+  bootstrapped standard errors are used to calculate the confidence intervals.",
+  label = "tab:main_results_pr",
+  digits = 4  # Set decimal places
+)
+
+# Adjust alignments to include vertical lines between columns
+align(xtable_obj) <- "|l|l|l|l|r|r|"
+
+# Print the LaTex table
+print(
+  xtable_obj,
+  include.rownames = FALSE,  # No row numbers
+  caption.placement = "bottom",  # Caption at the bottom
+  sanitize.text.function = identity  # Retains LaTex text formatting
+)
+
+### Make summary tables - APPENDIX ###
+rm(list = ls())
+df = read_rds("./results/main_models.RDS")
+
+# Calculate upper and lower bounds for confidence intervals
+df$lower_bound <- df$att - 1.96 * df$se  # 95% confidence interval lower bound
+df$upper_bound <- df$att + 1.96 * df$se  # 95% confidence interval upper bound
+
+# Adjust column names to include the new bounds
+colnames(df) <- c("Time", "Cell", "Actor", "DV", "DV Type", "ATT", "SE", "CI Lower", "CI Upper")
+
+df_event = df %>%
+  filter(`DV Type` == "Event")
+df_death = df %>%
+  filter(`DV Type` == "Death")
+
+# Create a LaTex table with vertical lines, without row numbers
+xtable_obj <- xtable(
+  df_event,
+  caption = "Models with violent events as the outcome. Bootstrapped standard errors are used to calculate the confidence intervals.",
+  label = "tab:appendix_main_results_events",
+  digits = 5  # Set decimal places
+)
+
+# Modify 'align' to add vertical lines between columns
+align(xtable_obj) <- "|c|c|l|c|c|c|r|r|r|r|"  # Vertical lines between columns
+
+# Print the LaTex table without row numbers
+print(
+  xtable_obj,
+  include.rownames = FALSE,  # Remove row numbers
+  caption.placement = "top",  # Placement of the caption
+  sanitize.text.function = identity  # Retains original text for LaTex
+)
+
+# Create a LaTex table with vertical lines, without row numbers
+xtable_obj <- xtable(
+  df_death,
+  caption = "Models with deaths as the outcome. Bootstrapped standard errors are used to calculate the confidence intervals.",
+  label = "tab:appendix_main_results_deaths",
+  digits = 5  # Set decimal places
+)
+
+align(xtable_obj) <- "|c|c|l|c|c|c|r|r|r|r|"  # Vertical lines between columns
+
+# Print the LaTex table without row numbers
+print(
+  xtable_obj,
+  include.rownames = FALSE,  # Remove row numbers
+  caption.placement = "top",  # Placement of the caption
+  sanitize.text.function = identity  # Retains original text for LaTex
+)
+
 ##### PLOT MAIN RESULTS #####
+rm(list = ls())
 df = read_rds("./results/main_models.RDS")
 
 ##### Entrance - same - total #####
