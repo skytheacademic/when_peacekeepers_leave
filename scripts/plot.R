@@ -1,9 +1,9 @@
 # When Peacekeepers Leave: Figures and Plots #
 # Sky Kunkel #
 # reading in cleaned data
+setwd(dirname(rstudioapi::getActiveDocumentContext()$path)) # set to source file location
 setwd("../")
 library(did); library(sf); library(tidyverse); library(lubridate); library(ggtext)
-setwd("/Users/kunkel3/Documents/GitHub/when_peacekeepers_leave")
 
 ### Make summary tables - main paper ###
 rm(list = ls())
@@ -341,6 +341,304 @@ ggplot(d_leave_neighbor_pr, aes(x = att, y = factor(actor), color = actor)) +
   guides(color = guide_legend(override.aes = list(linetype = c(0, 0)))) +
   geom_vline(xintercept = 0, linetype = "dashed", color = "darkgrey", size = 0.5)
 dev.off()
+
+
+
+
+
+
+
+
+
+######### Descriptives Plots ######### 
+library(ggpubr)
+rm(list = ls())
+df = read_rds("./data/Kunkel-Atkinson-Warner-final.rds") %>% 
+  as.data.frame()
+
+## 
+# Calculate the frequency of peacekeeping entrances over time
+entrances_over_time <- df %>%
+  filter(first_treated > 0) %>%
+  count(first_treated)
+
+pdf("./test_entrance.pdf")
+ggplot(entrances_over_time, aes(x = first_treated, y = n)) +
+  geom_line(color = "#5b92e5") +
+  geom_point(shape = 16, color = "#5b92e5", size = 2) + # Shape 16 corresponds to a solid circle
+  labs(title = "Frequency of Peacekeeping Entrances Over Time",
+       x = "Time (months since January 2000)",
+       y = "Number of Entrances") +
+  theme_pubr()
+
+ggplot(entrances_over_time, aes(x = first_treated, y = n)) +
+  geom_bar(stat = "identity", fill = "skyblue") +
+  labs(title = "Frequency of Peacekeeping Entrances Over Time",
+       x = "Time (months since January 2000)",
+       y = "Number of Entrances") +
+  theme_pubclean()
+
+ggplot(entrances_over_time, aes(x = first_treated, y = n)) +
+  geom_point(color = "#5b92e5", size = 2) + # Adjusted point color and size
+  geom_smooth(method = "loess", color = "black") + # LOESS smooth line
+  labs(title = "Frequency of Peacekeeping Entrances Over Time",
+       x = "Time (months since January 2000)",
+       y = "Number of Entrances") +
+  theme_pubclean()
+dev.off()
+
+# Calculate the frequency of peacekeeping entrances over time
+exits_over_time <- df %>%
+  filter(first_treated_leave > 0) %>%
+  count(first_treated_leave)
+
+pdf("./test_exit.pdf")
+ggplot(exits_over_time, aes(x = first_treated_leave, y = n)) +
+  geom_line(color = "#5b92e5") +
+  geom_point(shape = 16, color = "#5b92e5", size = 2) + # Shape 16 corresponds to a solid circle
+  labs(title = "Frequency of Peacekeeping Exits Over Time",
+       x = "Time (months since January 2000)",
+       y = "Number of Entrances") +
+  theme_pubr()
+
+ggplot(exits_over_time, aes(x = first_treated_leave, y = n)) +
+  geom_bar(stat = "identity", fill = "skyblue") +
+  labs(title = "Frequency of Peacekeeping Exits Over Time",
+       x = "Time (months since January 2000)",
+       y = "Number of Entrances") +
+  theme_pubclean()
+
+ggplot(exits_over_time, aes(x = first_treated_leave, y = n)) +
+  geom_point(color = "#5b92e5", size = 2) + # Adjusted point color and size
+  geom_smooth(method = "loess", color = "black") + # LOESS smooth line
+  labs(title = "Frequency of Peacekeeping Exits Over Time",
+       x = "Time (months since January 2000)",
+       y = "Number of Entrances") +
+  theme_pubclean()
+dev.off()
+
+## by mission ##
+# something is going wrong when "mission" is joined in the data
+entrances_over_time_mission <- df %>%
+  filter(first_treated > 0, !is.na(mission)) %>%
+  count(first_treated, mission)
+
+pdf("./test_entrance_mission.pdf")
+ggplot(entrances_over_time_mission, aes(x = first_treated, y = n, group = mission)) +
+  geom_line(color = "#5b92e5") +
+  geom_point(shape = 16, color = "#5b92e5", size = 2) +
+  labs(title = "Frequency of Peacekeeping Entrances Over Time by Mission",
+       x = "Time (months since January 2000)",
+       y = "Number of Entrances") +
+  theme_pubr() +
+  facet_wrap(~mission, scales = "free_y")
+
+ggplot(entrances_over_time_mission, aes(x = first_treated, y = n, fill = mission)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Frequency of Peacekeeping Entrances Over Time by Mission",
+       x = "Time (months since January 2000)",
+       y = "Number of Entrances") +
+  theme_pubclean()
+
+ggplot(entrances_over_time_mission, aes(x = first_treated, y = n, color = mission)) +
+  geom_line() +
+  geom_point(shape = 16, size = 2) +
+  labs(title = "Frequency of Peacekeeping Entrances Over Time by Mission",
+       x = "Time (months since January 2000)",
+       y = "Number of Entrances") +
+  theme_pubclean()
+
+ggplot(entrances_over_time_mission, aes(x = first_treated, y = n, fill = mission)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Frequency of Peacekeeping Entrances Over Time by Mission",
+       x = "Time (months since January 2000)",
+       y = "Number of Entrances") +
+  theme_pubclean() +
+  facet_wrap(~mission, scales = "free_y") +
+  theme(legend.position = "none")
+
+ggplot(entrances_over_time_mission, aes(x = first_treated, y = n, color = mission)) +
+  geom_point(shape = 16, size = 2) +
+  geom_smooth(method = "loess", se = FALSE, color = "black") +
+  labs(title = "Frequency of Peacekeeping Entrances Over Time by Mission",
+       x = "Time (months since January 2000)",
+       y = "Number of Entrances") +
+  theme_pubclean() +
+  facet_wrap(~ mission, scales = "free_y") +
+  theme(legend.position = "none")
+dev.off()
+
+
+exits_over_time_mission <- df %>%
+  filter(first_treated_leave > 0, !is.na(mission)) %>%
+  count(first_treated_leave, mission)
+
+pdf("./test_exit_mission.pdf")
+ggplot(exits_over_time_mission, aes(x = first_treated_leave, y = n, group = mission)) +
+  geom_line(color = "#5b92e5") +
+  geom_point(shape = 16, color = "#5b92e5", size = 2) +
+  labs(title = "Frequency of Peacekeeping exits Over Time by Mission",
+       x = "Time (months since January 2000)",
+       y = "Number of exits") +
+  theme_pubr() +
+  facet_wrap(~mission, scales = "free_y")
+
+ggplot(exits_over_time_mission, aes(x = first_treated_leave, y = n, fill = mission)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Frequency of Peacekeeping exits Over Time by Mission",
+       x = "Time (months since January 2000)",
+       y = "Number of exits") +
+  theme_pubclean()
+
+ggplot(exits_over_time_mission, aes(x = first_treated_leave, y = n, color = mission)) +
+  geom_line() +
+  geom_point(shape = 16, size = 2) +
+  labs(title = "Frequency of Peacekeeping exits Over Time by Mission",
+       x = "Time (months since January 2000)",
+       y = "Number of exits") +
+  theme_pubclean()
+
+ggplot(exits_over_time_mission, aes(x = first_treated_leave, y = n, fill = mission)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Frequency of Peacekeeping exits Over Time by Mission",
+       x = "Time (months since January 2000)",
+       y = "Number of exits") +
+  theme_pubclean() +
+  facet_wrap(~mission, scales = "free_y") +
+  theme(legend.position = "none")
+
+ggplot(exits_over_time_mission, aes(x = first_treated_leave, y = n, color = mission)) +
+  geom_point(shape = 16, size = 2) +
+  geom_smooth(method = "loess", se = FALSE, color = "black") +
+  labs(title = "Frequency of Peacekeeping exits Over Time by Mission",
+       x = "Time (months since January 2000)",
+       y = "Number of exits") +
+  theme_pubclean() +
+  facet_wrap(~ mission, scales = "free_y") +
+  theme(legend.position = "none")
+dev.off()
+
+## combined? ##
+# Combine entrances and exits data
+entrances_over_time_mission <- df %>%
+  filter(first_treated > 0, !is.na(mission)) %>%
+  count(first_treated, mission) %>%
+  rename(time = first_treated, n_entrances = n)
+
+# Prepare data for exits
+exits_over_time_mission <- df %>%
+  filter(first_treated_leave > 0, !is.na(mission)) %>%
+  count(first_treated_leave, mission) %>%
+  rename(time = first_treated_leave, n_exits = n)
+combined_data <- full_join(entrances_over_time_mission, exits_over_time_mission, by = c("time", "mission")) %>%
+  replace_na(list(n_entrances = 0, n_exits = 0))
+
+
+pdf("./test_combined_mission.pdf")
+
+ggplot(combined_data, aes(x = time, group = mission)) +
+  geom_line(aes(y = n_entrances, color = "Entrances")) +
+  geom_line(aes(y = n_exits, color = "Exits")) +
+  geom_point(aes(y = n_entrances, color = "Entrances"), shape = 16, size = 2) +
+  geom_point(aes(y = n_exits, color = "Exits"), shape = 16, size = 2) +
+  labs(title = "Frequency of Peacekeeping Entrances and Exits Over Time by Mission",
+       x = "Time (months since January 2000)",
+       y = "Number of Events") +
+  theme_pubr() +
+  facet_wrap(~mission, scales = "free_y") +
+  scale_color_manual(values = c("Entrances" = "#5b92e5", "Exits" = "red"))
+
+#### 2. Bar Plot
+ggplot(combined_data, aes(x = time)) +
+  geom_bar(aes(y = n_entrances, fill = "Entrances"), stat = "identity", position = "dodge") +
+  geom_bar(aes(y = n_exits, fill = "Exits"), stat = "identity", position = "dodge") +
+  labs(title = "Frequency of Peacekeeping Entrances and Exits Over Time by Mission",
+       x = "Time (months since January 2000)",
+       y = "Number of Events") +
+  theme_pubclean() +
+  facet_wrap(~mission, scales = "free_y") +
+  scale_fill_manual(values = c("Entrances" = "#5b92e5", "Exits" = "red"))
+
+#### 4. Faceted Bar Plot
+ggplot(combined_data, aes(x = time)) +
+  geom_bar(aes(y = n_entrances, fill = "Entrances"), stat = "identity", position = "dodge") +
+  geom_bar(aes(y = n_exits, fill = "Exits"), stat = "identity", position = "dodge") +
+  labs(title = "Frequency of Peacekeeping Entrances and Exits Over Time by Mission",
+       x = "Time (months since January 2000)",
+       y = "Number of Events") +
+  theme_pubclean() +
+  facet_wrap(~mission, scales = "free_y") +
+  scale_fill_manual(values = c("Entrances" = "#5b92e5", "Exits" = "red")) +
+  theme(legend.position = "none")
+
+#### 5. Scatter Plot with LOESS Smoothing
+ggplot(combined_data, aes(x = time)) +
+  geom_point(aes(y = n_entrances, color = "Entrances"), shape = 16, size = 2) +
+  geom_smooth(aes(y = n_entrances, color = "Entrances"), method = "loess", se = FALSE) +
+  geom_point(aes(y = n_exits, color = "Exits"), shape = 16, size = 2) +
+  geom_smooth(aes(y = n_exits, color = "Exits"), method = "loess", se = FALSE, color = "black") +
+  labs(title = "Frequency of Peacekeeping Entrances and Exits Over Time by Mission",
+       x = "Time (months since January 2000)",
+       y = "Number of Events") +
+  theme_pubclean() +
+  facet_wrap(~ mission, scales = "free_y") +
+  scale_color_manual(values = c("Entrances" = "#5b92e5", "Exits" = "red")) +
+  theme(legend.position = "none")
+
+dev.off()
+
+
+### average length of stay ###
+
+df <- df %>%
+  mutate(first_treated_leave = ifelse(first_treated_leave == 0, 216, first_treated_leave),
+         length_of_stay = first_treated_leave - first_treated) 
+dd = df %>%
+  filter(first_treated > 0, !is.na(mission))
+
+## length of stay by mission ##
+# Calculate descriptives for length of stay by mission
+length_of_stay_by_mission <- dd %>%
+  group_by(mission) %>%
+  summarize(mean_stay = mean(length_of_stay, na.rm = TRUE),
+            median_stay = median(length_of_stay, na.rm = TRUE),
+            sd_stay = sd(length_of_stay, na.rm = TRUE),
+            min_stay = min(length_of_stay, na.rm = TRUE),
+            max_stay = max(length_of_stay, na.rm = TRUE))
+
+# Load necessary library for table rendering
+library(knitr)
+
+# Display the descriptive statistics by mission as a table
+kable(length_of_stay_by_mission, caption = "Descriptive Statistics for Length of Stay by Mission")
+
+kable(length_of_stay_by_mission, format = "latex", booktabs = TRUE, 
+      caption = "Descriptive Statistics for Length of Stay by Mission")
+
+
+### anecdotes ###
+z = df %>% 
+  filter(length_of_stay == 0 | length_of_stay == 1) %>%
+  select(gid, year, month, time, first_treated, treated, post_treatment, first_treated_leave, treated_leave, post_treatment_leave, 
+         length_of_stay, mission, country, radpko_units_deployed)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
