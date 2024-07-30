@@ -15,7 +15,8 @@ cl <- makeCluster(detectCores()-1)
 registerDoSNOW(cl)
 
 ### set working directory ###
-setwd("/Users/zmwarner/github/when_peacekeepers_leave")
+setwd(dirname(rstudioapi::getActiveDocumentContext()$path)) # set to source file location
+setwd("../")
 
 ### create a function to compute queen contiguity
 st_queen <- function(a, b = a) st_relate(a, b, pattern = "F***T****")
@@ -35,8 +36,9 @@ prio_static <- expand_grid(prio_static, year)
 
 ### merge on grid ID and year, then reorder variables
 prio <- full_join(prio_static, prio_yearly, by = c("gid", "year")) %>% 
-  relocate(year, .after = "gid")
-
+  relocate(year, .after = "gid") %>%
+  filter(year > 1999 & year < 2018)  # until RADPKO data is updated, need to filter out incomplete years
+  
 ### expand into monthly data
 month <- seq(1, 12, 1)
 prio <- expand_grid(prio, month) %>% 
@@ -62,10 +64,10 @@ radpko <- read_csv("./data/radpko/radpko_grid.csv") %>%
 ### need to aggregate everything by those variables. all vars are sums/counts,
 ### so we can just sum them all.
 radpko <- radpko %>% 
-  select(-c(country, mission, date, capital.lon:gid_center_lat)) %>% 
+  select(-c(country, mission, date)) %>% 
   relocate(c(year, month), .after = gid) %>% 
   group_by(gid, year, month) %>% 
-  summarise(across(units_deployed:afr_unmob, sum), across(distance_to_capital:pko_africa, mean)) %>% 
+  summarise(across(units_deployed:afr_unmob, sum)) %>% 
   ungroup()
 
 ##### CLEAN ACLED DATA #####
@@ -425,7 +427,7 @@ df <- df %>%
              treated_leave, post_treatment_leave), .after = month)
 
 ### save it
-write_rds(df, "./data/Kunkel-Atkinson-Warner-final.rds")
+write_rds(df, "./data/Kunkel-Atkinson-Dudley-Warner-final.rds")
 
 ##### VERSION CONTROL (Sky) #####
 # R version 4.1.0 (2021-05-18)
