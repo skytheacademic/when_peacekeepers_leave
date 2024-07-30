@@ -10,15 +10,15 @@
 library(did); library(sf); library(tidyverse); library(lubridate); library(ggtext)
 
 ### set working directory ###
-setwd("/Users/zmwarner/github/when_peacekeepers_leave")
-
+# setwd("/Users/zmwarner/github/when_peacekeepers_leave")
+setwd("../")
 ### set seed
 set.seed(8675309) # hey jenny
 
 ##### READ IN DATA #####
 
 ### load it
-df <- read_rds("./data/Kunkel-Atkinson-Warner-final.rds")
+df <- read_rds("./data/Kunkel-Atkinson-Dudley-Warner-final.rds")
 
 ##### SUMMARY STATISTICS #####
 
@@ -347,77 +347,6 @@ results = rbind(results, data.frame(time = "Leave", cell = "Neighbor", actor = "
 rm(out8, es8)
 
 saveRDS(results, "./results/main_models.RDS")
-
-
-es1_plot <-   data.frame(
-  type          = "dynamic",
-  term = paste0('ATT(', es1$egt, ")"),
-  event.time= es1$egt,
-  estimate  = es1$att.egt,
-  std.error = es1$se.egt,
-  conf.low  = es1$att.egt - es1$crit.val.egt * es1$se.egt,
-  conf.high = es1$att.egt + es1$crit.val.egt  * es1$se.egt,
-  point.conf.low  = es1$att.egt - stats::qnorm(1 - es1$DIDparams$alp/2) * es1$se.egt,
-  point.conf.high = es1$att.egt + stats::qnorm(1 - es1$DIDparams$alp/2) * es1$se.egt
-) %>%
-  filter(event.time < 1)
-
-ggplot(data = es1_plot, mapping = aes(x = event.time, y = estimate)) +
-  geom_vline(xintercept = 0-0.05, color = 'grey', linewidth = 1.2, linetype = "dotted") + 
-  geom_ribbon(aes(ymin= point.conf.low, ymax=  point.conf.high), alpha = 0.5, size = 1, fill = "steelblue")+
-  geom_ribbon(aes(ymin=  conf.low, ymax =  conf.high), alpha =  0.3, size = 1, fill = "steelblue")+
-  geom_line(mapping = aes(x = event.time, y=estimate), colour = "black", linewidth = 0.6, linetype = "dashed") +
-  geom_line(size = 1.2, alpha = 2, colour = "darkblue") +
-  geom_hline(yintercept = 0, colour="black", size = 0.25, linetype = "dotted") +
-  xlab('Event time') +
-  ylab("Event-Study Estimate") +
-  scale_x_continuous(breaks = seq(min(es1_plot$event.time), max(es1_plot$event.time), by = 30)) +
-  theme(axis.text.y = element_text(size = 12))+
-  theme(axis.text.x = element_text(size = 12)) +
-  theme(axis.title = element_text(color="black",  size = 12))+
-  theme(plot.title=ggtext::element_markdown(size = 12, color="black", hjust=0, lineheight=1.2))
-
-### plotting event study ###
-es1_1_plot <-   data.frame(
-  type          = "dynamic",
-  term = paste0('ATT(', es1_1$egt, ")"),
-  event.time= es1_1$egt,
-  estimate  = es1_1$att.egt,
-  std.error = es1_1$se.egt,
-  conf.low  = es1_1$att.egt - es1_1$crit.val.egt * es1_1$se.egt,
-  conf.high = es1_1$att.egt + es1_1$crit.val.egt  * es1_1$se.egt,
-  point.conf.low  = es1_1$att.egt - stats::qnorm(1 - es1_1$DIDparams$alp/2) * es1_1$se.egt,
-  point.conf.high = es1_1$att.egt + stats::qnorm(1 - es1_1$DIDparams$alp/2) * es1_1$se.egt
-)
-
-ggplot(data = es1_1_plot, mapping = aes(x = event.time, y = estimate)) +
-  geom_vline(xintercept = 0-0.05, color = 'grey', size = 1.2, linetype = "dotted") + 
-  geom_ribbon(aes(ymin= point.conf.low, ymax=  point.conf.high), alpha = 0.5, size = 1, fill = "steelblue")+
-  geom_ribbon(aes(ymin=  conf.low, ymax =  conf.high), alpha =  0.3, size = 1, fill = "steelblue")+
-  geom_line(mapping = aes(x = event.time, y=estimate), colour = "black", size = 0.6, linetype = "dashed") +
-  geom_line(size = 1.2, alpha = 2, colour = "darkblue") +
-  geom_hline(yintercept = 0, colour="black", size = 0.25, linetype = "dotted") +
-  xlab('Event time') + ylab("Event-Study Estimate") +
-  scale_x_continuous(breaks = seq(min(es1_1_plot$event.time), 0, by = 10)) +
-  theme(axis.text.y = element_text(size = 12))+
-  theme(axis.text.x = element_text(size = 12)) +
-  theme(axis.title = element_text(color="black",  size = 12))+
-  theme(plot.title=ggtext::element_markdown(size = 12, color="black", hjust=0, lineheight=1.2))
-### end plotting
-
-
-
-##### OLD-SCHOOL DID FOR IF PKO REDUCE VIOLENCE #####
-
-df <- df %>%
-  group_by(gid) %>% 
-  mutate(treated = case_when(sum(radpko_pko_deployed_any, na.rm = T) > 0 ~ 1,
-                             TRUE ~ 0)) %>% 
-  ungroup()
-
-m1 <- glm(acled_fatalities_any ~ treated + post_treatment + 
-            treated*post_treatment, data = df)
-summary(m1)
 
 ##### VERSION CONTROL #####
 sessionInfO()
