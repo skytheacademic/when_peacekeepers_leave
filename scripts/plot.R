@@ -3,7 +3,12 @@
 # reading in cleaned data
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path)) # set to source file location
 setwd("../")
-library(did); library(sf); library(tidyverse); library(lubridate); library(ggtext)
+library(did)
+library(sf)
+library(tidyverse)
+library(lubridate)
+library(ggtext)
+library(xtable)
 
 ### Make summary tables - main paper ###
 rm(list = ls())
@@ -353,12 +358,16 @@ dev.off()
 ######### Descriptives Plots ######### 
 library(ggpubr)
 rm(list = ls())
-df = read_rds("./data/Kunkel-Atkinson-Warner-final.rds") %>% 
-  as.data.frame()
+df = read_rds("./data/Kunkel-Atkinson-Dudley-Warner-final.rds") %>% 
+  as.data.frame() %>%
+  select(gid, year, month, time, first_treated, treated, post_treatment, first_treated_leave, treated_leave, 
+         post_treatment_leave)
+gc()
 
 ## 
 # Calculate the frequency of peacekeeping entrances over time
 entrances_over_time <- df %>%
+  distinct(gid, first_treated) %>%
   filter(first_treated > 0) %>%
   count(first_treated)
 
@@ -389,6 +398,7 @@ dev.off()
 
 # Calculate the frequency of peacekeeping entrances over time
 exits_over_time <- df %>%
+  distinct(gid, first_treated_leave) %>%
   filter(first_treated_leave > 0) %>%
   count(first_treated_leave)
 
@@ -418,8 +428,21 @@ ggplot(exits_over_time, aes(x = first_treated_leave, y = n)) +
 dev.off()
 
 ## by mission ##
-# something is going wrong when "mission" is joined in the data
+# mission was dropped earlier to solve different coding issue, so we'll read RADPKO back in and join it to main data
+radpko <- read_csv("./data/radpko/radpko_grid.csv") %>% 
+  # make the date variable a date type
+  mutate(date = ymd(date),
+         month = month(date),
+         year = year(date)) %>% 
+  filter(year > 1999 & year < 2018) %>% # until data is updated, need to filter out incomplete years
+  # rename variable for ease of merging
+  rename(gid = prio.grid) %>%
+  distinct(mission, gid)
+
+df = left_join(df, radpko, relationship = "many-to-many")
+
 entrances_over_time_mission <- df %>%
+  distinct(gid, first_treated, mission) %>%
   filter(first_treated > 0, !is.na(mission)) %>%
   count(first_treated, mission)
 
@@ -470,6 +493,7 @@ dev.off()
 
 
 exits_over_time_mission <- df %>%
+  distinct(gid, first_treated_leave, mission) %>%
   filter(first_treated_leave > 0, !is.na(mission)) %>%
   count(first_treated_leave, mission)
 
@@ -594,11 +618,13 @@ df <- df %>%
   mutate(first_treated_leave = ifelse(first_treated_leave == 0, 216, first_treated_leave),
          length_of_stay = first_treated_leave - first_treated) 
 dd = df %>%
-  filter(first_treated > 0, !is.na(mission))
+  filter(first_treated > 0, !is.na(mission)) %>%
+  distinct(gid, mission, length_of_stay)
 
 ## length of stay by mission ##
 # Calculate descriptives for length of stay by mission
 length_of_stay_by_mission <- dd %>%
+  mutate(mission = ifelse(mission == "MONUC" | mission == "MONUSCO", "MONUC/MONUSCO", mission)) %>%
   group_by(mission) %>%
   summarize(mean_stay = mean(length_of_stay, na.rm = TRUE),
             median_stay = median(length_of_stay, na.rm = TRUE),
@@ -610,10 +636,14 @@ length_of_stay_by_mission <- dd %>%
 library(knitr)
 
 # Display the descriptive statistics by mission as a table
+colnames(length_of_stay_by_mission) <- c("Mission", "Mean", "Median", "SD", "Min", "Max")
+length_of_stay_by_mission$`Mean Stay` <- round(length_of_stay_by_mission$`Mean Stay`, 2)
+length_of_stay_by_mission$`SD Stay` <- round(length_of_stay_by_mission$`SD Stay`, 2)
 kable(length_of_stay_by_mission, caption = "Descriptive Statistics for Length of Stay by Mission")
 
 kable(length_of_stay_by_mission, format = "latex", booktabs = TRUE, 
-      caption = "Descriptive Statistics for Length of Stay by Mission")
+      caption = "Descriptive Statistics for Length of Stay by Mission", label = "tab:desc",
+    linesep = "")
 
 
 ### anecdotes ###
@@ -621,24 +651,6 @@ z = df %>%
   filter(length_of_stay == 0 | length_of_stay == 1) %>%
   select(gid, year, month, time, first_treated, treated, post_treatment, first_treated_leave, treated_leave, post_treatment_leave, 
          length_of_stay, mission, country, radpko_units_deployed)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
