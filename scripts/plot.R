@@ -361,7 +361,7 @@ rm(list = ls())
 df = read_rds("./data/Kunkel-Atkinson-Dudley-Warner-final.rds") %>% 
   as.data.frame() %>%
   select(gid, year, month, time, first_treated, treated, post_treatment, first_treated_leave, treated_leave, 
-         post_treatment_leave)
+         post_treatment_leave, neighbor_vac_gov_death_all, neighbor_vac_reb_death_any)
 gc()
 
 ## 
@@ -632,13 +632,13 @@ length_of_stay_by_mission <- dd %>%
             min_stay = min(length_of_stay, na.rm = TRUE),
             max_stay = max(length_of_stay, na.rm = TRUE))
 
-# Load necessary library for table rendering
+# Load knitr for table rendering
 library(knitr)
 
 # Display the descriptive statistics by mission as a table
 colnames(length_of_stay_by_mission) <- c("Mission", "Mean", "Median", "SD", "Min", "Max")
-length_of_stay_by_mission$`Mean Stay` <- round(length_of_stay_by_mission$`Mean Stay`, 2)
-length_of_stay_by_mission$`SD Stay` <- round(length_of_stay_by_mission$`SD Stay`, 2)
+length_of_stay_by_mission$`Mean` <- round(length_of_stay_by_mission$`Mean`, 2)
+length_of_stay_by_mission$`SD` <- round(length_of_stay_by_mission$`SD`, 2)
 kable(length_of_stay_by_mission, caption = "Descriptive Statistics for Length of Stay by Mission")
 
 kable(length_of_stay_by_mission, format = "latex", booktabs = TRUE, 
@@ -647,24 +647,43 @@ kable(length_of_stay_by_mission, format = "latex", booktabs = TRUE,
 
 
 ### anecdotes ###
+radpko <- read_csv("./data/radpko/radpko_grid.csv") %>% 
+  # make the date variable a date type
+  mutate(date = ymd(date),
+         month = month(date),
+         year = year(date)) %>% 
+  filter(year > 1999 & year < 2018) %>% # until data is updated, need to filter out incomplete years
+  # rename variable for ease of merging
+  rename(gid = prio.grid) %>%
+  distinct(mission, gid)
+
+df = left_join(df, radpko, relationship = "many-to-many")
 z = df %>% 
   filter(length_of_stay == 0 | length_of_stay == 1) %>%
   select(gid, year, month, time, first_treated, treated, post_treatment, first_treated_leave, treated_leave, post_treatment_leave, 
-         length_of_stay, mission, country, radpko_units_deployed)
-
-
+         length_of_stay, mission)
 
 ######### make parallel trends plots ######### 
 rm(list = ls())
-df = read_rds("./data/Kunkel-Atkinson-Warner-final.rds")
+df = read_rds("./data/Kunkel-Atkinson-Dudley-Warner-final.rds") %>%
+  select(time, gid, first_treated, first_treated_leave, starts_with("acled"), 
+         starts_with("neighbor"))
+gc()
+
+df$neighbor_gov_death_any[df$neighbor_gov_death_any > 0] = 1
+df$neighbor_reb_death_any[df$neighbor_reb_death_any > 0] = 1
+df$neighbor_gov_event_any[df$neighbor_gov_event_any > 0] = 1
+df$neighbor_reb_event_any[df$neighbor_reb_event_any > 0] = 1
 
 ##################################### VIOLENT EVENTS #####################################
 ###### TOTAL #######
 ## Same cell, enter ##
 set.seed(8675309) # hey jenny
 out1 <- att_gt(yname = "acled_vac_gov_event_all", tname = "time", idname = "gid", 
-               gname = "first_treated",data = df, pl = T, cores = 1, allow_unbalanced_panel = T)
+               gname = "first_treated",data = df, pl = T, allow_unbalanced_panel = T)
+gc()
 es1 <- aggte(out1, type = "dynamic", na.rm = T) # extract for parallel trends plot
+gc()
 es1_plot <-   data.frame(
   type          = "dynamic",
   term = paste0('ATT(', es1$egt, ")"),
@@ -677,6 +696,9 @@ es1_plot <-   data.frame(
   point.conf.high = es1$att.egt + stats::qnorm(1 - es1$DIDparams$alp/2) * es1$se.egt
 ) %>%
   filter(event.time < 1)
+
+rm(es1)
+gc()
 
 pdf("./results/event_study_pt/1.pdf")
 ggplot(data = es1_plot, mapping = aes(x = event.time, y = estimate)) +
@@ -694,13 +716,15 @@ ggplot(data = es1_plot, mapping = aes(x = event.time, y = estimate)) +
   theme(axis.title = element_text(color="black",  size = 12))+
   theme(plot.title=ggtext::element_markdown(size = 12, color="black", hjust=0, lineheight=1.2))
 dev.off()
-rm(es1, es1_plot, out1)
-
+rm(es1_plot, out1)
+gc()
 
 set.seed(8675309) # hey jenny
 out2 <- att_gt(yname = "acled_vac_reb_event_all", tname = "time", idname = "gid", 
-               gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
+               gname = "first_treated",data = df, pl = T, allow_unbalanced_panel = T)
+gc()
 es2 <- aggte(out2, type = "dynamic", na.rm = T)
+gc()
 es2_plot <-   data.frame(
   type          = "dynamic",
   term = paste0('ATT(', es2$egt, ")"),
@@ -713,6 +737,8 @@ es2_plot <-   data.frame(
   point.conf.high = es2$att.egt + stats::qnorm(1 - es2$DIDparams$alp/2) * es2$se.egt
 ) %>%
   filter(event.time < 1)
+rm(es2)
+gc()
 
 pdf("./results/event_study_pt/2.pdf")
 ggplot(data = es2_plot, mapping = aes(x = event.time, y = estimate)) +
@@ -730,13 +756,16 @@ ggplot(data = es2_plot, mapping = aes(x = event.time, y = estimate)) +
   theme(axis.title = element_text(color="black",  size = 12))+
   theme(plot.title=ggtext::element_markdown(size = 12, color="black", hjust=0, lineheight=1.2))
 dev.off()
-rm(es2, es2_plot, out2)
+rm(es2_plot, out2)
+gc()
 
 ## Neighbor cell, enter ##
 set.seed(8675309) # hey jenny
 out3 <- att_gt(yname = "neighbor_vac_gov_event_all", tname = "time", idname = "gid", 
-               gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
+               gname = "first_treated",data = df, pl = T, allow_unbalanced_panel = T)
+gc()
 es3 <- aggte(out3, type = "dynamic", na.rm = T)
+gc()
 es3_plot <-   data.frame(
   type          = "dynamic",
   term = paste0('ATT(', es3$egt, ")"),
@@ -749,6 +778,8 @@ es3_plot <-   data.frame(
   point.conf.high = es3$att.egt + stats::qnorm(1 - es3$DIDparams$alp/2) * es3$se.egt
 ) %>%
   filter(event.time < 1)
+rm(es3)
+gc()
 
 pdf("./results/event_study_pt/3.pdf")
 ggplot(data = es3_plot, mapping = aes(x = event.time, y = estimate)) +
@@ -766,12 +797,15 @@ ggplot(data = es3_plot, mapping = aes(x = event.time, y = estimate)) +
   theme(axis.title = element_text(color="black",  size = 12))+
   theme(plot.title=ggtext::element_markdown(size = 12, color="black", hjust=0, lineheight=1.2))
 dev.off()
-rm(es3, es3_plot, out3)
+rm(es3_plot, out3)
+gc()
 
 set.seed(8675309) # hey jenny
 out4 <- att_gt(yname = "neighbor_vac_reb_event_all", tname = "time", idname = "gid", 
-               gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
+               gname = "first_treated",data = df, pl = T, allow_unbalanced_panel = T)
+gc()
 es4 <- aggte(out4, type = "dynamic", na.rm = T)
+gc()
 es4_plot <-   data.frame(
   type          = "dynamic",
   term = paste0('ATT(', es4$egt, ")"),
@@ -784,6 +818,8 @@ es4_plot <-   data.frame(
   point.conf.high = es4$att.egt + stats::qnorm(1 - es4$DIDparams$alp/2) * es4$se.egt
 ) %>%
   filter(event.time < 1)
+rm(es4)
+gc()
 
 pdf("./results/event_study_pt/4.pdf")
 ggplot(data = es4_plot, mapping = aes(x = event.time, y = estimate)) +
@@ -801,13 +837,17 @@ ggplot(data = es4_plot, mapping = aes(x = event.time, y = estimate)) +
   theme(axis.title = element_text(color="black",  size = 12))+
   theme(plot.title=ggtext::element_markdown(size = 12, color="black", hjust=0, lineheight=1.2))
 dev.off()
-rm(es4, es4_plot, out4)
+rm(es4_plot, out4)
+gc()
 
 ## Same cell, leave ##
 set.seed(8675309) # hey jenny
 out5 <- att_gt(yname = "acled_vac_gov_event_all", tname = "time", idname = "gid", 
-               gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
+               gname = "first_treated_leave",data = df, pl = T, allow_unbalanced_panel = T)
+gc()
 es5 <- aggte(out5, type = "dynamic", na.rm = T)
+gc()
+
 es5_plot <-   data.frame(
   type          = "dynamic",
   term = paste0('ATT(', es5$egt, ")"),
@@ -820,6 +860,8 @@ es5_plot <-   data.frame(
   point.conf.high = es5$att.egt + stats::qnorm(1 - es5$DIDparams$alp/2) * es5$se.egt
 ) %>%
   filter(event.time < 1)
+rm(es5)
+gc()
 
 pdf("./results/event_study_pt/5.pdf")
 ggplot(data = es5_plot, mapping = aes(x = event.time, y = estimate)) +
@@ -837,12 +879,17 @@ ggplot(data = es5_plot, mapping = aes(x = event.time, y = estimate)) +
   theme(axis.title = element_text(color="black",  size = 12))+
   theme(plot.title=ggtext::element_markdown(size = 12, color="black", hjust=0, lineheight=1.2))
 dev.off()
-rm(es5, es5_plot, out5)
+rm(es5_plot, out5)
+gc()
 
 set.seed(8675309) # hey jenny
 out6 <- att_gt(yname = "acled_vac_reb_event_all", tname = "time", idname = "gid", 
-               gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
+               gname = "first_treated_leave",data = df, pl = T, allow_unbalanced_panel = T)
+gc()
 es6 <- aggte(out6, type = "dynamic", na.rm = T)
+rm(out6)
+gc()
+
 es6_plot <-   data.frame(
   type          = "dynamic",
   term = paste0('ATT(', es6$egt, ")"),
@@ -855,7 +902,8 @@ es6_plot <-   data.frame(
   point.conf.high = es6$att.egt + stats::qnorm(1 - es6$DIDparams$alp/2) * es6$se.egt
 ) %>%
   filter(event.time < 1)
-
+rm(es6)
+gc()
 pdf("./results/event_study_pt/6.pdf")
 ggplot(data = es6_plot, mapping = aes(x = event.time, y = estimate)) +
   geom_vline(xintercept = 0-0.05, color = 'grey', linewidth = 1.2, linetype = "dotted") + 
@@ -872,13 +920,16 @@ ggplot(data = es6_plot, mapping = aes(x = event.time, y = estimate)) +
   theme(axis.title = element_text(color="black",  size = 12))+
   theme(plot.title=ggtext::element_markdown(size = 12, color="black", hjust=0, lineheight=1.2))
 dev.off()
-rm(es6, es6_plot, out6)
+rm(es6, es6_plot)
+gc()
 
 ## Neighbor cell, leave ##
 set.seed(8675309) # hey jenny
 out7 <- att_gt(yname = "neighbor_vac_gov_event_all", tname = "time", idname = "gid", 
-               gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
+               gname = "first_treated_leave",data = df, pl = T, allow_unbalanced_panel = T)
+gc()
 es7 <- aggte(out7, type = "dynamic", na.rm = T)
+gc()
 es7_plot <-   data.frame(
   type          = "dynamic",
   term = paste0('ATT(', es7$egt, ")"),
@@ -909,11 +960,14 @@ ggplot(data = es7_plot, mapping = aes(x = event.time, y = estimate)) +
   theme(plot.title=ggtext::element_markdown(size = 12, color="black", hjust=0, lineheight=1.2))
 dev.off()
 rm(es7, es7_plot, out7)
+gc()
 
 set.seed(8675309) # hey jenny
 out8 <- att_gt(yname = "neighbor_vac_reb_event_all", tname = "time", idname = "gid", 
-               gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
+               gname = "first_treated_leave",data = df, pl = T, allow_unbalanced_panel = T)
+gc()
 es8 <- aggte(out8, type = "dynamic", na.rm = T)
+gc()
 es8_plot <-   data.frame(
   type          = "dynamic",
   term = paste0('ATT(', es8$egt, ")"),
@@ -944,13 +998,16 @@ ggplot(data = es8_plot, mapping = aes(x = event.time, y = estimate)) +
   theme(plot.title=ggtext::element_markdown(size = 12, color="black", hjust=0, lineheight=1.2))
 dev.off()
 rm(es8, es8_plot, out8)
+gc()
 
 ###### Pr() #######
 ## Same cell, enter ##
 set.seed(8675309) # hey jenny
 out1 <- att_gt(yname = "acled_vac_gov_event_any", tname = "time", idname = "gid", 
-               gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
+               gname = "first_treated",data = df, pl = T, allow_unbalanced_panel = T)
+gc()
 es1 <- aggte(out1, type = "dynamic", na.rm = T)
+gc()
 es1_plot <-   data.frame(
   type          = "dynamic",
   term = paste0('ATT(', es1$egt, ")"),
@@ -963,6 +1020,7 @@ es1_plot <-   data.frame(
   point.conf.high = es1$att.egt + stats::qnorm(1 - es1$DIDparams$alp/2) * es1$se.egt
 ) %>%
   filter(event.time < 1)
+gc()
 
 pdf("./results/event_study_pt/9.pdf")
 ggplot(data = es1_plot, mapping = aes(x = event.time, y = estimate)) +
@@ -981,11 +1039,14 @@ ggplot(data = es1_plot, mapping = aes(x = event.time, y = estimate)) +
   theme(plot.title=ggtext::element_markdown(size = 12, color="black", hjust=0, lineheight=1.2))
 dev.off()
 rm(es1, es1_plot, out1)
+gc()
 
 set.seed(8675309) # hey jenny
 out2 <- att_gt(yname = "acled_vac_reb_event_any", tname = "time", idname = "gid", 
-               gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
+               gname = "first_treated",data = df, pl = T, allow_unbalanced_panel = T)
+gc()
 es2 <- aggte(out2, type = "dynamic", na.rm = T)
+gc()
 es2_plot <-   data.frame(
   type          = "dynamic",
   term = paste0('ATT(', es2$egt, ")"),
@@ -1016,12 +1077,15 @@ ggplot(data = es2_plot, mapping = aes(x = event.time, y = estimate)) +
   theme(plot.title=ggtext::element_markdown(size = 12, color="black", hjust=0, lineheight=1.2))
 dev.off()
 rm(es2, es2_plot, out2)
+gc()
 
 ## Neighbor cell, enter ##
 set.seed(8675309) # hey jenny
 out3 <- att_gt(yname = "neighbor_vac_gov_event_any", tname = "time", idname = "gid", 
-               gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
+               gname = "first_treated",data = df, pl = T, allow_unbalanced_panel = T)
+gc()
 es3 <- aggte(out3, type = "dynamic", na.rm = T)
+gc()
 es3_plot <-   data.frame(
   type          = "dynamic",
   term = paste0('ATT(', es3$egt, ")"),
@@ -1034,6 +1098,7 @@ es3_plot <-   data.frame(
   point.conf.high = es3$att.egt + stats::qnorm(1 - es3$DIDparams$alp/2) * es3$se.egt
 ) %>%
   filter(event.time < 1)
+gc()
 
 pdf("./results/event_study_pt/11.pdf")
 ggplot(data = es3_plot, mapping = aes(x = event.time, y = estimate)) +
@@ -1052,11 +1117,14 @@ ggplot(data = es3_plot, mapping = aes(x = event.time, y = estimate)) +
   theme(plot.title=ggtext::element_markdown(size = 12, color="black", hjust=0, lineheight=1.2))
 dev.off()
 rm(es3, es3_plot, out3)
+gc()
 
 set.seed(8675309) # hey jenny
 out4 <- att_gt(yname = "neighbor_vac_reb_event_any", tname = "time", idname = "gid", 
-               gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
+               gname = "first_treated",data = df, pl = T, allow_unbalanced_panel = T)
+gc()
 es4 <- aggte(out4, type = "dynamic", na.rm = T)
+gc()
 es4_plot <-   data.frame(
   type          = "dynamic",
   term = paste0('ATT(', es4$egt, ")"),
@@ -1069,6 +1137,7 @@ es4_plot <-   data.frame(
   point.conf.high = es4$att.egt + stats::qnorm(1 - es4$DIDparams$alp/2) * es4$se.egt
 ) %>%
   filter(event.time < 1)
+gc()
 
 pdf("./results/event_study_pt/12.pdf")
 ggplot(data = es4_plot, mapping = aes(x = event.time, y = estimate)) +
@@ -1087,12 +1156,15 @@ ggplot(data = es4_plot, mapping = aes(x = event.time, y = estimate)) +
   theme(plot.title=ggtext::element_markdown(size = 12, color="black", hjust=0, lineheight=1.2))
 dev.off()
 rm(es4, es4_plot, out4)
+gc()
 
 ## Same cell, leave ##
 set.seed(8675309) # hey jenny
 out5 <- att_gt(yname = "acled_vac_gov_event_any", tname = "time", idname = "gid", 
-               gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
+               gname = "first_treated_leave",data = df, pl = T, allow_unbalanced_panel = T)
+gc()
 es5 <- aggte(out5, type = "dynamic", na.rm = T)
+gc()
 es5_plot <-   data.frame(
   type          = "dynamic",
   term = paste0('ATT(', es5$egt, ")"),
@@ -1105,6 +1177,7 @@ es5_plot <-   data.frame(
   point.conf.high = es5$att.egt + stats::qnorm(1 - es5$DIDparams$alp/2) * es5$se.egt
 ) %>%
   filter(event.time < 1)
+gc()
 
 pdf("./results/event_study_pt/13.pdf")
 ggplot(data = es5_plot, mapping = aes(x = event.time, y = estimate)) +
@@ -1123,11 +1196,14 @@ ggplot(data = es5_plot, mapping = aes(x = event.time, y = estimate)) +
   theme(plot.title=ggtext::element_markdown(size = 12, color="black", hjust=0, lineheight=1.2))
 dev.off()
 rm(es5, es5_plot, out5)
+gc()
 
 set.seed(8675309) # hey jenny
 out6 <- att_gt(yname = "acled_vac_reb_event_any", tname = "time", idname = "gid", 
-               gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
+               gname = "first_treated_leave",data = df, pl = T, allow_unbalanced_panel = T)
+gc()
 es6 <- aggte(out6, type = "dynamic", na.rm = T)
+gc()
 es6_plot <-   data.frame(
   type          = "dynamic",
   term = paste0('ATT(', es6$egt, ")"),
@@ -1140,6 +1216,7 @@ es6_plot <-   data.frame(
   point.conf.high = es6$att.egt + stats::qnorm(1 - es6$DIDparams$alp/2) * es6$se.egt
 ) %>%
   filter(event.time < 1)
+gc()
 
 pdf("./results/event_study_pt/14.pdf")
 ggplot(data = es6_plot, mapping = aes(x = event.time, y = estimate)) +
@@ -1158,12 +1235,15 @@ ggplot(data = es6_plot, mapping = aes(x = event.time, y = estimate)) +
   theme(plot.title=ggtext::element_markdown(size = 12, color="black", hjust=0, lineheight=1.2))
 dev.off()
 rm(es6, es6_plot, out6)
+gc()
 
 ## Neighbor cell, leave ##
 set.seed(8675309) # hey jenny
 out7 <- att_gt(yname = "neighbor_vac_gov_event_any", tname = "time", idname = "gid", 
-               gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
+               gname = "first_treated_leave",data = df, pl = T, allow_unbalanced_panel = T)
+gc()
 es7 <- aggte(out7, type = "dynamic", na.rm = T)
+gc()
 es7_plot <-   data.frame(
   type          = "dynamic",
   term = paste0('ATT(', es7$egt, ")"),
@@ -1176,6 +1256,7 @@ es7_plot <-   data.frame(
   point.conf.high = es7$att.egt + stats::qnorm(1 - es7$DIDparams$alp/2) * es7$se.egt
 ) %>%
   filter(event.time < 1)
+gc()
 
 pdf("./results/event_study_pt/15.pdf")
 ggplot(data = es7_plot, mapping = aes(x = event.time, y = estimate)) +
@@ -1194,11 +1275,14 @@ ggplot(data = es7_plot, mapping = aes(x = event.time, y = estimate)) +
   theme(plot.title=ggtext::element_markdown(size = 12, color="black", hjust=0, lineheight=1.2))
 dev.off()
 rm(es7, es7_plot, out7)
+gc()
 
 set.seed(8675309) # hey jenny
 out8 <- att_gt(yname = "neighbor_vac_reb_event_any", tname = "time", idname = "gid", 
-               gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
+               gname = "first_treated_leave",data = df, pl = T, allow_unbalanced_panel = T)
+gc()
 es8 <- aggte(out8, type = "dynamic", na.rm = T)
+gc()
 es8_plot <-   data.frame(
   type          = "dynamic",
   term = paste0('ATT(', es8$egt, ")"),
@@ -1229,14 +1313,17 @@ ggplot(data = es8_plot, mapping = aes(x = event.time, y = estimate)) +
   theme(plot.title=ggtext::element_markdown(size = 12, color="black", hjust=0, lineheight=1.2))
 dev.off()
 rm(es8, es8_plot, out8)
+gc()
 
 ##################################### FATALITIES ##################################### 
 ###### TOTAL #######
 ## Same cell, enter ##
 set.seed(8675309) # hey jenny
 out1 <- att_gt(yname = "acled_vac_gov_death_all", tname = "time", idname = "gid", 
-               gname = "first_treated",data = df, pl = T, cores = 1, allow_unbalanced_panel = T)
+               gname = "first_treated",data = df, pl = T, allow_unbalanced_panel = T)
+gc()
 es1 <- aggte(out1, type = "dynamic", na.rm = T) # extract for parallel trends plot
+gc()
 es1_plot <-   data.frame(
   type          = "dynamic",
   term = paste0('ATT(', es1$egt, ")"),
@@ -1249,7 +1336,7 @@ es1_plot <-   data.frame(
   point.conf.high = es1$att.egt + stats::qnorm(1 - es1$DIDparams$alp/2) * es1$se.egt
 ) %>%
   filter(event.time < 1)
-
+gc()
 pdf("./results/event_study_pt/17.pdf")
 ggplot(data = es1_plot, mapping = aes(x = event.time, y = estimate)) +
   geom_vline(xintercept = 0-0.05, color = 'grey', linewidth = 1.2, linetype = "dotted") + 
@@ -1267,12 +1354,14 @@ ggplot(data = es1_plot, mapping = aes(x = event.time, y = estimate)) +
   theme(plot.title=ggtext::element_markdown(size = 12, color="black", hjust=0, lineheight=1.2))
 dev.off()
 rm(es1, es1_plot, out1)
-
+gc()
 
 set.seed(8675309) # hey jenny
 out2 <- att_gt(yname = "acled_vac_reb_death_all", tname = "time", idname = "gid", 
-               gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
+               gname = "first_treated",data = df, pl = T, allow_unbalanced_panel = T)
+gc()
 es2 <- aggte(out2, type = "dynamic", na.rm = T)
+gc()
 es2_plot <-   data.frame(
   type          = "dynamic",
   term = paste0('ATT(', es2$egt, ")"),
@@ -1285,6 +1374,7 @@ es2_plot <-   data.frame(
   point.conf.high = es2$att.egt + stats::qnorm(1 - es2$DIDparams$alp/2) * es2$se.egt
 ) %>%
   filter(event.time < 1)
+gc()
 
 pdf("./results/event_study_pt/18.pdf")
 ggplot(data = es2_plot, mapping = aes(x = event.time, y = estimate)) +
@@ -1303,12 +1393,15 @@ ggplot(data = es2_plot, mapping = aes(x = event.time, y = estimate)) +
   theme(plot.title=ggtext::element_markdown(size = 12, color="black", hjust=0, lineheight=1.2))
 dev.off()
 rm(es2, es2_plot, out2)
+gc()
 
 ## Neighbor cell, enter ##
 set.seed(8675309) # hey jenny
 out3 <- att_gt(yname = "neighbor_vac_gov_death_all", tname = "time", idname = "gid", 
-               gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
+               gname = "first_treated",data = df, pl = T, allow_unbalanced_panel = T)
+gc()
 es3 <- aggte(out3, type = "dynamic", na.rm = T)
+gc()
 es3_plot <-   data.frame(
   type          = "dynamic",
   term = paste0('ATT(', es3$egt, ")"),
@@ -1321,6 +1414,7 @@ es3_plot <-   data.frame(
   point.conf.high = es3$att.egt + stats::qnorm(1 - es3$DIDparams$alp/2) * es3$se.egt
 ) %>%
   filter(event.time < 1)
+gc()
 
 pdf("./results/event_study_pt/19.pdf")
 ggplot(data = es3_plot, mapping = aes(x = event.time, y = estimate)) +
@@ -1339,11 +1433,14 @@ ggplot(data = es3_plot, mapping = aes(x = event.time, y = estimate)) +
   theme(plot.title=ggtext::element_markdown(size = 12, color="black", hjust=0, lineheight=1.2))
 dev.off()
 rm(es3, es3_plot, out3)
+gc()
 
 set.seed(8675309) # hey jenny
 out4 <- att_gt(yname = "neighbor_vac_reb_death_all", tname = "time", idname = "gid", 
-               gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
+               gname = "first_treated",data = df, pl = T, allow_unbalanced_panel = T)
+gc()
 es4 <- aggte(out4, type = "dynamic", na.rm = T)
+gc()
 es4_plot <-   data.frame(
   type          = "dynamic",
   term = paste0('ATT(', es4$egt, ")"),
@@ -1356,6 +1453,7 @@ es4_plot <-   data.frame(
   point.conf.high = es4$att.egt + stats::qnorm(1 - es4$DIDparams$alp/2) * es4$se.egt
 ) %>%
   filter(event.time < 1)
+gc()
 
 pdf("./results/event_study_pt/20.pdf")
 ggplot(data = es4_plot, mapping = aes(x = event.time, y = estimate)) +
@@ -1374,12 +1472,15 @@ ggplot(data = es4_plot, mapping = aes(x = event.time, y = estimate)) +
   theme(plot.title=ggtext::element_markdown(size = 12, color="black", hjust=0, lineheight=1.2))
 dev.off()
 rm(es4, es4_plot, out4)
+gc()
 
 ## Same cell, leave ##
 set.seed(8675309) # hey jenny
 out5 <- att_gt(yname = "acled_vac_gov_death_all", tname = "time", idname = "gid", 
-               gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
+               gname = "first_treated_leave",data = df, pl = T, allow_unbalanced_panel = T)
+gc()
 es5 <- aggte(out5, type = "dynamic", na.rm = T)
+gc()
 es5_plot <-   data.frame(
   type          = "dynamic",
   term = paste0('ATT(', es5$egt, ")"),
@@ -1392,6 +1493,7 @@ es5_plot <-   data.frame(
   point.conf.high = es5$att.egt + stats::qnorm(1 - es5$DIDparams$alp/2) * es5$se.egt
 ) %>%
   filter(event.time < 1)
+gc()
 
 pdf("./results/event_study_pt/21.pdf")
 ggplot(data = es5_plot, mapping = aes(x = event.time, y = estimate)) +
@@ -1410,11 +1512,14 @@ ggplot(data = es5_plot, mapping = aes(x = event.time, y = estimate)) +
   theme(plot.title=ggtext::element_markdown(size = 12, color="black", hjust=0, lineheight=1.2))
 dev.off()
 rm(es5, es5_plot, out5)
+gc()
 
 set.seed(8675309) # hey jenny
 out6 <- att_gt(yname = "acled_vac_reb_death_all", tname = "time", idname = "gid", 
-               gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
+               gname = "first_treated_leave",data = df, pl = T, allow_unbalanced_panel = T)
+gc()
 es6 <- aggte(out6, type = "dynamic", na.rm = T)
+gc()
 es6_plot <-   data.frame(
   type          = "dynamic",
   term = paste0('ATT(', es6$egt, ")"),
@@ -1427,6 +1532,7 @@ es6_plot <-   data.frame(
   point.conf.high = es6$att.egt + stats::qnorm(1 - es6$DIDparams$alp/2) * es6$se.egt
 ) %>%
   filter(event.time < 1)
+gc()
 
 pdf("./results/event_study_pt/22.pdf")
 ggplot(data = es6_plot, mapping = aes(x = event.time, y = estimate)) +
@@ -1449,8 +1555,10 @@ rm(es6, es6_plot, out6)
 ## Neighbor cell, leave ##
 set.seed(8675309) # hey jenny
 out7 <- att_gt(yname = "neighbor_vac_gov_death_all", tname = "time", idname = "gid", 
-               gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
+               gname = "first_treated_leave",data = df, pl = T, allow_unbalanced_panel = T)
+gc()
 es7 <- aggte(out7, type = "dynamic", na.rm = T)
+gc()
 es7_plot <-   data.frame(
   type          = "dynamic",
   term = paste0('ATT(', es7$egt, ")"),
@@ -1463,6 +1571,7 @@ es7_plot <-   data.frame(
   point.conf.high = es7$att.egt + stats::qnorm(1 - es7$DIDparams$alp/2) * es7$se.egt
 ) %>%
   filter(event.time < 1)
+gc()
 
 pdf("./results/event_study_pt/23.pdf")
 ggplot(data = es7_plot, mapping = aes(x = event.time, y = estimate)) +
@@ -1484,8 +1593,10 @@ rm(es7, es7_plot, out7)
 
 set.seed(8675309) # hey jenny
 out8 <- att_gt(yname = "neighbor_vac_reb_death_all", tname = "time", idname = "gid", 
-               gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
+               gname = "first_treated_leave",data = df, pl = T, allow_unbalanced_panel = T)
+gc()
 es8 <- aggte(out8, type = "dynamic", na.rm = T)
+gc()
 es8_plot <-   data.frame(
   type          = "dynamic",
   term = paste0('ATT(', es8$egt, ")"),
@@ -1498,6 +1609,7 @@ es8_plot <-   data.frame(
   point.conf.high = es8$att.egt + stats::qnorm(1 - es8$DIDparams$alp/2) * es8$se.egt
 ) %>%
   filter(event.time < 1)
+gc()
 
 pdf("./results/event_study_pt/24.pdf")
 ggplot(data = es8_plot, mapping = aes(x = event.time, y = estimate)) +
@@ -1521,8 +1633,10 @@ rm(es8, es8_plot, out8)
 ## Same cell, enter ##
 set.seed(8675309) # hey jenny
 out1 <- att_gt(yname = "acled_vac_gov_death_any", tname = "time", idname = "gid", 
-               gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
+               gname = "first_treated",data = df, pl = T, allow_unbalanced_panel = T)
+gc()
 es1 <- aggte(out1, type = "dynamic", na.rm = T)
+gc()
 es1_plot <-   data.frame(
   type          = "dynamic",
   term = paste0('ATT(', es1$egt, ")"),
@@ -1553,11 +1667,14 @@ ggplot(data = es1_plot, mapping = aes(x = event.time, y = estimate)) +
   theme(plot.title=ggtext::element_markdown(size = 12, color="black", hjust=0, lineheight=1.2))
 dev.off()
 rm(es1, es1_plot, out1)
+gc()
 
 set.seed(8675309) # hey jenny
 out2 <- att_gt(yname = "acled_vac_reb_death_any", tname = "time", idname = "gid", 
-               gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
+               gname = "first_treated",data = df, pl = T, allow_unbalanced_panel = T)
+gc()
 es2 <- aggte(out2, type = "dynamic", na.rm = T)
+gc()
 es2_plot <-   data.frame(
   type          = "dynamic",
   term = paste0('ATT(', es2$egt, ")"),
@@ -1588,12 +1705,15 @@ ggplot(data = es2_plot, mapping = aes(x = event.time, y = estimate)) +
   theme(plot.title=ggtext::element_markdown(size = 12, color="black", hjust=0, lineheight=1.2))
 dev.off()
 rm(es2, es2_plot, out2)
+gc()
 
 ## Neighbor cell, enter ##
 set.seed(8675309) # hey jenny
 out3 <- att_gt(yname = "neighbor_vac_gov_death_any", tname = "time", idname = "gid", 
-               gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
+               gname = "first_treated",data = df, pl = T, allow_unbalanced_panel = T)
+gc()
 es3 <- aggte(out3, type = "dynamic", na.rm = T)
+gc()
 es3_plot <-   data.frame(
   type          = "dynamic",
   term = paste0('ATT(', es3$egt, ")"),
@@ -1624,11 +1744,14 @@ ggplot(data = es3_plot, mapping = aes(x = event.time, y = estimate)) +
   theme(plot.title=ggtext::element_markdown(size = 12, color="black", hjust=0, lineheight=1.2))
 dev.off()
 rm(es3, es3_plot, out3)
+gc()
 
 set.seed(8675309) # hey jenny
 out4 <- att_gt(yname = "neighbor_vac_reb_death_any", tname = "time", idname = "gid", 
-               gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
+               gname = "first_treated",data = df, pl = T, allow_unbalanced_panel = T)
+gc()
 es4 <- aggte(out4, type = "dynamic", na.rm = T)
+gc()
 es4_plot <-   data.frame(
   type          = "dynamic",
   term = paste0('ATT(', es4$egt, ")"),
@@ -1659,12 +1782,15 @@ ggplot(data = es4_plot, mapping = aes(x = event.time, y = estimate)) +
   theme(plot.title=ggtext::element_markdown(size = 12, color="black", hjust=0, lineheight=1.2))
 dev.off()
 rm(es4, es4_plot, out4)
+gc()
 
 ## Same cell, leave ##
 set.seed(8675309) # hey jenny
 out5 <- att_gt(yname = "acled_vac_gov_death_any", tname = "time", idname = "gid", 
-               gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
+               gname = "first_treated_leave",data = df, pl = T, allow_unbalanced_panel = T)
+gc()
 es5 <- aggte(out5, type = "dynamic", na.rm = T)
+gc()
 es5_plot <-   data.frame(
   type          = "dynamic",
   term = paste0('ATT(', es5$egt, ")"),
@@ -1695,11 +1821,14 @@ ggplot(data = es5_plot, mapping = aes(x = event.time, y = estimate)) +
   theme(plot.title=ggtext::element_markdown(size = 12, color="black", hjust=0, lineheight=1.2))
 dev.off()
 rm(es5, es5_plot, out5)
+gc()
 
 set.seed(8675309) # hey jenny
 out6 <- att_gt(yname = "acled_vac_reb_death_any", tname = "time", idname = "gid", 
-               gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
+               gname = "first_treated_leave",data = df, pl = T, allow_unbalanced_panel = T)
+gc()
 es6 <- aggte(out6, type = "dynamic", na.rm = T)
+gc()
 es6_plot <-   data.frame(
   type          = "dynamic",
   term = paste0('ATT(', es6$egt, ")"),
@@ -1730,12 +1859,14 @@ ggplot(data = es6_plot, mapping = aes(x = event.time, y = estimate)) +
   theme(plot.title=ggtext::element_markdown(size = 12, color="black", hjust=0, lineheight=1.2))
 dev.off()
 rm(es6, es6_plot, out6)
-
+gc()
 ## Neighbor cell, leave ##
 set.seed(8675309) # hey jenny
 out7 <- att_gt(yname = "neighbor_vac_gov_death_any", tname = "time", idname = "gid", 
-               gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
+               gname = "first_treated_leave",data = df, pl = T, allow_unbalanced_panel = T)
+gc()
 es7 <- aggte(out7, type = "dynamic", na.rm = T)
+gc()
 es7_plot <-   data.frame(
   type          = "dynamic",
   term = paste0('ATT(', es7$egt, ")"),
@@ -1766,11 +1897,14 @@ ggplot(data = es7_plot, mapping = aes(x = event.time, y = estimate)) +
   theme(plot.title=ggtext::element_markdown(size = 12, color="black", hjust=0, lineheight=1.2))
 dev.off()
 rm(es7, es7_plot, out7)
+gc()
 
 set.seed(8675309) # hey jenny
 out8 <- att_gt(yname = "neighbor_vac_reb_death_any", tname = "time", idname = "gid", 
-               gname = "first_treated_leave",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
+               gname = "first_treated_leave",data = df, pl = T, allow_unbalanced_panel = T)
+gc()
 es8 <- aggte(out8, type = "dynamic", na.rm = T)
+gc()
 es8_plot <-   data.frame(
   type          = "dynamic",
   term = paste0('ATT(', es8$egt, ")"),
@@ -1801,6 +1935,7 @@ ggplot(data = es8_plot, mapping = aes(x = event.time, y = estimate)) +
   theme(plot.title=ggtext::element_markdown(size = 12, color="black", hjust=0, lineheight=1.2))
 dev.off()
 rm(es8, es8_plot, out8)
+gc()
 
 ### plotting event study ###
 es1_plot <-   data.frame(
@@ -2426,7 +2561,7 @@ a = readRDS("./data/plot.RDS")
 # PK arrival/presence
 out2 <- att_gt(yname = "acled_fatalities_any", 
                tname = "time", idname = "gid", 
-               gname = "first_treated", data = a, pl = T, cores = 6)
+               gname = "first_treated", data = a, pl = T)
 es2 <- aggte(out2, type = "group")
 saveRDS(es2, "./results/es2.RDS")
 
@@ -2454,7 +2589,7 @@ dev.off()
 # PK Leaving
 out4 <- att_gt(yname = "acled_fatalities_any", 
                tname = "time", idname = "gid", 
-               gname = "first_treated_leave.x", data = a, pl = T, cores = 6)
+               gname = "first_treated_leave.x", data = a, pl = T)
 es4 <- aggte(out4, type = "group")
 saveRDS(es4, "./results/es4.RDS")
 
@@ -2475,7 +2610,7 @@ dev.off()
 #### Build ES7 ####
 # Cells: neighbor cells. IV: PKO presence. DV: Pr(fatalities). ATT = 0.07, significant
 out7 <- att_gt(yname = "neighbor_fatalities_any", tname = "time", idname = "gid", 
-               gname = "first_treated", data = df, pl = T, cores = 6)
+               gname = "first_treated", data = df, pl = T)
 es7 <- aggte(out7, type = "group")
 summary(es7)
 rm(out7, es7)
@@ -2502,7 +2637,7 @@ dev.off()
 # Cells: neighbor cells. IV: PKO leaving.  DV: fatalities.     ATT = -6.50, significant
 out11 <- att_gt(yname = "neighbor_fatalities_all", 
                 tname = "time", idname = "gid", 
-                gname = "first_treated_leave", data = df, pl = T, cores = 6)
+                gname = "first_treated_leave", data = df, pl = T)
 es11 <- aggte(out11, type = "group")
 summary(es11)
 saveRDS(es11, "./results/es11.RDS")
