@@ -50,7 +50,11 @@ print(
 
 rm(list = ls())
 df_tab_2 = read_rds("./results/main_models.RDS") %>%
-  slice(9:16)
+  slice(9:10, 13:14)
+df_tab_2_corrected = read_rds("./results/binary_models.RDS") %>%
+  slice(1:4)
+
+df_tab_2 = rbind(df_tab_2, df_tab_2_corrected)
 
 # Add asterisks for statistical significance
 # if ATT divided by SE is greater than 1.96 (for a 95% confidence interval), mark with an asterisk
@@ -86,7 +90,35 @@ print(
 
 ### Make summary tables - APPENDIX ###
 rm(list = ls())
-df = read_rds("./results/main_models.RDS")
+# df = read_rds("./results/main_models.RDS")
+  # slice(1:10, 13, 14, 17:26, 29, 30)
+
+df_tab_1 = read_rds("./results/main_models.RDS") %>%
+  slice(1:10)
+df_cor_1 = read_rds("./results/binary_models.RDS") %>%
+  slice(1, 2)
+df = rbind(df_tab_1, df_cor_1)
+
+df_tab_2 = read_rds("./results/main_models.RDS") %>%
+  slice(13:14)
+df_cor_2 = read_rds("./results/binary_models.RDS") %>%
+  slice(3:4)
+df = rbind(df, df_tab_2)
+df = rbind(df, df_cor_2)
+
+df_tab_3 = read_rds("./results/main_models.RDS") %>%
+  slice(17:26)
+df_cor_3 = read_rds("./results/binary_models.RDS") %>%
+  slice(5, 6)
+df = rbind(df, df_tab_3)
+df = rbind(df, df_cor_3)
+
+df_tab_4 = read_rds("./results/main_models.RDS") %>%
+  slice(29:30)
+df_cor_4 = read_rds("./results/binary_models.RDS") %>%
+  slice(7, 8)
+df = rbind(df, df_tab_4)
+df = rbind(df, df_cor_4)
 
 # Calculate upper and lower bounds for confidence intervals
 df$lower_bound <- df$att - 1.96 * df$se  # 95% confidence interval lower bound
@@ -139,7 +171,36 @@ print(
 
 ##### PLOT MAIN RESULTS #####
 rm(list = ls())
-df = read_rds("./results/main_models.RDS")
+# df = read_rds("./results/main_models.RDS")
+df_tab_1 = read_rds("./results/main_models.RDS") %>%
+  slice(1:10)
+df_cor_1 = read_rds("./results/binary_models.RDS") %>%
+  slice(1, 2)
+df = rbind(df_tab_1, df_cor_1)
+
+df_tab_2 = read_rds("./results/main_models.RDS") %>%
+  slice(13:14)
+df_cor_2 = read_rds("./results/binary_models.RDS") %>%
+  slice(3:4)
+df = rbind(df, df_tab_2)
+df = rbind(df, df_cor_2)
+
+df_tab_3 = read_rds("./results/main_models.RDS") %>%
+  slice(17:26)
+df_cor_3 = read_rds("./results/binary_models.RDS") %>%
+  slice(5, 6)
+df = rbind(df, df_tab_3)
+df = rbind(df, df_cor_3)
+
+df_tab_4 = read_rds("./results/main_models.RDS") %>%
+  slice(29:30)
+df_cor_4 = read_rds("./results/binary_models.RDS") %>%
+  slice(7, 8)
+df = rbind(df, df_tab_4)
+df = rbind(df, df_cor_4)
+
+rm(list = setdiff(ls(), "df"))
+
 
 ##### Entrance - same - total #####
 d_enter_same_total = df %>%
