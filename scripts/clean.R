@@ -176,7 +176,7 @@ acled <- acled %>%
 ##### MERGE EVERYTHING TOGETHER #####
 
 ### create a full grid of gid-month-years
-all_gids <- sort(unique(c(acled$gid, prio$gid, radpko$gid)))
+all_gids <- sort(unique(c(acled$gid, radpko$gid)))
 df <- expand_grid(gid = all_gids, 
                   year = seq(2000, 2017, 1), 
                   month = seq(1, 12, 1))

@@ -59,9 +59,17 @@ rm(out2, es2)
 
 ## Neighbor cell, enter ##
 set.seed(8675309) # hey jenny
+
+
+df$neighbor_vac_gov_event_all[df$neighbor_vac_gov_event_all > 0] = 1
+
+
+
 out3 <- att_gt(yname = "neighbor_vac_gov_event_all", tname = "time", idname = "gid", 
                gname = "first_treated",data = df, pl = T, cores = 6, allow_unbalanced_panel = T)
+gc()
 es3 <- aggte(out3, type = "group", na.rm = T)
+gc()
 summary(es3)
 results = rbind(results, data.frame(time = "Enter", cell = "Neighbor", actor = "GOV", dv = "Total", dv_type = "Event",
                                     att = es3$overall.att, se = es3$overall.se))
