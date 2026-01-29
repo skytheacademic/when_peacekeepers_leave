@@ -7,10 +7,11 @@
 ##### SET UP #####
 
 ### load packages
-library(did); library(sf); library(tidyverse); library(lubridate); library(ggtext)
+library(did); library(tidyverse); library(ggtext)
 
 ### set working directory ###
 # setwd("/Users/zmwarner/github/when_peacekeepers_leave")
+setwd(dirname(rstudioapi::getActiveDocumentContext()$path)) # set to source file location
 setwd("../")
 ### set seed
 set.seed(8675309) # hey jenny
@@ -31,8 +32,8 @@ sort(unique(df$year))
 ### number of cells
 length(unique(df$gid))
 options(max.print = 20)
-##################################### VIOLENT EVENTS #####################################
 
+##################################### VIOLENT EVENTS #####################################
 # make dataframe to save values
 results = data.frame() %>%
   mutate(time = NA, cell = NA, actor = NA, dv = NA, dv_type = NA, att = NA, se = NA)
