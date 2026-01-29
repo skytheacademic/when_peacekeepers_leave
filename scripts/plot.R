@@ -422,7 +422,7 @@ rm(list = ls())
 df = read_rds("./data/Kunkel-Atkinson-Dudley-Warner-final.rds") %>% 
   as.data.frame() %>%
   select(gid, year, month, time, first_treated, treated, post_treatment, first_treated_leave, treated_leave, 
-         post_treatment_leave, neighbor_vac_gov_death_all, neighbor_vac_reb_death_any)
+         post_treatment_leave, neighbor_vac_gov_death_all, neighbor_vac_reb_death_any, mission)
 gc()
 
 ## Calculate the frequency of peacekeeping entrances/exits over time
@@ -476,10 +476,10 @@ library(knitr)
 colnames(length_of_stay_by_mission) <- c("Mission", "Mean", "Median", "SD", "Min", "Max")
 length_of_stay_by_mission$`Mean` <- round(length_of_stay_by_mission$`Mean`, 2)
 length_of_stay_by_mission$`SD` <- round(length_of_stay_by_mission$`SD`, 2)
-kable(length_of_stay_by_mission, caption = "Descriptive Statistics for Length of Stay by Mission")
+kable(length_of_stay_by_mission, caption = "Descriptive statistics for monthly PRIO-grid deployments by mission.")
 
 kable(length_of_stay_by_mission, format = "latex", booktabs = TRUE, 
-      caption = "Descriptive Statistics for Length of Stay by Mission", label = "tab:desc",
+      caption = "Descriptive statistics for monthly PRIO-grid deployments by mission.", label = "tab:desc",
     linesep = "")
 
 
