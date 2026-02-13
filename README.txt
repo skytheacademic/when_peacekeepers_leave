@@ -1,3 +1,16 @@
+"./scripts"
+- clean.R: Merges and preprocesses PRIO grid, RADPKO peacekeeping deployment, and ACLED conflict event datasets into a unified panel structure with spatial neighbor calculations.
+
+- analyze.R: Executes all models in the paper and appendix.
+
+- plot.R: Generates tables and figures from model results, including statistical significance formatting and LaTeX output for manuscript integration.
+
+- verify_data.R: Allows for manual verification of edge cases in spatial conflict data by examining specific grid cells and their neighbors to ensure data quality around data transformation.
+
+"./results"
+- provides the plots, figures, tables, and all results for the analyses in the paper.
+
+"./data"
 
 ACLED data:
 	- Contains data on armed conflict and violence.
