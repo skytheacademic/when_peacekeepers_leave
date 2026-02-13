@@ -1,7 +1,7 @@
 #!/usr/bin/env Rscript
 # clean_data.R
 # Merges all data and cleans it for analysis
-# Zach Warner
+# Zach Warner, Sky Kunkel
 # 8 June 2022
 
 ##### SET UP #####
