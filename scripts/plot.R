@@ -9,6 +9,11 @@ library(tidyverse)
 library(lubridate)
 library(ggtext)
 library(xtable)
+library(knitr)
+library(ggpubr)
+library(tmap)
+library(tmaptools)
+library(viridis)
 
 ### Make summary tables - main paper ###
 rm(list = ls())
@@ -90,8 +95,6 @@ print(
 
 ### Make summary tables - APPENDIX ###
 rm(list = ls())
-# df = read_rds("./results/main_models.RDS")
-  # slice(1:10, 13, 14, 17:26, 29, 30)
 
 df_tab_1 = read_rds("./results/main_models.RDS") %>%
   slice(1:10)
@@ -409,17 +412,10 @@ ggplot(d_leave_neighbor_pr, aes(x = att, y = factor(actor), color = actor)) +
 dev.off()
 
 
-
-
-
-
-
-
-
 ######### Descriptives Plots ######### 
-library(ggpubr)
 rm(list = ls())
 df = read_rds("./data/Kunkel-Atkinson-Dudley-Warner-final.rds") %>% 
+  # drop spatial data, select only a few columns to ease the burden on RAM
   as.data.frame() %>%
   select(gid, year, month, time, first_treated, treated, post_treatment, first_treated_leave, treated_leave, 
          post_treatment_leave, neighbor_vac_gov_death_all, neighbor_vac_reb_death_any, mission)
@@ -469,8 +465,7 @@ length_of_stay_by_mission <- dd %>%
             min_stay = min(length_of_stay, na.rm = TRUE),
             max_stay = max(length_of_stay, na.rm = TRUE))
 
-# Load knitr for table rendering
-library(knitr)
+
 
 # Display the descriptive statistics by mission as a table
 colnames(length_of_stay_by_mission) <- c("Mission", "Mean", "Median", "SD", "Min", "Max")
@@ -1774,37 +1769,16 @@ dev.off()
 rm(es8, es8_plot, out8)
 gc()
 
-### plotting event study ###
-es1_plot <-   data.frame(
-  type          = "dynamic",
-  term = paste0('ATT(', es1$egt, ")"),
-  event.time= es1$egt,
-  estimate  = es1$att.egt,
-  std.error = es1$se.egt,
-  conf.low  = es1$att.egt - es1$crit.val.egt * es1$se.egt,
-  conf.high = es1$att.egt + es1$crit.val.egt  * es1$se.egt,
-  point.conf.low  = es1$att.egt - stats::qnorm(1 - es1$DIDparams$alp/2) * es1$se.egt,
-  point.conf.high = es1$att.egt + stats::qnorm(1 - es1$DIDparams$alp/2) * es1$se.egt
-) %>%
-  filter(event.time < 1)
-
-ggplot(data = es1_plot, mapping = aes(x = event.time, y = estimate)) +
-  geom_vline(xintercept = 0-0.05, color = 'grey', linewidth = 1.2, linetype = "dotted") + 
-  geom_ribbon(aes(ymin= point.conf.low, ymax=  point.conf.high), alpha = 0.5, linewidth = 1, fill = "steelblue")+
-  geom_ribbon(aes(ymin=  conf.low, ymax =  conf.high), alpha =  0.3, linewidth = 1, fill = "steelblue")+
-  geom_line(mapping = aes(x = event.time, y=estimate), colour = "black", linewidth = 0.6, linetype = "dashed") +
-  geom_line(size = 1.2, alpha = 2, colour = "darkblue") +
-  geom_hline(yintercept = 0, colour="black", size = 0.25, linetype = "dotted") +
-  xlab('Event time') +
-  ylab("Event-Study Estimate") +
-  scale_x_continuous(breaks = seq(min(es1_plot$event.time), max(es1_plot$event.time), by = 30)) +
-  theme(axis.text.y = element_text(size = 12))+
-  theme(axis.text.x = element_text(size = 12)) +
-  theme(axis.title = element_text(color="black",  size = 12))+
-  theme(plot.title=ggtext::element_markdown(size = 12, color="black", hjust=0, lineheight=1.2))
 ### end plotting
-# Search for violence data
 
+
+
+#### Search for violence displacement grid ####
+## here, I'm looking for a grid that illustrates our theoretical framework (violence displacement and return), to include
+# as an introductory vignette ##
+rm(list = ls())
+a = readRDS("./data/Kunkel-Atkinson-Dudley-Warner-final.rds") %>%
+  as.data.frame()
 sort(tapply(a$acled_fatalities_violence_against_civilians, a$gid, max))
 
 ##### Check highest fatality grids #####
@@ -1870,12 +1844,7 @@ gc()
 # PKs exit at time 2003-2 (50) [AKA, there were 0 PKs at this time in the data]
 
 b = subset(a.132181, time < 56 & time > 9)
-library(ggplot2)
-library(tidyverse)
-library(sf)
-library(ggpubr)
-library(tmap)
-library(tmaptools)
+
 
 b = as.data.frame(b)
 b$t_ind = 0
@@ -2062,34 +2031,9 @@ dev.off()
 pdf("./results/violence_after.pdf")
 plot_3
 dev.off()
-
-
-dev.off()
-
 rm(list = ls())
 
-svg("./drc_ug.svg", height = 10, width = 15)
-ggarrange(plot_1, NULL, plot_2, NULL, plot_3, nrow = 1,
-          labels = c("6 Months Before", "", "3 Years of PK Presence", "", "6 Months After"),
-          legend = "none", label.y = 0.2, label.x = 0.15, widths = c(1, 0.05, 1, 0.05, 1))
-dev.off()
-#### Search for violence displacement grid ####
 
-# Search for displacement grids
-library(ggplot2)
-library(dplyr)
-library(tidyverse)
-library(sf)
-library(ggpubr)
-library(tmap)
-library(tmaptools)
-
-a = readRDS("./data/plot.RDS") %>%
-  relocate(c(16,29), .after = 4)
-a1 = subset(a, a$radpko_pko_deployed > 0 & a$neighbor_fatalities_all > 0)
-sort(decreasing = TRUE, tapply(a1$neighbor_fatalities_all, a1$gid, max))
-# a1 grids
-sort(decreasing = TRUE, tapply(a1$neighbor_fatalities_all, a1$gid, max))
 
 # Potential grids
 # Tested unsuccessfully: 111995 150914 151634
@@ -2227,14 +2171,7 @@ dev.off()
 rm(list = ls())
 
 ##### Descriptive Statistics Plots and Graphs #####
-library(ggplot2)
-library(tidyverse)
-library(sf)
-library(janitor)
-library(lubridate)
-library(viridis)
-
-a = readRDS("./data/Kunkel-Atkinson-Warner-final.rds") %>%
+a = readRDS("./data/Kunkel-Atkinson-Dudley-Warner-final.rds") %>%
   as.data.frame()
 
 df = a %>%
