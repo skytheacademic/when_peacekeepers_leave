@@ -7,7 +7,7 @@ format:
       top: 1cm
 ---
 
-**Feb. 15, 2026**
+**Feb. 16, 2026**
 
 **Authors:** **Sky Kunkel**^[Postdoctoral Research Associate, Gender and Security Sector Lab, Cornell University. Email: [sk3386@cornell.edu](mailto:sk3386@cornell.edu), web: [www.skytheacademic.com](http://www.skytheacademic.com)] \ \ \ \ **Douglas B. Atkinson**^[Assistant Professor of Political Science, Brigham Young University. Email: [atkinsond@byu.edu](mailto:atkinsond@byu.edu), web: [dougbatkinson.wordpress.com](https://dougbatkinson.wordpress.com)] \ \ \ \ **Rebecca Dudley**^[Assistant Professor of Political Science, Brigham Young University. Email: [rebecca.dudley@byu.edu](mailto:rebecca.dudley@byu.edu), web: [www.rebeccaedudley.com](https://www.rebeccaedudley.com)] \ \ \ \ **Zach Warner**^[Independent researcher. Email: [zachwarner11@gmail.com](mailto:zachwarner11@gmail.com), web: [zachwarner.net](http://www.zachwarner.net)]
 
@@ -15,19 +15,19 @@ format:
 
 **Replication Materials:** [https://github.com/skytheacademic/when_peacekeepers_leave](https://github.com/skytheacademic/when_peacekeepers_leave)
 
-This codebook describes the variables for "Here Today, Gone Tomorrow" in the *International Political Science Review*. The data used is a merged PRIO-GRID × month-year panel dataset covering Africa from January 2000 through December 2017 (`Kunkel-Atkinson-Dudley-Warner-final.RDS`). The unit of observation is a PRIO-GRID cell–month. Data are drawn from ACLED, RADPKO, and PRIO.
+This codebook describes the variables for "Here Today, Gone Tomorrow" in the *International Political Science Review*. The data used (`Kunkel-Atkinson-Dudley-Warner-final.RDS`) is a merged PRIO-GRID × month-year panel dataset covering Africa from January 2000 through December 2017. The unit of observation is a PRIO-GRID cell–month. Data are drawn from ACLED, RADPKO, and PRIO.
 
 ## Dataset Sources
 
 This dataset integrates variables from multiple sources. For detailed information about variables from external datasets, please consult the original codebooks:
 
 ### ACLED Variables
-All variables prefixed with `acled_` are derived from the Armed Conflict Location & Event Data Project (ACLED). These variables capture information on political violence events, demonstrations, and strategic developments. For complete definitions, coding rules, and methodology, please refer to the ACLED Codebook (included in this repository as `ACLED_Codebook_v1_January-2021.pdf`).
+All variables prefixed with `acled_` are derived from the Armed Conflict Location & Event Data (ACLED) Project. These variables capture information on political violence events, demonstrations, and strategic developments. For complete definitions, coding rules, and methodology, please refer to the ACLED Codebook (included in this repository as `ACLED_Codebook_v1_January-2021.pdf`).
 
 **Citation**: Raleigh, Clionadh, Andrew Linke, Håvard Hegre and Joakim Karlsen. 2010. "Introducing ACLED-Armed Conflict Location and Event Data." Journal of Peace Research 47(5): 651-660.
 
 ### RADPKO Variables
-All variables prefixed with `radpko_` are derived from the RADPKO (Rigorous and Accurate Data on Peacekeeping Operations) dataset. These variables provide detailed information on UN peacekeeping deployments at the subnational level, including troop counts, personnel types, and contributing countries. For complete definitions and methodology, please refer to the RADPKO documentation (included in this repository as `radpko_appendix.pdf`).
+All variables prefixed with `radpko_` are derived from the RADPKO (Robust African Deployments of Peacekeeping Operations) dataset. These variables provide detailed information on UN peacekeeping deployments at the subnational level, including troop counts, personnel types, and contributing countries. For complete definitions and methodology, please refer to the RADPKO documentation (included in this repository as `radpko_appendix.pdf`).
 
 **Citation**: Hunnicutt, Patrick and William G. Nomikos. 2020. "Nationality, Gender, and Deployments at the Local Level: Introducing the RADPKO Dataset." International Peacekeeping 27(4): 645-672.
 
@@ -52,7 +52,7 @@ Core identifiers that locate each observation in space and time.
 
 **Note**: The spatial identifiers `gid` (PRIO-GRID cell identifier), `row` (PRIO-GRID row index), and `col` (PRIO-GRID column index) originate from the PRIO-GRID framework. Please see the PRIO-GRID Codebook for their definitions.
 
-### Treatment Variables (Difference-in-Differences)
+### Treatment Variables
 
 Variables constructed for use with the did package. Two treatments are defined: (1) peacekeepers arrive, and (2) peacekeepers leave.
 
@@ -103,8 +103,6 @@ Computed via queen contiguity: for each cell–month, these are the sums of the 
 ## Notes
 
 - **Coverage:** Africa, January 2000 – December 2017, at the PRIO-GRID cell–month level.
-- **Missing values:** ACLED and RADPKO missing values within the study area are recoded to 0, reflecting true zeros (no events/deployments).
+- **Missing values:** RADPKO missing values within the study area are recoded to 0, as NA in RADPKO reflects non-deployment.
 - **Binary variables:** "_any" variables are recoded to {0, 1} after aggregation.
-- **Multiple missions:** RADPKO data aggregate across missions when multiple UN operations overlap in the same cell–month.
 - **Neighbor structure:** Queen contiguity (shared edge or vertex) defines the neighbor structure for spatial spillover variables.
-- **Country coding:** Countries are identified by Gleditsch–Ward codes; Abyei is recoded to match RADPKO conventions.
