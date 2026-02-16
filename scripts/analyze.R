@@ -358,4 +358,4 @@ rm(out8, es8)
 saveRDS(results, "./results/main_models.RDS")
 
 ##### VERSION CONTROL #####
-sessionInfO()
+sessionInfo()
