@@ -7,7 +7,7 @@
 ##### SET UP #####
 
 ### load packages
-library(doSNOW); library(foreach); library(janitor); library(lubridate)
+library(doSNOW); library(foreach); library(lubridate)
 library(parallel); library(sf); library(tidyverse)
 
 ### register the clusters
@@ -25,30 +25,14 @@ st_queen <- function(a, b = a) st_relate(a, b, pattern = "F***T****")
 set.seed(8675309) # hey jenny
 
 ##### CLEAN PRIO DATA #####
-
 ### load data
-prio_static <- read_csv("./data/prio/PRIO-GRID Static Variables - 2022-06-03.csv")
-prio_yearly <- read_csv("./data/prio/PRIO-GRID Yearly Variables for 1999-2014 - 2022-06-03.csv")
-
-### expand static data to cover years when "yearly" data isn't available
-year <- seq(1999, 2022, 1)
-prio_static <- expand_grid(prio_static, year)
-
-### merge on grid ID and year, then reorder variables
-prio <- full_join(prio_static, prio_yearly, by = c("gid", "year")) %>% 
-  relocate(year, .after = "gid") %>%
-  filter(year > 1999 & year < 2018)  # until RADPKO data is updated, need to filter out incomplete years
-  
-### expand into monthly data
-month <- seq(1, 12, 1)
-prio <- expand_grid(prio, month) %>% 
-  relocate(month, .after = "year") %>% 
-  arrange(gid, year, month)
-
-### clean up
-rm(month, prio_static, prio_yearly, year)
+prio_gwno <-  read_csv("./data/prio/PRIO-GRID Yearly Variables for 1999-2014 - 2022-06-03.csv") %>% 
+  distinct(gid, gwno)
 
 ##### CLEAN RADPKO DATA #####
+### there are duplicate gid-month-years because of different missions, so we
+### need to aggregate everything by those variables. all vars are sums/counts,
+### so we can just create a binary based on the grid.
 
 ### load data
 radpko <- read_csv("./data/radpko/radpko_grid.csv") %>% 
@@ -56,19 +40,12 @@ radpko <- read_csv("./data/radpko/radpko_grid.csv") %>%
   mutate(date = ymd(date),
          month = month(date),
          year = year(date)) %>% 
-  filter(year > 1999 & year < 2018) %>% # until data is updated, need to filter out incomplete years
-  # rename variable for ease of merging
-  rename(gid = prio.grid)
-
-### there are duplicate gid-month-years because of different missions, so we
-### need to aggregate everything by those variables. all vars are sums/counts,
-### so we can just sum them all.
-radpko <- radpko %>% 
-  select(-c(country, mission, date)) %>% 
-  relocate(c(year, month), .after = gid) %>% 
-  group_by(gid, year, month) %>% 
-  summarise(across(units_deployed:afr_unmob, sum)) %>% 
-  ungroup()
+  filter(year > 1999 & year < 2018) %>% 
+  rename(gid = prio.grid) %>% 
+  # collapse to unique gid-month-years: if any row exists, PKO was present
+  distinct(gid, year, month) %>% 
+  ### create an "any peacekeepers" variable for RADPKO
+  mutate(radpko_pko_deployed_any = 1L)
 
 ##### CLEAN ACLED DATA #####
 
@@ -79,11 +56,9 @@ acled <- read_csv("./data/acled/1999-01-01-2021-12-31.csv") %>%
                              TRUE ~ country)) %>% 
   # make the date variable a date type then subset to post-1999
   mutate(event_date = dmy(event_date)) %>% 
-  filter(event_date >= "2000-01-01" & event_date <"2018-01-01")
-
-### subset ACLED data to violence against civilians and battles
-acled = subset(acled, event_type == "Violence against civilians" | event_type == "Explosions/Remote violence" | 
-                 event_type == "Battles")
+  filter(event_date >= "2000-01-01" & event_date < "2018-01-01") %>% 
+  # VAC only
+  filter(event_type == "Violence against civilians")
 
 #### MERGE ACLED DATA WITH PRIO GRID IDS #####
 
@@ -105,47 +80,13 @@ acled$event = 1
 acled$vac_gov_death_all = 0
 acled$vac_gov_death_all[acled$interaction == 17 | acled$interaction == 37] = 
   acled$fatalities[acled$interaction == 17 | acled$interaction == 37]
-acled$vac_gov_death_any = 0
-acled$vac_gov_death_any[acled$interaction == 17 | acled$interaction == 37] = 1
 acled$vac_reb_death_all = 0
 acled$vac_reb_death_all[acled$interaction == 27] = acled$fatalities[acled$interaction == 27]
-acled$vac_reb_death_any = 0
-acled$vac_reb_death_any[acled$interaction == 27] = 1
 acled$vac_gov_event_all = 0
 acled$vac_gov_event_all[acled$interaction == 17 | acled$interaction == 37] = 
   acled$event[acled$interaction == 17 | acled$interaction == 37]
-acled$vac_gov_event_any = 0
-acled$vac_gov_event_any[acled$interaction == 17 | acled$interaction == 37] = 1
 acled$vac_reb_event_all = 0
 acled$vac_reb_event_all[acled$interaction == 27] = acled$event[acled$interaction == 27]
-acled$vac_reb_event_any = 0
-acled$vac_reb_event_any[acled$interaction == 27] = 1
-
-### add all violence by actor
-acled$gov_death_all = 0
-acled$gov_death_all[acled$interaction > 9 & acled$interaction < 20] = acled$fatalities[acled$interaction > 9 & acled$interaction < 20]
-acled$reb_death_all = 0
-acled$reb_death_all[acled$interaction > 19 & acled$interaction < 30] = acled$fatalities[acled$interaction > 19 & acled$interaction < 30]
-acled$gov_event_all = 0
-acled$gov_event_all[acled$interaction > 9 & acled$interaction < 20] = acled$event[acled$interaction > 9 & acled$interaction < 20]
-acled$reb_event_all = 0
-acled$reb_event_all[acled$interaction > 19 & acled$interaction < 30] = acled$event[acled$interaction > 19 & acled$interaction < 30]
-acled$gov_death_any = 0
-acled$gov_death_any[acled$gov_death_all > 0] = 1
-acled$reb_death_any = 0
-acled$reb_death_any[acled$reb_death_all > 0] = 1
-
-### add battle deaths/events
-acled$bat_death_all = 0
-acled$bat_death_all[acled$event_type == "Battles" & acled$inter1 == 1 | acled$inter2 == 2] = 
-  acled$fatalities[acled$event_type == "Battles" & acled$inter1 == 1 | acled$inter2 == 2]
-acled$bat_event_all = 0
-acled$bat_event_all[acled$event_type == "Battles" & acled$inter1 == 1 | acled$inter2 == 2] = 
-  acled$event[acled$event_type == "Battles" & acled$inter1 == 1 | acled$inter2 == 2]
-acled$bat_death_any = 0
-acled$bat_death_any[acled$bat_death_all > 0] = 1
-acled$bat_event_any = 0
-acled$bat_event_any[acled$bat_event_all > 0] = 1
 
 ### reshape ACLED long to wide, to aggregate deaths by type
 acled <- acled %>% 
@@ -154,24 +95,13 @@ acled <- acled %>%
   # remove extra spatial info, now unneeded
   as_tibble() %>% 
   # remove un-needed variables
-  select(-c(iso, data_id, event_id_cnty, event_id_no_cnty, time_precision, sub_event_type, actor1, assoc_actor_1, actor2, assoc_actor_2,
-            region, country, admin1, admin2, admin3, location, geo_precision, source, source_scale, notes, timestamp, iso3,
-            xcoord, ycoord, col, row, geometry))
-
-acled <- acled %>% 
+  select(-c(iso, data_id, event_id_cnty, event_id_no_cnty, time_precision, 
+            sub_event_type, actor1, assoc_actor_1, actor2, assoc_actor_2,
+            region, country, admin1, admin2, admin3, location, geo_precision, 
+            source, source_scale, notes, timestamp, iso3,
+            xcoord, ycoord, col, row, geometry)) %>% 
   group_by(gid, year, month) %>% 
-  summarise(across(event:bat_event_any, sum)) %>% 
-  ungroup()
-
-### clean names
-# acled <- acled %>% 
-#   clean_names() %>% 
-#   rename(fatalities_protests = protests, 
-#          fatalities_riots = riots,
-#          fatalities_violence_against_civilians = violence_against_civilians,
-#          fatalities_explosions_remote_violence = explosions_remote_violence,
-#          fatalities_battles = battles,
-#          fatalities_strategic_developments = strategic_developments)
+  summarise(across(event:vac_reb_event_all, sum), .groups = "drop")
 
 ##### MERGE EVERYTHING TOGETHER #####
 
@@ -187,11 +117,13 @@ df <- full_join(df, acled, by = c("gid", "year", "month"))
 ### merge the radpko data to the main df
 df <- full_join(df, radpko, by = c("gid", "year", "month"))
 
-### merge the PRIO data to the main df
-df <- full_join(df, prio, by = c("gid", "year", "month"))
-
 ### clean up
-rm(acled, all_gids, prio, proj_crs, radpko)
+rm(acled, all_gids, proj_crs, radpko)
+
+### add row/col from shapefile and gwno from static for filtering
+df <- df %>% 
+  left_join(prio_gwno, by = "gid") %>% 
+  left_join(prio_shp %>% as_tibble() %>% select(gid, row, col), by = "gid")
 
 ### drop unneeded data
 df <- df %>% 
@@ -202,14 +134,11 @@ df <- df %>%
   # some ACLED data is outside the PRIO static table. No PKO ops here, so drop
   filter(!is.na(row) & !is.na(col))
 
-### reorganize and rename
+### rename ACLED variables
 df <- df %>% 
   relocate(c(row, col), .after = month) %>% 
-  select(-c(xcoord, ycoord)) %>% 
-  rename_at(vars(event:bat_event_any), 
-            function(x) paste0("acled_", x)) %>% 
-  rename_at(vars(units_deployed:afr_unmob), function(x) paste0("radpko_", x)) %>% 
-  rename_at(vars(agri_gc:water_ih), function(x) paste0("prio_", x)) 
+  rename_at(vars(event:vac_reb_event_all), 
+            function(x) paste0("acled_", x))
 
 ### subset to Africa for the purpose of our analysis
 df <- df %>% 
@@ -219,57 +148,46 @@ df <- df %>%
 ### years. No boundary changes since 2014 -- South Sudan are already in the data 
 df <- df %>% 
   group_by(gid) %>% 
-  fill(prio_gwno) %>% 
+  fill(gwno) %>% 
   ungroup()
 
 ### drop any countries that we've clipped which aren't in Africa. This clips out
 ### all the water too. It does mean we lose some territories and microstates, eg
 ### Western Sahara.
-df <- df %>% 
-  filter(prio_gwno %in% c(402, 404, 411, 420, 432, 433, 434, 435, 436, 437, 438, 
-                          439, 450, 451, 452, 461, 471, 475, 481, 482, 483, 484, 
-                          490, 500, 501, 510, 516, 517, 520, 522, 530, 531, 540, 
-                          541, 551, 552, 553, 560, 565, 570, 571, 572, 580, 581, 
-                          590, 600, 615, 616, 620, 625, 626, 651))
+african_gids <- prio_gwno %>%
+  filter(gwno %in% c(402, 404, 411, 420, 432, 433, 434, 435, 436, 437, 438, 
+                      439, 450, 451, 452, 461, 471, 475, 481, 482, 483, 484, 
+                      490, 500, 501, 510, 516, 517, 520, 522, 530, 531, 540, 
+                      541, 551, 552, 553, 560, 565, 570, 571, 572, 580, 581, 
+                      590, 600, 615, 616, 620, 625, 626, 651)) %>%
+  distinct(gid)
+
+df <- semi_join(df, african_gids, by = "gid")
 
 ##### RECODE VARIABLES #####
 
 ### RADPKO data are complete 1999-2018 for Africa, so we recode NA to 0
 df <- df %>% 
-  mutate(across(radpko_units_deployed:radpko_afr_unmob, ~replace_na(.x, 0)))
-
-### create an "any peacekeepers" variable for RADPKO
-df <- df %>% 
-  mutate(radpko_pko_deployed_any = case_when(radpko_pko_deployed > 0 ~ 1,
-                                             TRUE ~ 0))
+  mutate(radpko_pko_deployed_any = replace_na(radpko_pko_deployed_any, 0))
 
 ### ACLED are also complete over this time/area, so recode NA to 0 here too
 df <- df %>% 
-  mutate(across(acled_event:acled_bat_event_any, 
-                ~replace_na(.x, 0)))
+  mutate(across(acled_event:acled_vac_reb_event_all, ~replace_na(.x, 0)))
 
-# recode "any" variables to be binary
-df$acled_vac_gov_death_any[df$acled_vac_gov_death_any > 0] = 1
-df$acled_vac_reb_death_any[df$acled_vac_reb_death_any > 0] = 1
-df$acled_vac_gov_event_any[df$acled_vac_gov_event_any > 0] = 1
-df$acled_vac_reb_event_any[df$acled_vac_reb_event_any > 0] = 1
-df$acled_gov_death_any[df$acled_gov_death_any > 0] = 1
-df$acled_reb_death_any[df$acled_reb_death_any > 0] = 1
-df$acled_bat_death_any[df$acled_bat_death_any > 0] = 1
-df$acled_bat_event_any[df$acled_bat_event_any > 0] = 1
-
-# ### create an "any fatalities" variable for ACLED
-# df <- df %>% 
-#   mutate(acled_fatalities_any = case_when(rowSums(across(
-#     acled_vac_gov_death:acled_bat_event)) > 0 ~ 1,
-#     TRUE ~ 0))
-# 
-# ### create a sum fatalaties variable for ACLED
-# df <- df %>% 
-#   mutate(acled_fatalities_all = rowSums(across(
-#     acled_fatalities:acled_bat_event)))
+### derive binary _any variables from _all
+df <- df %>% 
+  mutate(
+    acled_vac_gov_death_any = ifelse(acled_vac_gov_death_all > 0, 1, 0),
+    acled_vac_gov_event_any = ifelse(acled_vac_gov_event_all > 0, 1, 0),
+    acled_vac_reb_death_any = ifelse(acled_vac_reb_death_all > 0, 1, 0),
+    acled_vac_reb_event_any = ifelse(acled_vac_reb_event_all > 0, 1, 0)
+  )
 
 ##### CREATE SPATIAL MEASURES #####
+### now we're going to loop through the entire df, computing neighboring violence
+### run loop getting violence in adjacent grid cells. this is actually fastest
+### given the panel structure of the data, once parallelized
+# set up progress bar
 
 ### merge shapefile here (faster than if we do it above), then set it as spatial
 df <- left_join(df, prio_shp, by = c("gid", "col", "row")) %>%
@@ -290,15 +208,11 @@ for(i in 1:nrow(nb)){
 }
 names(nb_gid) <- nb$gid
 
-### now we're going to loop through the entire df, computing neighboring violence
-### run loop getting violence in adjacent grid cells. this is actually fastest
-### given the panel structure of the data, once parallelized
-# set up progress bar
+### run loop getting violence in adjacent grid cells
 pb <- txtProgressBar(max = nrow(df), style = 3)
 progress <- function(n) setTxtProgressBar(pb, n)
 opts <- list(progress = progress)
 
-# run loop
 out <- foreach(i = 1:nrow(df), .combine = rbind, .options.snow = opts) %dopar% {
   # get grid cell info
   yr <- df$year[i]
@@ -309,25 +223,9 @@ out <- foreach(i = 1:nrow(df), .combine = rbind, .options.snow = opts) %dopar% {
                   df$gid %in% nb_gid[[which(names(nb_gid) == as.character(gi))]]),]
   # compute and store values
   c(sum(tmp$acled_vac_gov_death_all, na.rm = T),
-    sum(tmp$acled_vac_gov_death_any, na.rm = T),
     sum(tmp$acled_vac_reb_death_all, na.rm = T),
-    sum(tmp$acled_vac_reb_death_any, na.rm = T),
     sum(tmp$acled_vac_gov_event_all, na.rm = T),
-    sum(tmp$acled_vac_gov_event_any, na.rm = T),
     sum(tmp$acled_vac_reb_event_all, na.rm = T),
-    sum(tmp$acled_vac_reb_event_any, na.rm = T),
-    sum(tmp$acled_gov_death_all, na.rm = T),
-    sum(tmp$acled_gov_death_any, na.rm = T),
-    sum(tmp$acled_reb_death_all, na.rm = T),
-    sum(tmp$acled_reb_death_any, na.rm = T),
-    sum(tmp$acled_gov_event_all, na.rm = T),
-    sum(tmp$acled_gov_event_any, na.rm = T),
-    sum(tmp$acled_reb_event_all, na.rm = T),
-    sum(tmp$acled_reb_event_any, na.rm = T),
-    sum(tmp$acled_bat_death_all, na.rm = T),
-    sum(tmp$acled_bat_death_any, na.rm = T),
-    sum(tmp$acled_bat_event_all, na.rm = T),
-    sum(tmp$acled_bat_event_any, na.rm = T),
     sum(tmp$radpko_pko_deployed_any, na.rm = T))
 }
 # turn off progress bar and clusters
@@ -337,29 +235,23 @@ stopCluster(cl)
 ### convert the output into a tibble and rename
 out <- as_tibble(out) %>% 
   rename(neighbor_vac_gov_death_all = V1,
-         neighbor_vac_gov_death_any = V2,
-         neighbor_vac_reb_death_all  = V3,
-         neighbor_vac_reb_death_any = V4,
-         neighbor_vac_gov_event_all = V5,
-         neighbor_vac_gov_event_any = V6,
-         neighbor_vac_reb_event_all = V7,
-         neighbor_vac_reb_event_any = V8,
-         neighbor_gov_death_all = V9,
-         neighbor_gov_death_any = V10,
-         neighbor_reb_death_all = V11,
-         neighbor_reb_death_any = V12,
-         neighbor_gov_event_all = V13,
-         neighbor_gov_event_any = V14,
-         neighbor_reb_event_all = V15,
-         neighbor_reb_event_any = V16,
-         neighbor_bat_death_all = V17,
-         neighbor_bat_death_any = V18,
-         neighbor_bat_event_all = V19,
-         neighbor_bat_event_any = V20,
-         neighbor_pko_any = V21)
+         neighbor_vac_reb_death_all = V2,
+         neighbor_vac_gov_event_all = V3,
+         neighbor_vac_reb_event_all = V4,
+         neighbor_pko_all = V5)
 
 ### bind them together
 df <- bind_cols(df, out)
+
+### derive _any from _all
+df <- df %>% 
+  mutate(
+    neighbor_vac_gov_death_any = ifelse(neighbor_vac_gov_death_all > 0, 1, 0),
+    neighbor_vac_reb_death_any = ifelse(neighbor_vac_reb_death_all > 0, 1, 0),
+    neighbor_vac_gov_event_any = ifelse(neighbor_vac_gov_event_all > 0, 1, 0),
+    neighbor_vac_reb_event_any = ifelse(neighbor_vac_reb_event_all > 0, 1, 0),
+    neighbor_pko_any           = ifelse(neighbor_pko_all > 0, 1, 0)
+  )
 
 ### clean up
 rm(cl, i, ids, nb, nb_gid, opts, out, pb, prio_shp, progress, st_queen)
@@ -398,8 +290,8 @@ dd <- lapply(dd, FUN = function(x){
   # create a "first treated" variable. needs to be 0 for untreated
   x$first_treated_leave <- ifelse(nrow(y) == 0, 0, min(y$time))
   # create a "post treated" variable. needs to be 0 until treatment then 1
-  x$post_treatment_leave <- ifelse(x$first_treated != 0 & 
-                                     x$time >= x$first_treated, 
+  x$post_treatment_leave <- ifelse(x$first_treated_leave != 0 & 
+                                     x$time >= x$first_treated_leave, 
                                    1, 0)
   # create a "treated" variable. needs to be 0 if control and 1 if treated
   x$treated_leave <- ifelse(sum(x$l_pko, na.rm = T) > 0, 1, 0)
@@ -418,11 +310,6 @@ rm(dd)
 
 ### reorder variables
 df <- df %>% 
-  rename(prio_xcoord = xcoord, prio_ycoord = ycoord, 
-         prio_geometry = geometry) %>% 
-  relocate(radpko_pko_deployed_any, .after = radpko_afr_unmob) %>% 
-  # relocate(c(acled_fatalities_any, acled_fatalities_all),
-  #          .after = acled_fatalities_explosions_remote_violence) %>% 
   relocate(c(time, first_treated, treated, post_treatment, first_treated_leave,
              treated_leave, post_treatment_leave), .after = month)
 
