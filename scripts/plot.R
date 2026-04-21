@@ -3,22 +3,18 @@
 # reading in cleaned data
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path)) # set to source file location
 setwd("../")
-library(did)
-library(sf)
-library(tidyverse)
-library(lubridate)
-library(ggtext)
-library(xtable)
-library(knitr)
-library(ggpubr)
-library(tmap)
-library(tmaptools)
-library(viridis)
+
+library(groundhog)
+
+# load libraries
+pkgs <- c("tidyverse","did", "sf", "lubridate", "ggtext", "xtable", "knitr", "ggpubr",
+          "tmap", "tmaptools", "viridis")
+groundhog.library(pkgs, "2026-01-28")
 
 ### Make summary tables - main paper ###
 rm(list = ls())
 df_tab_1 = read_rds("./results/main_models.RDS") %>%
-  slice(1:8)
+  filter(dv_type == "Event" & dv == "Total")
 
 # Add asterisks for statistical significance
 # if ATT divided by SE is greater than 1.96 (for a 95% confidence interval), mark with an asterisk
@@ -50,25 +46,20 @@ print(
   xtable_obj,
   include.rownames = FALSE,  # No row numbers
   caption.placement = "bottom",  # Caption at the bottom
-  sanitize.text.function = identity  # Retains LaTex text formatting
+  sanitize.text.function = identity  # Retain LaTex text formatting
 )
 
 rm(list = ls())
 df_tab_2 = read_rds("./results/main_models.RDS") %>%
-  slice(9:10, 13:14)
-df_tab_2_corrected = read_rds("./results/binary_models.RDS") %>%
-  slice(1:4)
-
-df_tab_2 = rbind(df_tab_2, df_tab_2_corrected)
+  filter(dv == "Binary" & dv_type == "Event")
 
 # Add asterisks for statistical significance
 # if ATT divided by SE is greater than 1.96 (for a 95% confidence interval), mark with an asterisk
 df_tab_2$ATT <- ifelse(abs(df_tab_2$att / df_tab_2$se) > 1.96, paste0(formatC(df_tab_2$att, format = "f", digits = 4), "*"), formatC(df_tab_2$att, format = "f", digits = 4))
 df_tab_2$SE <- formatC(df_tab_2$se, format = "f", digits = 4)  # Format SE to 4 decimal places
-df_tab_2$att = NULL
-df_tab_2$se = NULL
-df_tab_2$dv = NULL
-df_tab_2$dv_type = NULL
+df_tab_2 = df_tab_2 %>%
+  select(-c(att, se, dv, dv_type))
+
 # Adjust column names to reflect the table
 colnames(df_tab_2) <- c("Time", "Cell", "Actor", "ATT", "SE")
 
@@ -90,38 +81,12 @@ print(
   xtable_obj,
   include.rownames = FALSE,  # No row numbers
   caption.placement = "bottom",  # Caption at the bottom
-  sanitize.text.function = identity  # Retains LaTex text formatting
+  sanitize.text.function = identity  # Retain LaTex text formatting
 )
 
 ### Make summary tables - APPENDIX ###
 rm(list = ls())
-
-df_tab_1 = read_rds("./results/main_models.RDS") %>%
-  slice(1:10)
-df_cor_1 = read_rds("./results/binary_models.RDS") %>%
-  slice(1, 2)
-df = rbind(df_tab_1, df_cor_1)
-
-df_tab_2 = read_rds("./results/main_models.RDS") %>%
-  slice(13:14)
-df_cor_2 = read_rds("./results/binary_models.RDS") %>%
-  slice(3:4)
-df = rbind(df, df_tab_2)
-df = rbind(df, df_cor_2)
-
-df_tab_3 = read_rds("./results/main_models.RDS") %>%
-  slice(17:26)
-df_cor_3 = read_rds("./results/binary_models.RDS") %>%
-  slice(5, 6)
-df = rbind(df, df_tab_3)
-df = rbind(df, df_cor_3)
-
-df_tab_4 = read_rds("./results/main_models.RDS") %>%
-  slice(29:30)
-df_cor_4 = read_rds("./results/binary_models.RDS") %>%
-  slice(7, 8)
-df = rbind(df, df_tab_4)
-df = rbind(df, df_cor_4)
+df = read_rds("./results/main_models.RDS") 
 
 # Calculate upper and lower bounds for confidence intervals
 df$lower_bound <- df$att - 1.96 * df$se  # 95% confidence interval lower bound
@@ -149,9 +114,9 @@ align(xtable_obj) <- "|c|c|l|c|c|c|r|r|r|r|"  # Vertical lines between columns
 # Print the LaTex table without row numbers
 print(
   xtable_obj,
-  include.rownames = FALSE,  # Remove row numbers
-  caption.placement = "top",  # Placement of the caption
-  sanitize.text.function = identity  # Retains original text for LaTex
+  include.rownames = FALSE,
+  caption.placement = "top",
+  sanitize.text.function = identity 
 )
 
 # Create a LaTex table with vertical lines, without row numbers
@@ -499,20 +464,16 @@ z = df %>%
 rm(list = ls())
 df = read_rds("./data/Kunkel-Atkinson-Dudley-Warner-final.rds") %>%
   select(time, gid, first_treated, first_treated_leave, starts_with("acled"), 
-         starts_with("neighbor"))
+         starts_with("neighbor")) %>%
+  as.data.frame()
 gc()
-
-df$neighbor_gov_death_any[df$neighbor_gov_death_any > 0] = 1
-df$neighbor_reb_death_any[df$neighbor_reb_death_any > 0] = 1
-df$neighbor_gov_event_any[df$neighbor_gov_event_any > 0] = 1
-df$neighbor_reb_event_any[df$neighbor_reb_event_any > 0] = 1
 
 ##################################### VIOLENT EVENTS #####################################
 ###### TOTAL #######
 ## Same cell, enter ##
 set.seed(8675309) # hey jenny
 out1 <- att_gt(yname = "acled_vac_gov_event_all", tname = "time", idname = "gid", 
-               gname = "first_treated",data = df, pl = T, allow_unbalanced_panel = T)
+               gname = "first_treated",data = df, pl = T)
 gc()
 es1 <- aggte(out1, type = "dynamic", na.rm = T) # extract for parallel trends plot
 gc()
@@ -553,7 +514,7 @@ gc()
 
 set.seed(8675309) # hey jenny
 out2 <- att_gt(yname = "acled_vac_reb_event_all", tname = "time", idname = "gid", 
-               gname = "first_treated",data = df, pl = T, allow_unbalanced_panel = T)
+               gname = "first_treated",data = df, pl = T)
 gc()
 es2 <- aggte(out2, type = "dynamic", na.rm = T)
 gc()
@@ -594,7 +555,7 @@ gc()
 ## Neighbor cell, enter ##
 set.seed(8675309) # hey jenny
 out3 <- att_gt(yname = "neighbor_vac_gov_event_all", tname = "time", idname = "gid", 
-               gname = "first_treated",data = df, pl = T, allow_unbalanced_panel = T)
+               gname = "first_treated",data = df, pl = T)
 gc()
 es3 <- aggte(out3, type = "dynamic", na.rm = T)
 gc()
@@ -634,7 +595,7 @@ gc()
 
 set.seed(8675309) # hey jenny
 out4 <- att_gt(yname = "neighbor_vac_reb_event_all", tname = "time", idname = "gid", 
-               gname = "first_treated",data = df, pl = T, allow_unbalanced_panel = T)
+               gname = "first_treated",data = df, pl = T)
 gc()
 es4 <- aggte(out4, type = "dynamic", na.rm = T)
 gc()
@@ -675,7 +636,7 @@ gc()
 ## Same cell, leave ##
 set.seed(8675309) # hey jenny
 out5 <- att_gt(yname = "acled_vac_gov_event_all", tname = "time", idname = "gid", 
-               gname = "first_treated_leave",data = df, pl = T, allow_unbalanced_panel = T)
+               gname = "first_treated_leave",data = df, pl = T)
 gc()
 es5 <- aggte(out5, type = "dynamic", na.rm = T)
 gc()
@@ -716,7 +677,7 @@ gc()
 
 set.seed(8675309) # hey jenny
 out6 <- att_gt(yname = "acled_vac_reb_event_all", tname = "time", idname = "gid", 
-               gname = "first_treated_leave",data = df, pl = T, allow_unbalanced_panel = T)
+               gname = "first_treated_leave",data = df, pl = T)
 gc()
 es6 <- aggte(out6, type = "dynamic", na.rm = T)
 rm(out6)
@@ -758,7 +719,7 @@ gc()
 ## Neighbor cell, leave ##
 set.seed(8675309) # hey jenny
 out7 <- att_gt(yname = "neighbor_vac_gov_event_all", tname = "time", idname = "gid", 
-               gname = "first_treated_leave",data = df, pl = T, allow_unbalanced_panel = T)
+               gname = "first_treated_leave",data = df, pl = T)
 gc()
 es7 <- aggte(out7, type = "dynamic", na.rm = T)
 gc()
@@ -796,7 +757,7 @@ gc()
 
 set.seed(8675309) # hey jenny
 out8 <- att_gt(yname = "neighbor_vac_reb_event_all", tname = "time", idname = "gid", 
-               gname = "first_treated_leave",data = df, pl = T, allow_unbalanced_panel = T)
+               gname = "first_treated_leave",data = df, pl = T)
 gc()
 es8 <- aggte(out8, type = "dynamic", na.rm = T)
 gc()
@@ -836,7 +797,7 @@ gc()
 ## Same cell, enter ##
 set.seed(8675309) # hey jenny
 out1 <- att_gt(yname = "acled_vac_gov_event_any", tname = "time", idname = "gid", 
-               gname = "first_treated",data = df, pl = T, allow_unbalanced_panel = T)
+               gname = "first_treated",data = df, pl = T)
 gc()
 es1 <- aggte(out1, type = "dynamic", na.rm = T)
 gc()
@@ -875,7 +836,7 @@ gc()
 
 set.seed(8675309) # hey jenny
 out2 <- att_gt(yname = "acled_vac_reb_event_any", tname = "time", idname = "gid", 
-               gname = "first_treated",data = df, pl = T, allow_unbalanced_panel = T)
+               gname = "first_treated",data = df, pl = T)
 gc()
 es2 <- aggte(out2, type = "dynamic", na.rm = T)
 gc()
@@ -914,7 +875,7 @@ gc()
 ## Neighbor cell, enter ##
 set.seed(8675309) # hey jenny
 out3 <- att_gt(yname = "neighbor_vac_gov_event_any", tname = "time", idname = "gid", 
-               gname = "first_treated",data = df, pl = T, allow_unbalanced_panel = T)
+               gname = "first_treated",data = df, pl = T)
 gc()
 es3 <- aggte(out3, type = "dynamic", na.rm = T)
 gc()
@@ -953,7 +914,7 @@ gc()
 
 set.seed(8675309) # hey jenny
 out4 <- att_gt(yname = "neighbor_vac_reb_event_any", tname = "time", idname = "gid", 
-               gname = "first_treated",data = df, pl = T, allow_unbalanced_panel = T)
+               gname = "first_treated",data = df, pl = T)
 gc()
 es4 <- aggte(out4, type = "dynamic", na.rm = T)
 gc()
@@ -993,7 +954,7 @@ gc()
 ## Same cell, leave ##
 set.seed(8675309) # hey jenny
 out5 <- att_gt(yname = "acled_vac_gov_event_any", tname = "time", idname = "gid", 
-               gname = "first_treated_leave",data = df, pl = T, allow_unbalanced_panel = T)
+               gname = "first_treated_leave",data = df, pl = T)
 gc()
 es5 <- aggte(out5, type = "dynamic", na.rm = T)
 gc()
@@ -1032,7 +993,7 @@ gc()
 
 set.seed(8675309) # hey jenny
 out6 <- att_gt(yname = "acled_vac_reb_event_any", tname = "time", idname = "gid", 
-               gname = "first_treated_leave",data = df, pl = T, allow_unbalanced_panel = T)
+               gname = "first_treated_leave",data = df, pl = T)
 gc()
 es6 <- aggte(out6, type = "dynamic", na.rm = T)
 gc()
@@ -1072,7 +1033,7 @@ gc()
 ## Neighbor cell, leave ##
 set.seed(8675309) # hey jenny
 out7 <- att_gt(yname = "neighbor_vac_gov_event_any", tname = "time", idname = "gid", 
-               gname = "first_treated_leave",data = df, pl = T, allow_unbalanced_panel = T)
+               gname = "first_treated_leave",data = df, pl = T)
 gc()
 es7 <- aggte(out7, type = "dynamic", na.rm = T)
 gc()
@@ -1111,7 +1072,7 @@ gc()
 
 set.seed(8675309) # hey jenny
 out8 <- att_gt(yname = "neighbor_vac_reb_event_any", tname = "time", idname = "gid", 
-               gname = "first_treated_leave",data = df, pl = T, allow_unbalanced_panel = T)
+               gname = "first_treated_leave",data = df, pl = T)
 gc()
 es8 <- aggte(out8, type = "dynamic", na.rm = T)
 gc()
@@ -1152,7 +1113,7 @@ gc()
 ## Same cell, enter ##
 set.seed(8675309) # hey jenny
 out1 <- att_gt(yname = "acled_vac_gov_death_all", tname = "time", idname = "gid", 
-               gname = "first_treated",data = df, pl = T, allow_unbalanced_panel = T)
+               gname = "first_treated",data = df, pl = T)
 gc()
 es1 <- aggte(out1, type = "dynamic", na.rm = T) # extract for parallel trends plot
 gc()
@@ -1190,7 +1151,7 @@ gc()
 
 set.seed(8675309) # hey jenny
 out2 <- att_gt(yname = "acled_vac_reb_death_all", tname = "time", idname = "gid", 
-               gname = "first_treated",data = df, pl = T, allow_unbalanced_panel = T)
+               gname = "first_treated",data = df, pl = T)
 gc()
 es2 <- aggte(out2, type = "dynamic", na.rm = T)
 gc()
@@ -1230,7 +1191,7 @@ gc()
 ## Neighbor cell, enter ##
 set.seed(8675309) # hey jenny
 out3 <- att_gt(yname = "neighbor_vac_gov_death_all", tname = "time", idname = "gid", 
-               gname = "first_treated",data = df, pl = T, allow_unbalanced_panel = T)
+               gname = "first_treated",data = df, pl = T)
 gc()
 es3 <- aggte(out3, type = "dynamic", na.rm = T)
 gc()
@@ -1269,7 +1230,7 @@ gc()
 
 set.seed(8675309) # hey jenny
 out4 <- att_gt(yname = "neighbor_vac_reb_death_all", tname = "time", idname = "gid", 
-               gname = "first_treated",data = df, pl = T, allow_unbalanced_panel = T)
+               gname = "first_treated",data = df, pl = T)
 gc()
 es4 <- aggte(out4, type = "dynamic", na.rm = T)
 gc()
@@ -1309,7 +1270,7 @@ gc()
 ## Same cell, leave ##
 set.seed(8675309) # hey jenny
 out5 <- att_gt(yname = "acled_vac_gov_death_all", tname = "time", idname = "gid", 
-               gname = "first_treated_leave",data = df, pl = T, allow_unbalanced_panel = T)
+               gname = "first_treated_leave",data = df, pl = T)
 gc()
 es5 <- aggte(out5, type = "dynamic", na.rm = T)
 gc()
@@ -1348,7 +1309,7 @@ gc()
 
 set.seed(8675309) # hey jenny
 out6 <- att_gt(yname = "acled_vac_reb_death_all", tname = "time", idname = "gid", 
-               gname = "first_treated_leave",data = df, pl = T, allow_unbalanced_panel = T)
+               gname = "first_treated_leave",data = df, pl = T)
 gc()
 es6 <- aggte(out6, type = "dynamic", na.rm = T)
 gc()
@@ -1387,7 +1348,7 @@ rm(es6, es6_plot, out6)
 ## Neighbor cell, leave ##
 set.seed(8675309) # hey jenny
 out7 <- att_gt(yname = "neighbor_vac_gov_death_all", tname = "time", idname = "gid", 
-               gname = "first_treated_leave",data = df, pl = T, allow_unbalanced_panel = T)
+               gname = "first_treated_leave",data = df, pl = T)
 gc()
 es7 <- aggte(out7, type = "dynamic", na.rm = T)
 gc()
@@ -1425,7 +1386,7 @@ rm(es7, es7_plot, out7)
 
 set.seed(8675309) # hey jenny
 out8 <- att_gt(yname = "neighbor_vac_reb_death_all", tname = "time", idname = "gid", 
-               gname = "first_treated_leave",data = df, pl = T, allow_unbalanced_panel = T)
+               gname = "first_treated_leave",data = df, pl = T)
 gc()
 es8 <- aggte(out8, type = "dynamic", na.rm = T)
 gc()
@@ -1465,7 +1426,7 @@ rm(es8, es8_plot, out8)
 ## Same cell, enter ##
 set.seed(8675309) # hey jenny
 out1 <- att_gt(yname = "acled_vac_gov_death_any", tname = "time", idname = "gid", 
-               gname = "first_treated",data = df, pl = T, allow_unbalanced_panel = T)
+               gname = "first_treated",data = df, pl = T)
 gc()
 es1 <- aggte(out1, type = "dynamic", na.rm = T)
 gc()
@@ -1503,7 +1464,7 @@ gc()
 
 set.seed(8675309) # hey jenny
 out2 <- att_gt(yname = "acled_vac_reb_death_any", tname = "time", idname = "gid", 
-               gname = "first_treated",data = df, pl = T, allow_unbalanced_panel = T)
+               gname = "first_treated",data = df, pl = T)
 gc()
 es2 <- aggte(out2, type = "dynamic", na.rm = T)
 gc()
@@ -1542,7 +1503,7 @@ gc()
 ## Neighbor cell, enter ##
 set.seed(8675309) # hey jenny
 out3 <- att_gt(yname = "neighbor_vac_gov_death_any", tname = "time", idname = "gid", 
-               gname = "first_treated",data = df, pl = T, allow_unbalanced_panel = T)
+               gname = "first_treated",data = df, pl = T)
 gc()
 es3 <- aggte(out3, type = "dynamic", na.rm = T)
 gc()
@@ -1580,7 +1541,7 @@ gc()
 
 set.seed(8675309) # hey jenny
 out4 <- att_gt(yname = "neighbor_vac_reb_death_any", tname = "time", idname = "gid", 
-               gname = "first_treated",data = df, pl = T, allow_unbalanced_panel = T)
+               gname = "first_treated",data = df, pl = T)
 gc()
 es4 <- aggte(out4, type = "dynamic", na.rm = T)
 gc()
@@ -1619,7 +1580,7 @@ gc()
 ## Same cell, leave ##
 set.seed(8675309) # hey jenny
 out5 <- att_gt(yname = "acled_vac_gov_death_any", tname = "time", idname = "gid", 
-               gname = "first_treated_leave",data = df, pl = T, allow_unbalanced_panel = T)
+               gname = "first_treated_leave",data = df, pl = T)
 gc()
 es5 <- aggte(out5, type = "dynamic", na.rm = T)
 gc()
@@ -1657,7 +1618,7 @@ gc()
 
 set.seed(8675309) # hey jenny
 out6 <- att_gt(yname = "acled_vac_reb_death_any", tname = "time", idname = "gid", 
-               gname = "first_treated_leave",data = df, pl = T, allow_unbalanced_panel = T)
+               gname = "first_treated_leave",data = df, pl = T)
 gc()
 es6 <- aggte(out6, type = "dynamic", na.rm = T)
 gc()
@@ -1692,10 +1653,11 @@ ggplot(data = es6_plot, mapping = aes(x = event.time, y = estimate)) +
 dev.off()
 rm(es6, es6_plot, out6)
 gc()
+
 ## Neighbor cell, leave ##
 set.seed(8675309) # hey jenny
 out7 <- att_gt(yname = "neighbor_vac_gov_death_any", tname = "time", idname = "gid", 
-               gname = "first_treated_leave",data = df, pl = T, allow_unbalanced_panel = T)
+               gname = "first_treated_leave",data = df, pl = T)
 gc()
 es7 <- aggte(out7, type = "dynamic", na.rm = T)
 gc()
@@ -1733,7 +1695,7 @@ gc()
 
 set.seed(8675309) # hey jenny
 out8 <- att_gt(yname = "neighbor_vac_reb_death_any", tname = "time", idname = "gid", 
-               gname = "first_treated_leave",data = df, pl = T, allow_unbalanced_panel = T)
+               gname = "first_treated_leave",data = df, pl = T)
 gc()
 es8 <- aggte(out8, type = "dynamic", na.rm = T)
 gc()
